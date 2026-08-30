@@ -1,0 +1,157 @@
+name: Release
+
+# Releases follow fxmanifest.lua. Bump the version and push -- a release is cut
+# for it automatically. Push anything else and nothing happens, so ordinary
+# commits do not pile up releases.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      # Asks GitHub whether the release exists rather than trusting the tags in
+      # the checkout. A tag that failed to fetch would otherwise read as "not
+      # released yet" and republish a version that is already out.
+      - name: Decide whether to release
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(sed -n "s/^version[[:space:]]*'\([^']*\)'.*/\1/p" fxmanifest.lua)
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not read version from fxmanifest.lua"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release=skip" >> "$GITHUB_OUTPUT"
+            echo "v$VERSION is already released -- nothing to do"
+            exit 0
+          fi
+
+          if git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Tag v$VERSION already exists but has no release. Refusing to move it."
+            exit 1
+          fi
+
+          echo "release=go" >> "$GITHUB_OUTPUT"
+          echo "v$VERSION is new -- cutting a release"
+
+      # The two ways a release ships broken without anything erroring. A UI
+      # pointed at localhost means no menu at all on a customer's server, and a
+      # version behind what the feed advertises tells everyone about an update
+      # they can never download.
+      - name: Refuse to ship a broken build
+        if: steps.check.outputs.release == 'go'
+        run: |
+          if ! grep -q '^ui_page "web/dist/index.html"' fxmanifest.lua; then
+            echo "::error::ui_page is not the built UI. The dev server line is still live, which ships a resource with no interface at all."
+            exit 1
+          fi
+
+          if [ ! -f web/dist/index.html ]; then
+            echo "::error::web/dist is missing. Run 'npm run build' in web/ and commit it."
+            exit 1
+          fi
+
+          VERSION="${{ steps.check.outputs.version }}"
+
+          # gg_lib has no update file of its own -- its log is this releases
+          # page. Only the home file names a version.
+          if ! grep -q "\"$VERSION\"" feed/home.json; then
+            echo "::error::feed/home.json does not mention $VERSION. The feed would advertise a version that does not match this release."
+            exit 1
+          fi
+
+          if [ -f feed/updates/gg_lib.json ]; then
+            echo "::error::feed/updates/gg_lib.json is back. gg_lib reads its own log from this releases page; a second copy can only disagree with it."
+            exit 1
+          fi
+
+      # What a customer gets: the resource, and nothing that only matters to
+      # building it. The UI ships built -- web/dist -- and its source does not
+      # ship at all.
+      - name: Prepare Release Folder
+        if: steps.check.outputs.release == 'go'
+        run: |
+          mkdir "gg_lib"
+          shopt -s extglob
+          cp -r !(gg_lib|.git|.github) "gg_lib/"
+
+          # Copy everything, then take out what only matters to building it.
+          # Listing what goes is safer than listing what stays: a file added
+          # next month ships by default rather than being silently dropped.
+          rm -rf \
+            "gg_lib/web" \
+            "gg_lib/tools" \
+            "gg_lib/node_modules" \
+            "gg_lib/AGENTS.md" \
+            "gg_lib/.gitignore" \
+            "gg_lib/server_config.lua"
+
+          find "gg_lib" -name '*.tsbuildinfo' -delete
+
+          # The UI ships built. Its source does not ship at all.
+          mkdir -p "gg_lib/web"
+          cp -r web/dist "gg_lib/web/dist"
+
+      - name: Check nothing private slipped in
+        if: steps.check.outputs.release == 'go'
+        run: |
+          FOUND=0
+
+          for BAD in \
+            "gg_lib/web/src" \
+            "gg_lib/web/package.json" \
+            "gg_lib/web/node_modules" \
+            "gg_lib/node_modules" \
+            "gg_lib/AGENTS.md" \
+            "gg_lib/tools" \
+            "gg_lib/server_config.lua"
+          do
+            if [ -e "$BAD" ]; then
+              echo "::error::$BAD is in the release and should not be"
+              FOUND=1
+            fi
+          done
+
+          if [ ! -f "gg_lib/web/dist/index.html" ]; then
+            echo "::error::the built UI is missing from the release"
+            FOUND=1
+          fi
+
+          exit $FOUND
+
+      - name: Create ZIP Archive
+        if: steps.check.outputs.release == 'go'
+        run: |
+          zip -r "gg_lib.zip" "gg_lib"
+
+      - name: Tag and publish
+        if: steps.check.outputs.release == 'go'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.check.outputs.version }}
+          name: v${{ steps.check.outputs.version }}
+          files: gg_lib.zip
+          generate_release_notes: true
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

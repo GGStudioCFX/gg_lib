@@ -1,0 +1,32 @@
+#!/bin/sh
+# The UI ships built and its source is never published, so GitHub cannot
+# rebuild it. If web/dist is stale, the release ships an old interface and
+# nothing anywhere reports it. So the rebuild happens here, before the push.
+
+set -e
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+if ! grep -q '^ui_page "web/dist/index.html"' fxmanifest.lua; then
+    echo "pre-push: ui_page is not web/dist/index.html -- the dev server line is still live." >&2
+    exit 1
+fi
+
+echo "pre-push: rebuilding the UI..."
+
+( cd web && npm run build >/dev/null 2>&1 ) || {
+    echo "pre-push: the UI build failed. Fix it before pushing." >&2
+    exit 1
+}
+
+if ! git diff --quiet -- web/dist; then
+    echo "" >&2
+    echo "pre-push: web/dist was stale. It has been rebuilt:" >&2
+    git diff --stat -- web/dist >&2
+    echo "" >&2
+    echo "Commit the rebuilt UI, then push again." >&2
+    exit 1
+fi
+
+echo "pre-push: web/dist is current."

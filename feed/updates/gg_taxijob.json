@@ -1,0 +1,31 @@
+{
+    "label": "gg_taxijob",
+    "resource": "gg_taxijob",
+    "latest": "2.0.0",
+    "url": "https://discord.gg/DqMXJzATph",
+    "updates": [
+        {
+            "version": "2.0.0",
+            "at": 1787866200,
+            "kind": "major",
+            "important": true,
+            "title": "The rebuild",
+            "changes": [
+                "The whole job rebuilt on Script Studio -- every depot, vehicle, rider class, contract, reward, organization and phone setting is edited in game, by anyone you trust, with no file to open",
+                "Every setting applies live. Change a fare, a spawn, a blip or a zone and it is in effect before you have let go of the slider -- restart required is gone",
+                "The menu is new from nothing: search across every setting in every script, a rail that follows where you are, presets, per-setting help, undo, and a diff of what you changed before you save it",
+                "Gameplay rebuilt end to end -- pickups, the meter, fare steps, tips, ratings, the drop-off and the return to depot are all new code, not the old flow with settings bolted on",
+                "Job panel with a live meter, the current fare step and your rider, in place of the popups that used to cover half the screen",
+                "lb-phone taxi app: civilians hail a cab from their phone, on-duty drivers get the call, accept it and are routed there -- no third-party dispatch script needed",
+                "Vehicle editor: build every rental in game. Model, price, deposit, tier, livery, extras, colors and plate, previewed on the car in front of you",
+                "Ped and prop attacher, so a depot ped can be posed, dressed, given an animation or handed a prop or an animal without a single line of code",
+                "Twelve pickup zones across the city, each drawn in the world in debug mode, each moved by dragging it rather than by typing coordinates",
+                "Levels, achievements, daily challenges and a company board, all shared through gg_lib so every GG script counts the same day",
+                "Organizations: found a company, share vehicles and props with it, and work shared goals as a crew",
+                "Metric and imperial across the whole job, following the unit set in gg_lib",
+                "Bridges for fuel, keys, inventory, dispatch, targeting, banking and phone -- detected automatically, and overridable per server",
+                "Every entity the job spawns is now tracked and cleaned up on restart, so a stopped resource leaves no peds, cars or props behind"
+            ]
+        }
+    ]
+}

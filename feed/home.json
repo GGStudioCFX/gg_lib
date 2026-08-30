@@ -1,0 +1,62 @@
+{
+    "publishedAt": 1787767200,
+    "version": "1.0.0",
+    "ticker": [
+        "25% off everything until the end of September -- SUMMER25",
+        "gg_police is coming",
+        "Giveaway: three copies of gg_taxijob",
+        "Script Studio: every setting in every GG script, in one menu"
+    ],
+    "links": {
+        "discord": "https://discord.gg/DqMXJzATph",
+        "store": "https://www.ggstudio.store"
+    },
+    "featured": "summer-sale",
+    "promos": [
+        {
+            "id": "summer-sale",
+            "kind": "sale",
+            "title": "End of summer sale",
+            "body": "Every GG script, and everything that ships after this, for less until the end of the month.",
+            "discount": "25% off",
+            "code": "SUMMER25",
+            "at": 1787673600,
+            "endsAt": 1790812740,
+            "image": "https://picsum.photos/seed/gg-summer-sale/1400/600",
+            "url": "https://www.ggstudio.store",
+            "cta": "Visit the store"
+        },
+        {
+            "id": "giveaway-september",
+            "kind": "giveaway",
+            "title": "Three copies of gg_taxijob",
+            "body": "Drop a reaction on the pinned post in Discord. Three winners drawn live on stream when it closes.",
+            "at": 1787598000,
+            "endsAt": 1789502400,
+            "image": "https://picsum.photos/seed/gg-giveaway/1400/600",
+            "url": "https://discord.gg/DqMXJzATph",
+            "cta": "Join the Discord"
+        },
+        {
+            "id": "discord-move",
+            "kind": "announcement",
+            "title": "Support has moved to Discord",
+            "body": "Tickets, updates and drops all go through the server now. The old support email is closed.",
+            "at": 1787407200,
+            "url": "https://discord.gg/DqMXJzATph",
+            "cta": "Join the Discord"
+        },
+        {
+            "id": "spring-sale",
+            "kind": "sale",
+            "title": "Spring sale",
+            "body": "Every GG script for less, all of April.",
+            "discount": "20% off",
+            "code": "SPRING20",
+            "at": 1775044800,
+            "endsAt": 1777593540,
+            "image": "https://picsum.photos/seed/gg-spring-sale/1400/600",
+            "url": "https://www.ggstudio.store"
+        }
+    ]
+}

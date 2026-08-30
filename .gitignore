@@ -1,0 +1,35 @@
+# Your own server config -- holds admin identifiers
+server_config.lua
+
+# Working notes, not shipped and not published
+AGENTS.md
+
+# Dependencies
+node_modules/
+
+# Everything the UI is built from. Only web/dist is tracked -- it is what
+# fxmanifest ships and what the resource runs. The source is not given away.
+web/*
+!web/dist/
+
+# Build and maintenance scripts. They read web/src, which is not published,
+# so they are useless outside this working copy.
+tools/
+
+# Build caches
+.vite/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

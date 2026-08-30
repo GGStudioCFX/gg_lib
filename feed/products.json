@@ -1,0 +1,118 @@
+{
+    "publishedAt": 1787927784,
+    "products": [
+        {
+            "id": "gg_hunting",
+            "resource": "gg_hunting",
+            "name": "Advanced Hunting System 2.0",
+            "blurb": "Next-generation hunting system for FiveM featuring dynamic zones, advanced progression, and fully reworked gameplay systems.",
+            "price": "$34.95",
+            "icon": "fa-crosshairs",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/fae833b063a0e3941a3421ecc7b6a20b81dabc67.png",
+            "url": "https://www.ggstudio.store/scripts/hunting",
+            "hot": true
+        },
+        {
+            "id": "gg_boosting",
+            "resource": "gg_boosting",
+            "name": "Advanced Boosting System",
+            "blurb": "An advanced vehicle boosting system featuring a real-time contract marketplace, tablet interface, 17+ unique missions, and a deep 50-level progression system built for high-stakes criminal gameplay.",
+            "price": "$34.95",
+            "icon": "fa-car-burst",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/40a02f21ea58e810268f81310766bdfd33e3e293.webp",
+            "url": "https://www.ggstudio.store/scripts/boosting",
+            "hot": true
+        },
+        {
+            "id": "gg_towjob",
+            "resource": "gg_towjob",
+            "name": "Advanced Towing Job",
+            "blurb": "A feature-rich towing and roadside assistance system featuring immersive recovery contracts, progression, police integration, and competitive gameplay.",
+            "price": "$19.95",
+            "icon": "fa-truck-pickup",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/956919b0abb150d5d13358565bcc36320dad2f81.png",
+            "url": "https://www.ggstudio.store/scripts/towjob"
+        },
+        {
+            "id": "gg_coinshop",
+            "resource": "gg_coinshop",
+            "name": "Advanced Coin Shop System",
+            "blurb": "A fully-featured donor and VIP management system with a built-in Battle Pass, playtime rewards, daily drops, and complete in-game admin control.",
+            "price": "$24.95",
+            "icon": "fa-coins",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/90d18ecd65c45d290d39bc1aa5763899b1209bd6.png",
+            "url": "https://www.ggstudio.store/scripts/coinshop"
+        },
+        {
+            "id": "gg_gruppejob",
+            "resource": "gg_gruppejob",
+            "name": "Advanced Gruppe 6 Job",
+            "blurb": "A polished Gruppe 6 system delivering structured operations, immersive risk-reward mechanics, and progression designed for long-term engagement.",
+            "price": "$19.95",
+            "icon": "fa-shield-halved",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/00e67e14c863812f38fb27f0a964f6ea9ee0fdc2.png",
+            "url": "https://www.ggstudio.store/scripts/7252243"
+        },
+        {
+            "id": "gg_electricianjob",
+            "resource": "gg_electricianjob",
+            "name": "Advanced Electrician Job",
+            "blurb": "A dynamic electrician job system featuring 4 unique job types, multiplayer gameplay, global blackout events, and a 15-level progression system built for engaging, skill-based work.",
+            "price": "$19.95",
+            "icon": "fa-bolt",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/7035f47b929052a6dc12ae8b2ffa9507e6c4d025.png",
+            "url": "https://www.ggstudio.store/scripts/6859419"
+        },
+        {
+            "id": "gg_garbagejob",
+            "resource": "gg_garbagejob",
+            "name": "Advanced Garbage Job",
+            "blurb": "A premium garbage collection system delivering custom routes, group-based gameplay, upgrade-driven progression, and a full economy system for long-term engagement.",
+            "price": "$19.95",
+            "icon": "fa-dumpster",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/2fbae4393c4235f4a2c464fe7675c34b042bbc3e.webp",
+            "url": "https://www.ggstudio.store/scripts/garbage-job"
+        },
+        {
+            "id": "gg_taxijob",
+            "resource": "gg_taxijob",
+            "name": "Advanced Taxi Job",
+            "blurb": "A fully interactive taxi system featuring player-driven rides, diverse passenger types, fleet customization, and progression-based unlocks that keep every trip engaging.",
+            "price": "$19.95",
+            "icon": "fa-taxi",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/111a963f5b668486ab0dfa78068f35111a54dafb.png",
+            "url": "https://www.ggstudio.store/scripts/taxi-job"
+        },
+        {
+            "id": "gg_gopostal",
+            "resource": "gg_gopostal",
+            "name": "Go Postal Job System",
+            "blurb": "A progression-based delivery system combining warehouse work, delivery gameplay, and competitive streak mechanics to create a full career-driven experience.",
+            "price": "$19.95",
+            "icon": "fa-envelope",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/8e46124a7555b5ad03d45b12cab127d994b3552b.png",
+            "url": "https://www.ggstudio.store/scripts/gopostal-job"
+        },
+        {
+            "id": "gg_casinowheel",
+            "resource": "gg_casinowheel",
+            "name": "Casino Wheel Editor",
+            "blurb": "A standalone Casino Wheel Editor that lets you create and customize unlimited animated lucky wheels in real time with no configs.",
+            "price": "$9.95",
+            "status": "WAS $20.00",
+            "icon": "fa-dharmachakra",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/44cf5824e14bec19038a7860d9d28856bee6ac91.png",
+            "url": "https://www.ggstudio.store/scripts/casinowheel"
+        },
+        {
+            "id": "gg_busjob",
+            "resource": "gg_busjob",
+            "name": "Advanced Bus Job",
+            "blurb": "A route-based bus system built around rider collection, progression unlocks, and performance tracking that turns public transport into an engaging grind.",
+            "price": "Free",
+            "icon": "fa-bus",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/42a36fea4c9fcbf120eb4277112f5430c933457e.png",
+            "url": "https://www.ggstudio.store/scripts/bus-job"
+        }
+    ]
+}
