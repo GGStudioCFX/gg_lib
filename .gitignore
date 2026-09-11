@@ -1,6 +1,3 @@
-# Your own server config -- holds admin identifiers
-server_config.lua
-
 # Working notes, not shipped and not published
 AGENTS.md
 
@@ -11,6 +8,10 @@ node_modules/
 # fxmanifest ships and what the resource runs. The source is not given away.
 web/*
 !web/dist/
+
+# A source map is the source. Vite does not write them today; turning them on
+# by accident should not publish web/src along with the bundle.
+web/dist/**/*.map
 
 # Build and maintenance scripts. They read web/src, which is not published,
 # so they are useless outside this working copy.

@@ -37,6 +37,8 @@ return {
         gg.inventory.getImageDirectory = nothing
     end,
 
+    -- The shape of the target API. On the client init.lua wraps these in
+    -- proxies that journal every call, so nothing here is ever reached there.
     target = function()
         gg.target = gg.target or {}
 

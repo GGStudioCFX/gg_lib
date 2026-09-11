@@ -1,8 +1,8 @@
 # Bridges
 
 Every bridge answers one small set of calls, whatever resource is behind it. A
-script written against `gg.target` works on ox_target, sleepless_interact and
-qb-target without knowing which is installed.
+script written against `gg.target` works on lation_interact, sleepless_interact,
+ox_target and qb-target without knowing which is installed.
 
 Detection order lives in `manifest.lua`. ox and qb candidates are listed **last**
 in every category on purpose: plenty of servers run them as a dependency of the
@@ -85,6 +85,29 @@ gg.target.removeGlobalPed('depot:talk')
 
 ox_target drops a resource's targets when it stops, and the qb-target bridge does
 the same by hand. **You do not need an `onResourceStop` handler for targets.**
+
+### When the target script is the one that breaks
+
+Every call the target bridge makes into ox_target, sleepless_interact or
+lation_interact goes through a guard. If that resource throws -- a bad release, a
+renamed export, an export dropped between versions -- the error never reaches the
+GG script that happened to be registering a zone at the time. The call fails
+quietly, the script carries on, and the console says once, per export, whose code
+broke:
+
+```
+[gg_lib] lation_interact:addBoxZone() threw. That is lation_interact's code, not
+gg_lib's -- send them this:
+  An error occurred while calling export addBoxZone in resource lation_interact: ...
+```
+
+Counts land on `gg.bridge_status.target.provider_failures`, and because the line
+is printed client-side it is picked up by the support bundle -- so a customer's
+paste already carries the evidence of whose resource failed.
+
+Looking an export up is itself what throws in FiveM when it does not exist, so
+the lookup happens inside the guard rather than at the call site. Any bridge
+that calls a third-party resource should do the same.
 
 ---
 
@@ -174,5 +197,8 @@ Not every key resource can take a key back; those answer `false` from
 
 A resource that declares `provides { 'ox_target' }` still needs its own entry:
 `provides` does not make `GetResourceState('ox_target')` report started, so
-nothing would match it. `sleepless_interact` is the example — its bridge runs the
-ox_target one rather than keeping a copy.
+nothing would match it. `sleepless_interact` and `lation_interact` are the
+examples — their bridges run the ox_target one rather than keeping a copy.
+`lation_interact` hands it `GG_TARGET_EXPORT`, so every call goes to
+`exports.lation_interact` rather than to the `ox_target` alias, which a server
+still running the real ox_target would answer instead.

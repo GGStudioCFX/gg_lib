@@ -57,34 +57,3 @@ function Locales.forget()
 
     if LocaleNames and LocaleNames.forget then LocaleNames.forget() end
 end
-
-local function count(rows)
-    local total = 0
-
-    for _ in pairs(rows or {}) do total = total + 1 end
-
-    return total
-end
-
-RegisterCommand("gglocales", function(source)
-    if source ~= 0 then return end
-
-    Locales.forget()
-
-    local code = Locales.code()
-    local rows = Locales.strings()
-
-    if code == FALLBACK then
-        print("[gg_lib] language: English, built in")
-    elseif rows then
-        print(("[gg_lib] language: %s, %d strings translated -- the rest fall back to English"):format(code, count(rows)))
-    else
-        print(("^3[gg_lib] language: %s is set but has no readable file -- everything is English^0"):format(code))
-    end
-
-    local names = {}
-
-    for _, option in ipairs(LocaleNames.options()) do names[#names + 1] = option.value end
-
-    print(("[gg_lib] available: %s"):format(table.concat(names, ", ")))
-end, true)

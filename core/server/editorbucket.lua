@@ -74,15 +74,3 @@ AddEventHandler("onResourceStop", function(resource)
         restore(src)
     end
 end)
-
-RegisterCommand("gg_unstick", function(source)
-    if source == 0 then
-        for src in pairs(occupants) do restore(src) end
-        print("Pulled every editor occupant back to their world")
-        return
-    end
-
-    if restore(source) then
-        TriggerClientEvent("gg_lib:editor:forceExit", source)
-    end
-end, true)

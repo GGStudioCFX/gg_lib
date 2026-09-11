@@ -74,19 +74,7 @@ Open **`/ggsettings` → Waypoints** to see every style, copy its export, change
 what it says by default, and drop one in front of you for ten seconds to look
 at it.
 
-### Seeing one
-
-There is a command for checking it works without writing any code:
-
-```
-/waypoint            place one at your feet
-/waypoint map        place one at your marker on the map
-/waypoint DROP OFF   place one at your feet saying something else
-```
-
-Run it again to take it away. Place one and walk off to watch it count up,
-grow, switch to miles and lift itself over anything in the way. `/ggwaypoint`
-does the same thing, for when another resource already owns the short name.
+### What one costs
 
 Each waypoint draws through its own 4096x2048 DUI, which is a real amount of
 video memory. A handful at a time is fine; leaving dozens placed is not, and

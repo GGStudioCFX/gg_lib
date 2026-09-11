@@ -42,5 +42,3 @@ A script gg_lib has never seen starts caught up, so installing something new
 does not wipe what it shipped with. Move the reset time and the next one lands
 on the new time, without waiting out the old one.
 
-`gg_daily_reset` in the server console rolls everything over now, for testing.
-

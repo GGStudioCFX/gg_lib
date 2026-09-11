@@ -8,9 +8,7 @@ Using the menu.
 
 ## Using Script Studio
 
-Type **`/ggsettings`** in game.
-script also gets its own shortcut — `/taxisettings` opens straight to the taxi
-job.
+Type **`/ggsettings`** in game. It is the only command gg_lib registers.
 
 | Page         | What it holds                                                    |
 | ------------ | ---------------------------------------------------------------- |
@@ -22,6 +20,63 @@ job.
 
 Changes are staged until you press **Save**, so you can adjust several things
 and apply them together. Anything needing a restart is labelled.
+
+### Visual editors
+
+A script can provide a dedicated design page using `settings.editor`. Its page
+opens from the script's sidebar, separately from the scrolling settings and
+Update Log. Controls use the same drafts, Save, Discard, reset, permissions and
+server validation as ordinary settings. Unlisted settings remain in their
+normal groups; search still finds fields managed by an editor.
+
+Declare settings with `settings.define` first, then reference their paths:
+
+```lua
+settings.editor('appearance', {
+    label = 'Design Editor',
+    icon = 'fa-palette',
+    preview = 'web/editor.html',
+    sections = {
+        { id = 'design', label = 'Design', fields = {
+            { path = 'appearance.style', view = 'gallery', thumbnailPrefix = 'web/previews/style-' },
+            { path = 'appearance.corners', view = 'cards' },
+            'appearance.color',
+        } },
+    },
+})
+```
+
+`preview` and gallery thumbnails are relative to the declaring resource and must
+be included in its manifest `files`. Gallery images use `<prefix><enum-value>.svg`
+and appear together in the scrolling controls pane; the preview stays fixed.
+Use galleries for small visual catalogs of up to roughly 50 designs. Empty
+sections are omitted when none of their fields apply. `cards` renders enum options inline. A field may
+provide `icons = { value = 'fa-icon' }` or `when = { path = 'other.path', equals = value }`.
+Both `when` and the setting's `depends` respond to unsaved draft changes. The
+preview receives public settings only; server-only values are excluded.
+
+The host opens `preview?studio=1&host=<host-origin>` in a visual-only iframe. The
+preview must send `{ event: 'gg:editor:ready', version: 1 }` to its parent using
+the supplied host origin. It then receives:
+
+```js
+{ event: 'gg:editor:preview', version: 1,
+  values: { 'appearance.style': 'circle' },
+  state: 'ready', scale: 2,
+  context: { accent: '#c694ff', applyToAll: true } }
+```
+
+Validate `event.source === window.parent` and the supplied host origin before
+handling messages. States are `ready`, `idle`, `press` and `hold`.
+`scale` relates the preview viewport to the editor's viewport, so a renderer can
+keep its existing vh sizes. Changes must render sample actions only: an embedded
+preview must never send gameplay NUI callbacks or save settings itself. The host
+keeps controls usable if the preview fails to load.
+
+For local development, the Vite browser accepts `?scriptPreview=<localhost JSON URL>`.
+The schema JSON can include `previewBase: 'http://127.0.0.1:4178/resource/'` to
+resolve its resource assets. This override is restricted to the development
+browser; native resource URLs always use `https://cfx-nui-<resource>/`.
 
 Each script also has a **Factory Reset** at the bottom of its page, which puts
 everything back to how it shipped.

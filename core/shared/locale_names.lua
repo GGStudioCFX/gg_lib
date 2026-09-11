@@ -1,16 +1,18 @@
 
 LocaleNames = LocaleNames or {}
 
+-- Every language is written the way its own speakers write it. Somebody
+-- looking for their language is scanning for a word they recognise, and
+-- "Japanese" is not that word to anyone who reads Japanese.
 local NAMES = {
     { code = "en",    label = "English" },
     { code = "de",    label = "Deutsch" },
-    { code = "es",    label = "Espanol" },
-    { code = "fr",    label = "Francais" },
+    { code = "es",    label = "Español" },
+    { code = "fr",    label = "Français" },
     { code = "nl",    label = "Nederlands" },
-    { code = "pt-br", label = "Portugues (Brasil)" },
-
-    { code = "ja",    label = "Japanese" },
-    { code = "zh-cn", label = "Chinese (Simplified)" },
+    { code = "pt-br", label = "Português (Brasil)" },
+    { code = "ja",    label = "日本語" },
+    { code = "zh-cn", label = "简体中文" },
 }
 
 function LocaleNames.label(code)
@@ -63,15 +65,25 @@ function LocaleNames.present(code)
     return ready[code]
 end
 
+--- Whether a file for this language ships at all, which is a different
+--- question from whether anybody has translated it yet.
+function LocaleNames.shipped(code)
+    return code == "en" or load(code) ~= nil
+end
+
 function LocaleNames.forget()
     ready = {}
 end
 
+-- Every language that ships, whether or not anybody has finished translating
+-- it. What is missing falls back to English key by key, so a half-done language
+-- is a half-translated menu rather than a broken one -- and hiding it meant a
+-- server could never pick the language it was translating.
 function LocaleNames.options()
     local out = {}
 
     for _, row in ipairs(NAMES) do
-        if LocaleNames.present(row.code) then
+        if LocaleNames.shipped(row.code) then
             out[#out + 1] = { value = row.code, label = row.label }
         end
     end

@@ -41,7 +41,7 @@ local function loadConfig()
     local source = LoadResourceFile("gg_lib", CONFIG_FILE)
 
     if not source or source == "" then
-        print(("^3[gg_lib] %s not found -- copy server_config.example.lua to %s and add your license2 to the admins list^0"):format(CONFIG_FILE, CONFIG_FILE))
+        print(("^3[gg_lib] %s is missing -- put it back and add your license2 to the admins list^0"):format(CONFIG_FILE))
         return false
     end
 

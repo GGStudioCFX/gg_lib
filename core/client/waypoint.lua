@@ -132,7 +132,7 @@ local drawing   = false
 local styleDefaults = {}
 
 local function refreshStyleDefaults()
-    local ok, stored = pcall(GGCallback.await, "gg_lib:waypoints:defaults")
+    local ok, stored = pcall(function() return GGCallback.await("gg_lib:waypoints:defaults") end)
 
     if ok and type(stored) == "table" then styleDefaults = stored end
 end
@@ -809,67 +809,3 @@ AddEventHandler("onClientResourceStop", function(resource)
     clearOwner(resource)
 end)
 
-local DEBUG_ID = "debug"
-
-local function tell(message)
-    GGPopup.flash(message)
-
-    print(("[gg_lib] %s"):format(message))
-end
-
-local function mapMarker()
-    local blip = GetFirstBlipInfoId(8)
-
-    if not DoesBlipExist(blip) then return nil end
-
-    local at = GetBlipInfoIdCoord(blip)
-    local found, groundZ = GetGroundZFor_3dCoord(at.x, at.y, 1000.0, false)
-
-    return vec3(at.x, at.y, found and groundZ or at.z)
-end
-
-local function debugWaypoint(_, args)
-    local key = keyOf(RESOURCE, DEBUG_ID)
-
-    if waypoints[key] then
-        removeKey(key)
-        tell("Debug waypoint removed")
-        return
-    end
-
-    local first = args and args[1] and tostring(args[1]):lower() or nil
-    local coords, from
-
-    if first == "map" then
-        coords = mapMarker()
-
-        if not coords then
-            tell("Set a marker on the map first, then run this again")
-            return
-        end
-
-        from = "your map marker"
-    else
-        coords = GetEntityCoords(PlayerPedId())
-        from = "your feet"
-    end
-
-    local label = "CHECKPOINT"
-
-    if first and first ~= "map" then
-        local joined = table.concat(args, " "):upper()
-
-        if joined ~= "" then label = joined end
-    end
-
-    if not create(RESOURCE, { id = DEBUG_ID, coords = coords, label = label }) then
-        tell("Could not place the debug waypoint")
-        return
-    end
-
-    tell(("Debug waypoint placed at %s -- run the command again to remove it"):format(from))
-    print(("[gg_lib] waypoint at %.2f, %.2f, %.2f"):format(coords.x, coords.y, coords.z))
-end
-
-RegisterCommand("ggwaypoint", debugWaypoint, false)
-RegisterCommand("waypoint", debugWaypoint, false)

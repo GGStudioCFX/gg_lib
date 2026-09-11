@@ -287,13 +287,3 @@ CreateThread(function()
         Wait(REFRESH_MS)
     end
 end)
-
-RegisterCommand("gghomefeed", function(source)
-    if source ~= 0 then return end
-
-    HomeFeed.refresh(function(ok, moved)
-        if not ok then return end
-
-        print(moved and "[gg_lib] feed: fetched, changed -- sent to everyone" or "[gg_lib] feed: fetched, same as what is showing")
-    end)
-end, true)

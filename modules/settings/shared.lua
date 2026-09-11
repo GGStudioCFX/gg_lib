@@ -3,6 +3,7 @@ settings = settings or {}
 cfg = cfg or {}
 
 settings.schema      = {}  -- path -> definition
+settings.editors     = {}
 settings.order       = {}  -- declaration order, so the editor reads top to bottom
 settings.groups      = {}  -- group id -> meta
 settings.group_order = {}
@@ -300,7 +301,9 @@ validators.image = function(_, value)
 end
 
 validators.enum = function(def, value)
-    for _, option in ipairs(def.options or {}) do
+    local choices = type(def.options) == "function" and (select(2, pcall(def.options)) or {}) or def.options
+
+    for _, option in ipairs(choices or {}) do
         local candidate = type(option) == "table" and option.value or option
         if candidate == value then return true, value end
     end
@@ -319,6 +322,58 @@ validators.color = function(_, value)
     end
 
     return false, "expected a hex or rgb() color"
+end
+
+local function hexByte(value)
+    local number = math.floor(tonumber(value) or 0)
+
+    if number < 0 then number = 0 elseif number > 255 then number = 255 end
+
+    return string.format("%02x", number)
+end
+
+local function toHex8(value)
+    -- Two fields left over from when a color and its opacity were separate
+    -- settings. One value now, so the pair is folded into it on the way in.
+    if type(value) == "table" then
+        local base = toHex8(value.color)
+
+        if not base then return nil end
+
+        return base:sub(1, 7) .. hexByte(value.alpha == nil and 255 or value.alpha)
+    end
+
+    if type(value) ~= "string" then return nil end
+
+    local body = string.match(value, "^#(%x+)$")
+
+    if body and #body == 3 then body = (body:gsub("(%x)", "%1%1")) end
+    if body and #body == 6 then return ("#%sff"):format(body):lower() end
+    if body and #body == 8 then return ("#%s"):format(body):lower() end
+
+    local red, green, blue, alpha = string.match(value, "^rgba?%(%s*(%d+)%s*,%s*(%d+)%s*,%s*(%d+)%s*,?%s*([%d%.]*)%s*%)$")
+
+    if not red then return nil end
+
+    local opacity = 255
+
+    if alpha and alpha ~= "" then
+        local number = tonumber(alpha) or 1
+
+        -- Written this way the last channel runs 0 to 1, but every native that
+        -- takes one counts it to 255.
+        opacity = number <= 1 and number * 255 or number
+    end
+
+    return ("#%s%s%s%s"):format(hexByte(red), hexByte(green), hexByte(blue), hexByte(opacity))
+end
+
+validators.rgba = function(_, value)
+    local hex = toHex8(value)
+
+    if hex then return true, hex end
+
+    return false, "expected a color with an opacity, like #rrggbbaa"
 end
 
 validators.time = function(_, value)
@@ -675,6 +730,20 @@ function settings.isSecret(path)
     return def ~= nil and def.server_only == true
 end
 
+function settings.editor(id, definition)
+    if type(id) ~= "string" or not id:match("^[%w_%-]+$") or type(definition) ~= "table" then return false end
+    local preview = definition.preview
+    if type(preview) ~= "string" or not preview:match("^[%w_/%-%.]+%.html$") or preview:find("..", 1, true) or preview:sub(1, 1) == "/" then return false end
+    if type(definition.sections) ~= "table" then return false end
+
+    local editor = settings.deepCopy(definition)
+    editor.id = id
+    settings.editors[id] = editor
+    settings.group(id, { label = editor.label or id, icon = editor.icon or "fa-palette", help = editor.help })
+    settings.groups[id].editor = true
+    return true
+end
+
 function settings.action(path, def)
     def = def or {}
     def.type = "action"
@@ -732,8 +801,107 @@ settings.accounts = {
     { value = "black", label = "Black Money" },
 }
 
+settings.speechLines = {
+    { value = "GENERIC_HI",              label = "Greeting · Hello" },
+    { value = "GENERIC_HOWS_IT_GOING",   label = "Greeting · How's it going" },
+    { value = "GENERIC_WHATEVER",        label = "Greeting · Whatever" },
+    { value = "GENERIC_HOWDY",           label = "Greeting · Howdy" },
+    { value = "CHAT_STATE",              label = "Greeting · Small talk" },
+    { value = "CHAT_RESP",               label = "Greeting · Small talk reply" },
+
+    { value = "GENERIC_BYE",             label = "Farewell · Goodbye" },
+    { value = "GENERIC_THANKS",          label = "Farewell · Thanks" },
+    { value = "GENERIC_INSULT_MED",      label = "Farewell · Mild insult" },
+    { value = "GENERIC_INSULT_HIGH",     label = "Farewell · Strong insult" },
+
+    { value = "GENERIC_CURSE_MED",       label = "Annoyed · Mild curse" },
+    { value = "GENERIC_CURSE_HIGH",      label = "Annoyed · Strong curse" },
+    { value = "BLOCKED_GENERIC",         label = "Annoyed · You're in the way" },
+    { value = "PROVOKE_GENERIC",         label = "Annoyed · Provoked" },
+    { value = "PROVOKE_TRESPASS",        label = "Annoyed · Get out of here" },
+    { value = "SHOUT_THREATEN_PED",      label = "Annoyed · Threaten" },
+
+    { value = "GENERIC_SHOCKED_MED",     label = "Reaction · Surprised" },
+    { value = "GENERIC_SHOCKED_HIGH",    label = "Reaction · Very surprised" },
+    { value = "GENERIC_FRIGHTENED_MED",  label = "Reaction · Nervous" },
+    { value = "GENERIC_FRIGHTENED_HIGH", label = "Reaction · Scared" },
+    { value = "GENERIC_FUCK_YOU",        label = "Reaction · Told off" },
+    { value = "GENERIC_WAR_CRY",         label = "Reaction · War cry" },
+
+    { value = "APPLAUD",                 label = "Approval · Applaud" },
+    { value = "CHEER",                   label = "Approval · Cheer" },
+    { value = "GENERIC_YES",             label = "Approval · Yes" },
+    { value = "GENERIC_NO",              label = "Approval · No" },
+
+    { value = "COUGH",                   label = "Idle · Cough" },
+    { value = "WHISTLE",                 label = "Idle · Whistle" },
+    { value = "GENERIC_FRUSTRATED_HIGH", label = "Idle · Frustrated" },
+}
+
+settings.speechParams = {
+    { value = "SPEECH_PARAMS_STANDARD",                     label = "Standard" },
+    { value = "SPEECH_PARAMS_ALLOW_REPEAT",                 label = "Allow repeat" },
+    { value = "SPEECH_PARAMS_BEAT",                         label = "Beat" },
+
+    { value = "SPEECH_PARAMS_FORCE",                        label = "Force" },
+    { value = "SPEECH_PARAMS_FORCE_FRONTEND",               label = "Force, frontend" },
+    { value = "SPEECH_PARAMS_FORCE_NO_REPEAT_FRONTEND",     label = "Force, frontend, no repeat" },
+
+    { value = "SPEECH_PARAMS_FORCE_NORMAL",                 label = "Force, normal volume" },
+    { value = "SPEECH_PARAMS_FORCE_NORMAL_CLEAR",           label = "Force, normal, clear" },
+    { value = "SPEECH_PARAMS_FORCE_NORMAL_CRITICAL",        label = "Force, normal, critical" },
+
+    { value = "SPEECH_PARAMS_FORCE_SHOUTED",                label = "Force, shouted" },
+    { value = "SPEECH_PARAMS_FORCE_SHOUTED_CLEAR",          label = "Force, shouted, clear" },
+    { value = "SPEECH_PARAMS_FORCE_SHOUTED_CRITICAL",       label = "Force, shouted, critical" },
+
+    { value = "SPEECH_PARAMS_FORCE_PRELOAD_ONLY",           label = "Preload only" },
+    { value = "SPEECH_PARAMS_MEGAPHONE",                    label = "Megaphone" },
+    { value = "SPEECH_PARAMS_HELI",                         label = "Helicopter" },
+    { value = "SPEECH_PARAMS_INTERRUPT",                    label = "Interrupt" },
+    { value = "SPEECH_PARAMS_INTERRUPT_SHOUTED",            label = "Interrupt, shouted" },
+    { value = "SPEECH_PARAMS_INTERRUPT_SHOUTED_CLEAR",      label = "Interrupt, shouted, clear" },
+    { value = "SPEECH_PARAMS_INTERRUPT_SHOUTED_CRITICAL",   label = "Interrupt, shouted, critical" },
+    { value = "SPEECH_PARAMS_ADD_BLIP",                     label = "Add blip" },
+}
+
+settings.speechAnims = {
+    { value = "",                                                    label = "None" },
+
+    { value = "gestures@m@standing@casual|gesture_hello",             label = "Wave hello" },
+    { value = "gestures@m@standing@casual|gesture_bye_soft",          label = "Wave goodbye" },
+    { value = "gestures@m@standing@casual|gesture_bye_hard",          label = "Wave off" },
+    { value = "gestures@m@standing@casual|gesture_come_here_soft",    label = "Come here" },
+    { value = "gestures@m@standing@casual|gesture_come_here_hard",    label = "Get over here" },
+
+    { value = "gestures@m@standing@casual|gesture_nod_yes_soft",      label = "Nod" },
+    { value = "gestures@m@standing@casual|gesture_nod_yes_hard",      label = "Nod firmly" },
+    { value = "gestures@m@standing@casual|gesture_nod_no_soft",       label = "Shake head" },
+    { value = "gestures@m@standing@casual|gesture_nod_no_hard",       label = "Shake head firmly" },
+
+    { value = "gestures@m@standing@casual|gesture_shrug_soft",        label = "Shrug" },
+    { value = "gestures@m@standing@casual|gesture_shrug_hard",        label = "Shrug hard" },
+    { value = "gestures@m@standing@casual|gesture_point",             label = "Point" },
+    { value = "gestures@m@standing@casual|gesture_damn",              label = "Dismiss" },
+    { value = "gestures@m@standing@casual|gesture_hand_up",           label = "Hand up" },
+    { value = "gestures@m@standing@casual|gesture_easy_soft",         label = "Take it easy" },
+    { value = "gestures@m@standing@casual|gesture_me_hard",           label = "Point at self" },
+    { value = "gestures@m@standing@casual|gesture_you_hard",          label = "Point at you" },
+    { value = "gestures@m@standing@casual|gesture_what_hard",         label = "What?" },
+    { value = "gestures@m@standing@casual|gesture_why",               label = "Why?" },
+    { value = "gestures@m@standing@casual|gesture_plead",             label = "Plead" },
+}
+
 settings.shape = {}
 settings.column = {}
+function settings.column.speech(prefix, label, help)
+    return {
+        { key = ("%s.name"):format(prefix),  label = ("%s Line"):format(label),     type = "enum", options = settings.speechLines,  help = help },
+        { key = ("%s.param"):format(prefix), label = ("%s Delivery"):format(label), type = "enum", options = settings.speechParams },
+        { key = ("%s.anim"):format(prefix),  label = ("%s Gesture"):format(label),  type = "enum", options = settings.speechAnims },
+    }
+end
+
 function settings.column.account(key, label)
     return {
         key     = key or "account",
@@ -994,6 +1162,50 @@ local function isFilled(value)
     return value ~= nil and value ~= ""
 end
 
+-- A dropdown can be built from something else the admin has already filled in,
+-- so its choices are worked out when the editor asks rather than at boot.
+local function resolveOptions(def)
+    if type(def.options) ~= "function" then return def.options end
+
+    local ok, options = pcall(def.options)
+
+    if not ok then
+        logError(("Settings '%s' options failed: %s"):format(tostring(def.path), options))
+
+        return {}
+    end
+
+    return type(options) == "table" and options or {}
+end
+
+settings.resolveOptions = resolveOptions
+
+-- A column inside a list or an object can carry a dynamic option set too --
+-- the rider roster picks from whatever classes exist right now. Those go out
+-- over NUI verbatim, so they have to be resolved here or a function reaches
+-- the encoder.
+local function resolveFields(fields)
+    if type(fields) ~= "table" then return fields end
+
+    local out, dynamic = {}, false
+
+    for index, field in ipairs(fields) do
+        if type(field) == "table" and type(field.options) == "function" then
+            local copy = {}
+
+            for key, value in pairs(field) do copy[key] = value end
+
+            copy.options = resolveOptions(field)
+            out[index]   = copy
+            dynamic      = true
+        else
+            out[index] = field
+        end
+    end
+
+    return dynamic and out or fields
+end
+
 local function isHidden(def)
     if not def.hidden then return false end
 
@@ -1021,13 +1233,16 @@ function settings.describe()
             help        = def.help,
             type        = def.type,
             group       = def.group,
-            options     = def.options,
-            fields      = def.fields,
-            item        = def.item,
+            options     = resolveOptions(def),
+            fields      = resolveFields(def.fields),
+            item        = resolveFields(def.item),
             item_type   = def.item_type,
             item_default= def.item_default,
             min_items   = def.min_items,
             weight_key  = def.weight_key,
+            row_fields  = def.row_fields,
+            takeover    = def.takeover,
+            row_actions = def.row_actions,
             auto_key    = def.auto_key,
             max_items   = def.max_items,
             min         = def.min,
@@ -1039,6 +1254,7 @@ function settings.describe()
             docs        = def.docs,
             preview_from= def.preview_from,
             preview_model= def.preview_model,
+            image_base  = def.image_base,
             min_gap     = def.min_gap,
             edit_mode   = def.edit_mode,
             live        = def.live,
@@ -1060,12 +1276,16 @@ function settings.describe()
     end
 
     local groups = {}
+    local editors = {}
     local updates = settings.updates(settings.info.updates)
 
     for index = 1, #settings.group_order do
         local id = settings.group_order[index]
 
-        if id ~= DEBUG_GROUP then groups[#groups + 1] = settings.groups[id] end
+        if id ~= DEBUG_GROUP then
+            groups[#groups + 1] = settings.groups[id]
+            if settings.editors[id] then editors[#editors + 1] = settings.editors[id] end
+        end
     end
 
     if settings.groups[DEBUG_GROUP] then groups[#groups + 1] = settings.groups[DEBUG_GROUP] end
@@ -1081,6 +1301,7 @@ function settings.describe()
         order    = settings.info.order,
         version  = GetResourceMetadata(settings.info.id, "version", 0),
         groups   = groups,
+        editors  = editors,
         updates  = updates,
         entries  = entries,
         requires = settings.info.requires,

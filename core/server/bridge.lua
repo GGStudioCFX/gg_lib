@@ -290,6 +290,20 @@ end
 
 local own
 
+--- Detection as it stands right now. Held between calls only so anything that
+--- asks before the first sweep gets an answer rather than nothing.
+local function refresh()
+    local rows = {}
+
+    for _, category in ipairs((manifest and manifest.category_order) or {}) do
+        rows[#rows + 1] = detect(category)
+    end
+
+    own = rows
+
+    return own
+end
+
 CreateThread(function()
     Wait(0)
 
@@ -297,23 +311,37 @@ CreateThread(function()
 
     if GenericSettings and GenericSettings.publishGlobals then GenericSettings.publishGlobals() end
 
-    own = {}
+    refresh()
+end)
 
-    for _, category in ipairs((manifest and manifest.category_order) or {}) do
-        own[#own + 1] = detect(category)
-    end
+-- A target or inventory script that starts after gg_lib was not there for the
+-- first sweep. Every script re-detects for itself when one turns up, so the
+-- bridge works -- but this page kept showing the sweep from boot, which said it
+-- was missing. It is the one thing on the page that has to be true right now.
+AddEventHandler("onResourceStart", function(resource)
+    if resource == GetCurrentResourceName() then return end
+
+    SetTimeout(0, refresh)
+end)
+
+AddEventHandler("onResourceStop", function(resource)
+    if resource == GetCurrentResourceName() then return end
+
+    SetTimeout(0, refresh)
 end)
 
 Bridges = Bridges or {}
 
 function Bridges.wired(category)
+    local resolved = detect(category)
+
+    if resolved and resolved.resource then return resolved.resource end
+
     for _, row in ipairs(own or {}) do
         if row.category == category then return row.resource end
     end
 
-    local resolved = detect(category)
-
-    return resolved and resolved.resource or "default"
+    return "default"
 end
 
 GGCallback.register("gg_lib:bridge:fetch", function(source)
@@ -325,7 +353,8 @@ GGCallback.register("gg_lib:bridge:fetch", function(source)
         bridges      = (function()
             local rows = {}
 
-            for index, row in ipairs(own or {}) do
+            -- Detected as the page is opened, not as the server booted.
+            for index, row in ipairs(refresh()) do
                 local copy = {}
                 for key, value in pairs(row) do copy[key] = value end
 

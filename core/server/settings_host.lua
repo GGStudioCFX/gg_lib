@@ -273,42 +273,6 @@ GGCallback.register("gg_lib:settings:reset", function(source, data)
     return response.ok, response.result
 end)
 
-RegisterCommand("gg_settings_prune", function(source, args)
-    if source ~= 0 then
-        print("[gg_lib] gg_settings_prune is console-only")
-        return
-    end
-
-    local target = args and args[1]
-
-    local function pruneOne(resource)
-        local ok, response = pcall(function()
-            return exports[resource]:ggSettingsPrune("console")
-        end)
-
-        if not ok or type(response) ~= "table" then
-            print(("[gg_lib] %s does not support pruning (update its settings module)"):format(resource))
-            return
-        end
-
-        print(("[gg_lib] %s: pruned %d orphaned override(s)"):format(resource, #(response.result or {})))
-    end
-
-    if target and target ~= GenericSettings.resource then
-        pruneOne(target)
-        return
-    end
-
-    if not target then
-        for index = 1, #peers do pruneOne(peers[index]) end
-    end
-
-    local ok, pruned = GenericSettings.prune("console")
-    if ok then
-        print(("[gg_lib] %s: pruned %d orphaned override(s)"):format(GenericSettings.resource, #pruned))
-    end
-end, true)
-
 AddEventHandler("onResourceStart", function(resource)
     SetTimeout(2000, scanPeers)
 end)

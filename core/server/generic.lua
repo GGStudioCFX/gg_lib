@@ -65,20 +65,23 @@ local function isSecret(path)
     return def ~= nil and def.server_only == true
 end
 
-define("theme.apply_to_all", {
-    group   = "appearance",
-    label   = "Apply Theme to All UIs",
-    help    = "On, every GG script paints its UI in the accent color below. Off, each script offers an accent color of its own and uses that instead.",
-    type    = "boolean",
-    default = true,
-})
-
+-- The colour first: it is the one thing on this page anybody comes looking for.
 define("theme.primary_color", {
     group   = "appearance",
     label   = "Interface Accent Color",
-    help    = "The studio's accent color, and every other script's too while the toggle above is on.",
+    help    = "The studio's accent color, and every other script's too once the toggle below is on.",
     type    = "color",
     default = "rgb(198, 148, 255)",
+})
+
+-- Off to begin with: a script that shipped with its own colours keeps them
+-- until somebody decides everything should match.
+define("theme.apply_to_all", {
+    group   = "appearance",
+    label   = "Apply Theme to All UIs",
+    help    = "On, every GG script paints its UI in the accent color above. Off, each script offers an accent color of its own and uses that instead.",
+    type    = "boolean",
+    default = false,
 })
 
 define("theme.fade_on_hover_out", {
@@ -266,7 +269,16 @@ for code, name in CURRENCIES:gmatch("(%u+)=([^\n]+)") do
     currency_options[#currency_options + 1] = { value = code, label = ("%s (%s)"):format(name, code) }
 end
 
-table.sort(currency_options, function(left, right) return left.label < right.label end)
+-- Alphabetical, but the default sits at the top where somebody accepting it
+-- does not have to go looking for it first.
+table.sort(currency_options, function(left, right)
+    if left.value ~= right.value then
+        if left.value == "USD" then return true end
+        if right.value == "USD" then return false end
+    end
+
+    return left.label < right.label
+end)
 
 define("general.language", {
     group   = "general",
@@ -284,6 +296,16 @@ define("general.currency_type", {
     type    = "enum",
     default = "USD",
     options = currency_options,
+})
+
+-- Never listed. It only records that the first-run questions were answered,
+-- so accepting every default still counts as having been asked.
+define("general.setup_done", {
+    group    = "general",
+    label    = "Setup Complete",
+    type     = "boolean",
+    internal = true,
+    default  = false,
 })
 
 define("general.unit_system", {
@@ -663,6 +685,13 @@ function GenericSettings.options(path)
     return def and def.options or nil
 end
 
+--- Whether the first-run questions still need asking. It is one stored mark
+--- rather than "are there any rows yet": somebody who answers by accepting
+--- every default changes nothing, and would otherwise be asked again forever.
+function GenericSettings.needsSetup()
+    return GenericSettings.get("general.setup_done") ~= true
+end
+
 function GenericSettings.describe()
     local overrides = loadOverrides()
     local entries = {}
@@ -681,6 +710,10 @@ function GenericSettings.describe()
         if value == nil then
             value = settings.deepCopy(def.default)
         end
+
+        ---- Kept out of the list: it is a mark saying the first-run questions
+        --- have been answered, not a setting anybody sets.
+        if def.internal then goto continue end
 
         local entry = {
             path    = path,
@@ -708,11 +741,14 @@ function GenericSettings.describe()
         end
 
         entries[#entries + 1] = entry
+
+        ::continue::
     end
 
     return {
         resource = PSEUDO,
         label    = "Generic Settings",
+        setup    = GenericSettings.needsSetup(),
         icon     = "fa-layer-group",
         order    = 1000,
         generic  = true,
@@ -1024,3 +1060,4 @@ AddEventHandler("gg_lib:database:ready", function()
 
     GenericSettings.publishGlobals()
 end)
+

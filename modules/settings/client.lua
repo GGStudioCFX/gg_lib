@@ -41,6 +41,12 @@ AddEventHandler("gg_lib:settings:rowAction", function(resource, id, row, token)
     end
 end)
 
+local stopping = {}
+
+AddEventHandler("gg_lib:settings:actionStop", function(token)
+    stopping[token] = true
+end)
+
 AddEventHandler("gg_lib:settings:action", function(resource, path, token)
     if resource ~= RESOURCE then return end
 
@@ -53,10 +59,23 @@ AddEventHandler("gg_lib:settings:action", function(resource, path, token)
         if answered then return end
         answered = true
 
+        stopping[token] = nil
+
         TriggerEvent("gg_lib:settings:actionResult", token, ok ~= false, message)
     end
 
-    local ran, err = pcall(handler, done)
+    -- Says where the work is up to, and answers false once the person watching
+    -- has asked for it to end. One function both ways: anything long enough to
+    -- be worth reporting is long enough to be worth calling off.
+    local function report(info)
+        if type(info) == "table" then
+            TriggerEvent("gg_lib:settings:actionProgress", token, info)
+        end
+
+        return not stopping[token]
+    end
+
+    local ran, err = pcall(handler, done, report)
 
     if not ran then
         gg.print.error(("Settings action '%s' failed: %s"):format(tostring(path), tostring(err)))

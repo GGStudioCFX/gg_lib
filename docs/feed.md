@@ -33,18 +33,23 @@ The copies that shipped with your version are shown until the repo answers,
 and kept if it stops answering. A file that answers with something that is not
 the file asked for -- a list, or a table carrying none of the keys that file is
 read for -- is refused rather than allowed to blank a page that was fine.
-Run `gghomefeed` in the server console to fetch now rather than waiting for
-the clock. A server that cannot reach GitHub, or a fork that publishes its
-own, can point every fetch elsewhere with `set gg_home_feed "https://..."` in
+A server that cannot reach GitHub, or a fork that publishes its own, can
+point every fetch elsewhere with `set gg_home_feed "https://..."` in
 server.cfg -- it names the folder, exactly as the default does.
 
 ### feed/home.json
 
-A promo is one of `sale`, `giveaway` or `announcement`. Whatever is at the top
-of the page is the newest one still running, or the one named in `featured` if
-that is still running: an ended sale stops being the headline on its own,
-rather than the day somebody remembers to edit the file. With nothing on,
-there is no headline at all, which is most days.
+A promo is one of `sale`, `giveaway`, `announcement` or `release`. Whatever is
+at the top of the page is the newest one still running, or the one named in
+`featured` if that is still running: an ended sale stops being the headline on
+its own, rather than the day somebody remembers to edit the file. With nothing
+on, there is no headline at all, which is most days.
+
+A `release` is a script version going out. It names the script in `resource`
+and the version in `version`: on a server already running that script the
+button opens the script's own page in the studio, and on one that is not it
+goes to `url` -- the store page, usually. Releases and announcements that are
+not the headline sit in the news rail.
 
 An `image` is a picture beside the copy; a `video` -- an mp4 address or a
 YouTube link -- plays there instead. `url` is where the button goes and `cta`
@@ -57,10 +62,22 @@ pages is drawn as a distance from now.
 {
     "publishedAt": 1787767200,
     "version": "1.0.2",
-    "ticker": ["25% off everything until Sunday -- SUMMER25"],
+    "ticker": ["gg_taxijob 2.0 is out", "25% off everything until Sunday -- SUMMER25"],
     "links": { "discord": "https://discord.gg/...", "store": "https://..." },
-    "featured": "summer-sale",
+    "featured": "taxi-2-0",
     "promos": [
+        {
+            "id": "taxi-2-0",
+            "kind": "release",
+            "title": "gg_taxijob 2.0 is out",
+            "body": "The whole job rebuilt on Script Studio.",
+            "version": "2.0.0",
+            "resource": "gg_taxijob",
+            "at": 1787866200,
+            "image": "https://.../taxi.png",
+            "url": "https://www.ggstudio.store/scripts/taxi-job",
+            "cta": "Open the taxi job"
+        },
         {
             "id": "summer-sale",
             "kind": "sale",

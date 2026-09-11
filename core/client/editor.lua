@@ -199,6 +199,30 @@ RegisterNUICallback("settings_model_check", function(data, cb)
     cb(answer)
 end)
 
+local actionRunning = nil
+
+AddEventHandler("gg_lib:settings:actionProgress", function(token, info)
+    if actionRunning ~= token then return end
+
+    SendNUIMessage({
+        action = "settings_capture",
+        data = {
+            open    = true,
+            index   = info.index,
+            total   = info.total,
+            subject = info.label,
+        },
+    })
+end)
+
+RegisterNUICallback("settings_action_stop", function(_, cb)
+    if actionRunning then
+        TriggerEvent("gg_lib:settings:actionStop", actionRunning)
+    end
+
+    cb({ ok = actionRunning ~= nil })
+end)
+
 RegisterNUICallback("settings_action", function(data, cb)
     local resource = type(data) == "table" and data.resource or nil
     local path = type(data) == "table" and data.path or nil
@@ -214,6 +238,7 @@ RegisterNUICallback("settings_action", function(data, cb)
     local answer = promise.new()
 
     actionWaiting[token] = answer
+    actionRunning = token
 
     TriggerEvent("gg_lib:settings:action", resource, path, token)
 
@@ -224,7 +249,11 @@ RegisterNUICallback("settings_action", function(data, cb)
         end
     end)
 
-    cb(Citizen.Await(answer))
+    local result = Citizen.Await(answer)
+
+    actionRunning = nil
+
+    cb(result)
 end)
 
 RegisterNUICallback("settings_refresh", function(_, cb)
@@ -482,6 +511,26 @@ RegisterNUICallback("actions_test_route", function(data, cb)
     local ok = GGCallback.await("gg_lib:actions:test", data and data.id)
 
     cb({ ok = ok == true })
+end)
+
+RegisterNUICallback("support_bundle", function(_, cb)
+    local ok, payload = GGCallback.await("gg_lib:support:bundle")
+    local rows = GGConsole and GGConsole.collect() or {}
+
+    cb({
+        ok      = ok == true,
+        INFO    = ok and payload and payload.info or nil,
+        CONSOLE = ok and payload and payload.console or nil,
+        LINES   = ok and payload and payload.lines or 0,
+        DENIED  = ok and payload and payload.denied or false,
+        CLIENT  = rows,
+        NOW     = GetGameTimer(),
+        PLAYER  = {
+            name  = GetPlayerName(PlayerId()),
+            id    = GetPlayerServerId(PlayerId()),
+            build = GetGameBuildNumber(),
+        },
+    })
 end)
 
 RegisterNUICallback("settings_close", function(_, cb)

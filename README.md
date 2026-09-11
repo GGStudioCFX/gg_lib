@@ -67,14 +67,18 @@ are in [docs/access.md](docs/access.md).
 | [Waypoints](docs/waypoints.md) | The shared world markers every script draws |
 | [Daily reset](docs/daily-reset.md) | The clock every script's daily counters share |
 | [Home feed](docs/feed.md) | Publishing the home page, the shop and the update logs |
+| [Support bundle](docs/support.md) | One click to copy what a ticket needs: versions, the server console and what a script printed |
 
 ---
 
 ## Updating
 
-Replace the folder and restart. Your settings are in your database and your
-`server_config.lua` is not part of the download, so nothing you configured is
-lost.
+Replace the folder and restart. Your settings live in your database, so nothing
+you changed in game is lost.
+
+Two files are yours and are replaced along with everything else, so keep a copy
+of them first: `server_config.lua`, which holds your admins, and
+`hooks/server.lua`, if you have written anything in it.
 
 ---
 

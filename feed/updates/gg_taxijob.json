@@ -24,7 +24,16 @@
                 "Organizations: found a company, share vehicles and props with it, and work shared goals as a crew",
                 "Metric and imperial across the whole job, following the unit set in gg_lib",
                 "Bridges for fuel, keys, inventory, dispatch, targeting, banking and phone -- detected automatically, and overridable per server",
-                "Every entity the job spawns is now tracked and cleaned up on restart, so a stopped resource leaves no peds, cars or props behind"
+                "Every entity the job spawns is now tracked and cleaned up on restart, so a stopped resource leaves no peds, cars or props behind",
+                "Customs bay on every rental: open the wrench beside a vehicle and it spawns in front of you with the whole tuner -- paint, wheels, brakes, livery, extras, neon, tint and plate -- and whatever it is wearing when you leave is what it spawns wearing",
+                "Roof kits fitted by eye: pick a kit and drag it into place on the car itself, with the paint you chose already on it, instead of typing offsets",
+                "Spawn any rental from its row to drive it, with the keys already handed to your framework, then delete it when you are done",
+                "Rebuild every vehicle image in one pass, with a live count of what is being photographed and a stop button, and the studio out of the way so you can watch it happen",
+                "Outline colour and how hard it reads are one setting now, picked from a colour wheel with an opacity slider under it",
+                "Rider classes are weighted rather than given a made-up percentage, and the odds each one actually works out to are shown as you change them",
+                "Prices are entered in your server's currency, formatted as you type; service times are entered in hours and minutes rather than raw seconds",
+                "Lists read as pictures and names -- a rider's face, a vehicle's photograph, an item's icon -- with the figures that matter labelled beside them instead of bare numbers",
+                "A setting that depends on another is greyed out and says which switch turns it on, rather than disappearing until you find it"
             ]
         }
     ]

@@ -9,18 +9,28 @@ gg.inventory.canCarryitem = function(src, data)
 end
 
 gg.inventory.hasItem = function(src, data)
-    local inventory = exports['qs-inventory']:GetInventory(src)
-    if not inventory then
-        return false, {err = "Failed to get inventory"}
-    end
+    local required = data.count or 1
     local count = 0
-    for k,v in pairs(inventory) do
-        if v.name == data.item then
-            count = count + v.amount
+
+    local ok, result = pcall(function()
+        return exports['qs-inventory']:GetItemTotalAmount(src, data.item)
+    end)
+
+    if ok and type(result) == "number" then
+        count = result
+    else
+        local inventory = exports['qs-inventory']:GetInventory(src)
+        if not inventory then
+            return false, {err = "Failed to get inventory"}
+        end
+        for _, v in pairs(inventory) do
+            if v and v.name == data.item then
+                count = count + (v.amount or v.count or 0)
+            end
         end
     end
 
-    if count < data.count then
+    if count < required then
         return false, {err = "You do not have enough of this item"}
     end
 

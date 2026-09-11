@@ -90,6 +90,14 @@ local function fit(entity, data)
     if props[1] then fitted[entity] = props end
 end
 
+--- Fitting a kit is normally the statebag's job, but the editors work on
+--- vehicles that were never networked -- the customs bay spawns its own -- so
+--- they dress theirs by hand with the same code rather than a copy of it.
+GGAttachments = GGAttachments or {}
+
+GGAttachments.fit = fit
+GGAttachments.strip = strip
+
 AddStateBagChangeHandler(BAG, "", function(bagName, _, value)
     CreateThread(function()
         local deadline = GetGameTimer() + LOAD_TIMEOUT_MS

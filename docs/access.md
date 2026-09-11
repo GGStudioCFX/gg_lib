@@ -10,7 +10,7 @@ Who can open Script Studio.
 
 Script Studio is admin-only. Nobody can open it until you add yourself.
 
-**Copy `server_config.example.lua` to `server_config.lua`, then put your license in the list:**
+**Open `server_config.lua` in the gg_lib folder and put your license in the list:**
 
 ```lua
 return {
@@ -25,8 +25,9 @@ return {
 Restart gg_lib and type **`/ggsettings`** in game.
 
 > `server_config.lua` never reaches players. It is not downloaded to their game
-> the way the rest of the resource is, so the list is safe to keep here. It also
-> survives updates, because the release only ships the example.
+> the way the rest of the resource is, so the list is safe to keep here. It does
+> ship with the resource, though, so keep a copy before you update -- the same as
+> `hooks/server.lua`.
 
 ### If your server already has admins
 
@@ -75,4 +76,25 @@ add_ace group.mod   gg.settings.view allow   # can look, cannot change
 ```
 
 Set `ace = false` to ignore ACE entirely and use only the lists above.
+
+### Names and pictures in the studio
+
+The Admins page shows whoever it can work out from the identifiers a player
+carries. Cfx.re and Steam answer for anyone; Discord does not answer an
+anonymous caller at all, so a Discord id stays an id unless you hand gg_lib a
+bot token:
+
+```lua
+return {
+    admins = { "license2:put_your_own_license_here" },
+
+    discord_bot_token = "paste it here",
+}
+```
+
+Make a bot at **discord.com/developers/applications → New Application → Bot →
+Reset Token** and copy the token in. It needs no permissions and does not have
+to be in your server; it is only used to turn an id into a name and an avatar.
+
+Leave it out and everything still works, with initials in place of pictures.
 

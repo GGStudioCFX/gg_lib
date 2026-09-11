@@ -22,6 +22,7 @@ return {
             "qb-inventory",
         },
         target = {
+            "lation_interact",
             "sleepless_interact",
             "ox_target",
             "qb-target",
@@ -92,6 +93,10 @@ return {
         inventory = true,
         target    = true,
         dispatch  = true,
+    },
+
+    client_only = {
+        target = true,
     },
 
     modules = {

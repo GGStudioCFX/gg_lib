@@ -325,11 +325,29 @@ local function finishJob(result)
 
     job = nil
 
+    -- Before the car goes, or the props it was wearing are left behind it.
+    if GGAttachments and GGAttachments.strip then pcall(GGAttachments.strip, ending.vehicle) end
+
     GG_EDITOR_STAGE.despawn(ending.vehicle)
 
     GG_EDITOR_STAGE.leave()
 
     TriggerEvent("gg_lib:customs:tuneResult", ending.resource, ending.id, result)
+end
+
+--- Puts the screen, the controls and the stage back after a run that threw
+--- part way through. The half-built job is what wedges the next press.
+local function abandonJob(why)
+    clear()
+    SetNuiFocus(false, false)
+
+    SendNUIMessage({ action = "customs_state", data = { open = false } })
+
+    if job then
+        finishJob(why)
+    else
+        GG_EDITOR_STAGE.leave()
+    end
 end
 
 local function runJob(resource, id, options)
@@ -352,10 +370,19 @@ local function runJob(resource, id, options)
         end
     end
 
+    -- Whatever the vehicle wears in the world, it wears in here: paint chosen
+    -- against a bare roof is paint chosen against the wrong car. It is fitted
+    -- for looking at only -- moving the kit is its own editor.
+    if type(options.props) == "table" and GGAttachments and GGAttachments.fit then
+        pcall(GGAttachments.fit, vehicle, options.props)
+    end
+
     job = {
         resource = resource,
         id       = id,
         vehicle  = vehicle,
+        -- Nothing has been changed yet, so closing now is a look, not an edit.
+        touched  = false,
         title    = options.title,
         subject  = options.subject,
         answer   = promise.new(),
@@ -396,7 +423,7 @@ AddEventHandler("gg_lib:customs:tune", function(resource, id, options)
         if not ok then
             say(("customs: %s"):format(tostring(refusal)))
 
-            TriggerEvent("gg_lib:customs:tuneResult", resource, id, "the vehicle tuner failed to open")
+            abandonJob("the vehicle tuner failed to open")
         elseif refusal then
             TriggerEvent("gg_lib:customs:tuneResult", resource, id, refusal)
         end
@@ -428,6 +455,8 @@ RegisterNUICallback("customs_apply", function(data, cb)
     cb({ ok = true })
 
     if type(data) ~= "table" or type(data.kind) ~= "string" then return end
+
+    if job then job.touched = true end
 
     CreateThread(function()
         apply(data.kind, data.id, data.value, data.extra)
@@ -467,7 +496,11 @@ RegisterNUICallback("customs_close", function(_, cb)
 
     local look = nil
 
-    if job and target and DoesEntityExist(target) then
+    -- Only hand back a look if one was actually chosen. getProperties returns
+    -- the vehicle's ENTIRE mod set, which is a superset of the handful of keys
+    -- a script usually stores -- so returning it after a look-and-close left
+    -- the caller holding a "change" it never made.
+    if job and job.touched and target and DoesEntityExist(target) then
         local ok, properties = pcall(GGVehicle.getProperties, target)
 
         if ok then look = properties end

@@ -3,8 +3,6 @@ Daily = {}
 
 local DAY = 86400
 
-local every = 0
-
 local MAX_SLEEP = 60
 
 local function say(message)
@@ -29,8 +27,6 @@ local function resetClock()
 end
 
 function Daily.boundaryAt(now)
-    if every > 0 then return now - (now % every) end
-
     local hour, minute, offset = resetClock()
 
     local zoned  = now + offset
@@ -47,7 +43,7 @@ end
 function Daily.nextAt(now)
     now = now or os.time()
 
-    return Daily.boundaryAt(now) + (every > 0 and every or DAY)
+    return Daily.boundaryAt(now) + DAY
 end
 
 function Daily.lastAt(now)
@@ -233,53 +229,3 @@ AddEventHandler("gg_lib:generic:changed", function(changed)
     end
 end)
 
-RegisterCommand("gg_daily_reset", function(source)
-    if source ~= 0 and not Admins.can(source, "manage_admins") then return end
-
-    local ran = Daily.force()
-
-    print(("[gg_lib] daily reset ran for %d script(s)"):format(ran))
-end, true)
-
-RegisterCommand("gg_daily_status", function(source)
-    if source ~= 0 and not Admins.can(source, "manage_admins") then return end
-
-    local now = os.time()
-    local last = Daily.lastAt(now)
-    local nextAt = Daily.nextAt(now)
-
-    print(("[gg_lib] daily clock: %s | last boundary %d (%ds ago) | next %d (in %ds)"):format(
-        every > 0 and ("development, every %d minute(s)"):format(every / 60) or "real day",
-        last, now - last, nextAt, nextAt - now
-    ))
-
-    for resource in pairs(tasks) do
-        local done = handled[resource]
-
-        print(("[gg_lib]   %s: handled boundary %s -- %s"):format(
-            resource,
-            tostring(done),
-            (done and done >= last) and "up to date" or "BEHIND: will reset on the next pass"
-        ))
-    end
-end, true)
-
-RegisterCommand("gg_daily_every", function(source, args)
-    if source ~= 0 and not Admins.can(source, "manage_admins") then return end
-
-    local minutes = math.max(0, tonumber(args and args[1]) or 0)
-
-    every = math.floor(minutes * 60)
-
-    for resource in pairs(tasks) do
-        handled[resource] = Daily.boundaryAt(os.time())
-    end
-
-    publish()
-
-    if every > 0 then
-        print(("[gg_lib] daily reset now every %d minute(s) -- development clock, until restart"):format(minutes))
-    else
-        print("[gg_lib] daily reset back on the real clock")
-    end
-end, true)

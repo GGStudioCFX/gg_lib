@@ -218,11 +218,16 @@ local function capture(entries, options)
     drawBackdrop(at)
 
     local done, failed = {}, {}
+    local stopped = false
 
     local ok, err = pcall(function()
         for index, entry in ipairs(entries) do
-            if options.progress then
-                options.progress(index, #entries, entry)
+            -- The only place this can be called off. Whoever is watching says
+            -- no by answering false, and it takes effect before the next car
+            -- is spawned rather than half way through the one in hand.
+            if options.progress and options.progress(index, #entries, entry) == false then
+                stopped = true
+                break
             end
 
             if not spawn(entry.vehicle, at) then
@@ -291,7 +296,7 @@ local function capture(entries, options)
 
     if not ok then return false, tostring(err) end
 
-    return true, { captured = done, failed = failed }
+    return true, { captured = done, failed = failed, stopped = stopped }
 end
 
 exports("ggCaptureVehicles", function(entries, options)

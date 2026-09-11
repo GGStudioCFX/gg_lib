@@ -14,6 +14,7 @@ ui_page "web/dist/index.html"
 files {
     'init.lua',
     'core/shared/callback.lua',
+    'core/client/console.lua',
     'locales/*.json',
     'feed/home.json',
     'feed/products.json',

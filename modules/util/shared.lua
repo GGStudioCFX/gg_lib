@@ -145,3 +145,23 @@ function gg.util.formatSpeed(mps)
 
     return ("%s %s"):format(gg.util.formatNumber(value, decimals), unit)
 end
+
+--- Splits a stored color into the four channels every native asks for.
+--- Accepts #rrggbbaa, #rrggbb and #rgb, so a default written by hand works
+--- without anybody having to remember the opacity.
+function gg.util.rgba(value, fallback)
+    local hex = string.match(tostring(value or ""), "^#?(%x+)$")
+
+    if not (hex and (#hex == 3 or #hex == 6 or #hex == 8)) then
+        hex = string.match(tostring(fallback or ""), "^#?(%x+)$")
+    end
+
+    if not (hex and (#hex == 3 or #hex == 6 or #hex == 8)) then return 255, 255, 255, 255 end
+
+    if #hex == 3 then hex = (hex:gsub("(%x)", "%1%1")) end
+
+    return tonumber(hex:sub(1, 2), 16) or 255,
+           tonumber(hex:sub(3, 4), 16) or 255,
+           tonumber(hex:sub(5, 6), 16) or 255,
+           #hex == 8 and (tonumber(hex:sub(7, 8), 16) or 255) or 255
+end

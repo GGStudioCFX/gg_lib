@@ -106,14 +106,8 @@ fr: 358/497 translated (72%)
 It never writes to a translation. A tool that "fixes" a language by filling it
 with English is a tool that quietly un-translates things.
 
-**Reload without restarting:**
-
-```
-gglocales
-```
-
-In the server console. It re-reads the files and reports what is loaded, so a
-translation can be checked by editing and reopening the menu.
+A language is read once and kept, so a file edited while the server is up is
+picked up on the next restart.
 
 ---
 
