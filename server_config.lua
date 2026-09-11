@@ -1,29 +1,19 @@
 --------------------------------------------------
 -- MARK: gg_lib Server Configuration
 --------------------------------------------------
--- Put your license in admins and restart. Players never see this file.
--- Keep a copy before you update -- an update replaces it.
+-- Put your license below and restart. That is the whole setup.
+-- Keep a copy before you update -- an update replaces this file.
 
 return {
-    -- Owners. Nothing in game can remove these, so keep yourself here.
-    -- Join your server and read your license2 off the console.
-    -- Everyone else is added in /ggsettings, not in here.
+    -- You. Join your server and read your license2 off the console.
+    -- Nothing in game can remove anyone listed here, so it is the way back
+    -- in if you ever lock yourself out. Everyone else is added in /ggsettings.
     admins = {
         "license2:6e713bc45df69b1338e94c292948ef0053ffb638",
     },
 
-    -- Let anyone who is already an admin on your server straight in, without
-    -- listing them above: group.admin, group.god, the principals qb-core and
-    -- Qbox register, or your framework's own admin group. They get Admin,
-    -- never Owner. Set false and only the list above gets in.
+    -- Anyone who is already an admin on your server gets in too, without
+    -- being listed above. They get Admin, never Owner.
+    -- Set false if you want only the list above.
     auto_admin = true,
-
-    -- Give someone Script Studio on its own, without making them an admin.
-    -- Two permissions, handed out in server.cfg:
-    --
-    --   add_ace group.support gg.settings      allow   -- can change settings
-    --   add_ace group.helper  gg.settings.view allow   -- can look, not touch
-    --
-    -- This is the only way to give read-only access. Set false to ignore both.
-    ace = true,
 }

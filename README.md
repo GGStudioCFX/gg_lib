@@ -1,57 +1,40 @@
 # gg_lib
 
-The shared foundation every GG Studio script runs on. Install it once and every
-GG Studio resource you own works with your server — your framework, your
-inventory, your target system, your dispatch — with nothing to configure.
+The shared foundation every GG Studio script runs on. Install it once and your
+scripts work with whatever your server already has — your framework, your
+inventory, your target system, your dispatch — with nothing to wire up.
 
-It also gives you **Script Studio**: one in-game menu where you edit the
-settings for all of them, with everything saved to your database rather than to
-a file, so updating a script never wipes what you configured.
+It also gives you **Script Studio**: one in-game menu that edits the settings
+for every GG script, saved to your database, so updating a script never wipes
+what you configured.
 
 ---
 
 ## Install
 
-**1. Install the one thing gg_lib needs**
+**1.** Install [oxmysql](https://github.com/overextended/oxmysql).
 
-- [oxmysql](https://github.com/overextended/oxmysql)
+**2.** Drop `gg_lib` into your resources folder.
 
-**2. Drop `gg_lib` into your resources folder**
-
-**3. Start it before any GG Studio script**
+**3.** Start it before any GG Studio script:
 
 ```cfg
 ensure oxmysql
-ensure gg_lib          # must come before the scripts below
+ensure gg_lib          # before the scripts below
 ensure gg_taxijob
 ```
 
-gg_lib itself does not require ox_lib. Individual GG scripts may still list it
-in their own manifests — follow each script's install notes.
+**4.** Open `server_config.lua`, put your license in `admins`, and restart.
+
+Now type **`/ggsettings`** in game.
 
 That is the whole install. gg_lib builds its own database tables the first time
-it starts — there is no `.sql` file to import.
+it starts, so there is no `.sql` to import, and it does not need ox_lib —
+though individual scripts may, so follow each one's own notes.
 
----
-
-## Open the menu
-
-Script Studio is admin-only, so nothing opens until you add yourself. The
-quickest way, in `server.cfg`:
-
-```cfg
-add_ace group.admin gg.settings allow
-add_principal identifier.license:YOUR_LICENSE group.admin
-```
-
-Then, in game:
-
-```
-/ggsettings
-```
-
-Other ways to grant access — a framework job, a Discord role, an allow list —
-are in [docs/access.md](docs/access.md).
+> To find your license, join your server and read the `license2` line off the
+> console. Other ways to let people in — your framework's admins, a Discord
+> role, an allow list — are in [Access](docs/access.md).
 
 ---
 
@@ -85,7 +68,7 @@ of them first: `server_config.lua`, which holds your admins, and
 ## Support
 
 - Discord: <https://discord.gg/DqMXJzATph>
-- Store: <https://www.ggstudio.store>
+- Store and docs: <https://www.ggstudio.store>
 
 ## License
 
