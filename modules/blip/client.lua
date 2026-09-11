@@ -52,7 +52,7 @@ gg.blip.createFadingBlip = function(data, duration)
         BeginTextCommandSetBlipName('STRING')
         AddTextComponentString(tostring(data.name))
         EndTextCommandSetBlipName(blip)
-        blipCounter += 1
+        blipCounter = blipCounter + 1
     return id
 end
 
