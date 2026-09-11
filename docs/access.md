@@ -17,17 +17,13 @@ return {
     admins = {
         "license2:put_your_own_license_here",
     },
-
-    ace = true,
 }
 ```
 
 Restart gg_lib and type **`/ggsettings`** in game.
 
-> `server_config.lua` never reaches players. It is not downloaded to their game
-> the way the rest of the resource is, so the list is safe to keep here. It does
-> ship with the resource, though, so keep a copy before you update -- the same as
-> `hooks/server.lua`.
+> `server_config.lua` never reaches players, so the list is safe to keep here.
+> It does ship with the resource, so keep a copy before you update.
 
 ### If your server already has admins
 
@@ -66,16 +62,23 @@ Anyone listed in `server_config.lua` **cannot** be removed in game. That is
 deliberate: it is the route back in if something goes wrong. Keep yourself
 there.
 
-### If you use ACE permissions
+### Giving someone the studio without making them an admin
 
-With `ace = true`, these also grant access:
+The section above is about people who are *already* admins on your server.
+This is the other way round: somebody you want in Script Studio and nowhere
+else. gg_lib has two permissions of its own for that, handed out in
+`server.cfg`:
 
 ```cfg
-add_ace group.admin gg.settings allow        # can edit
-add_ace group.mod   gg.settings.view allow   # can look, cannot change
+add_ace group.support gg.settings      allow   # can change settings
+add_ace group.helper  gg.settings.view allow   # can look, cannot change
 ```
 
-Set `ace = false` to ignore ACE entirely and use only the lists above.
+Use a group that is *not* already an admin, or you have just done what
+`auto_admin` was doing anyway. This is also the only way to hand out read-only
+access, since `auto_admin` only recognises the moderator groups.
+
+Set `ace = false` to ignore both permissions and use only the lists above.
 
 ### Names and pictures in the studio
 
