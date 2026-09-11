@@ -30,3 +30,21 @@ if ! git diff --quiet -- web/dist; then
 fi
 
 echo "pre-push: web/dist is current."
+
+# The website reads the supported list straight off this repo, so a bridge
+# added without regenerating it is a bridge nobody is told about.
+node tools/bridges.mjs >/dev/null || {
+    echo "pre-push: feed/bridges.json could not be written. See the line above." >&2
+    exit 1
+}
+
+if ! git diff --quiet -- feed/bridges.json; then
+    echo "" >&2
+    echo "pre-push: feed/bridges.json was stale. It has been rewritten:" >&2
+    git diff --stat -- feed/bridges.json >&2
+    echo "" >&2
+    echo "Commit it, then push again." >&2
+    exit 1
+fi
+
+echo "pre-push: feed/bridges.json is current."

@@ -16,13 +16,14 @@ or a release is a push to a file and nothing else -- every server running
 gg_lib picks it up on its next refresh, and the Home tab shows a badge until
 it has been looked at.
 
-Three kinds of file, because they change for different reasons:
+Four kinds of file, because they change for different reasons:
 
 | File | What it holds | Who edits it |
 | --- | --- | --- |
 | `feed/home.json` | the ticker, the promos, the links | you, when something is on |
 | `feed/products.json` | the catalogue behind the shop | generated from the store |
 | `feed/updates/<resource>.json` | one release log per script | per release |
+| `feed/bridges.json` | every resource gg_lib bridges to, by category | generated, never by hand |
 
 Splitting them means a marketing edit and a release edit never touch the same
 file, and a botched promo cannot take the changelogs down with it. Update logs
@@ -194,3 +195,41 @@ the repo.
 `web/src/lib/homeCases.ts` has a worked example of every case the page can be
 asked to draw, including a server that already owns everything.
 
+### feed/bridges.json
+
+Every framework, inventory, target, dispatch, fuel, keys and phone resource
+gg_lib bridges to, grouped by category. Script Studio does not read it; it is
+there for the website, which fetches it straight off the repo:
+
+```
+https://raw.githubusercontent.com/GGStudioCFX/gg_lib/main/feed/bridges.json
+```
+
+GitHub serves that with open CORS, so a page can fetch it from the browser
+with nothing in between.
+
+```json
+{
+    "library": "gg_lib",
+    "source": "bridge/manifest.lua",
+    "total": 69,
+    "categories": [
+        {
+            "id": "inventory",
+            "label": "Inventories",
+            "required": true,
+            "count": 13,
+            "resources": ["ak47_inventory", "codem-inventory", "..."]
+        }
+    ]
+}
+```
+
+Resources are resource names, sorted. `required` marks the categories a
+server has to have one of. Nothing in the file changes unless the list does --
+there is no timestamp -- so a diff on it is always a real change.
+
+It is written from `bridge/manifest.lua` by `node tools/bridges.mjs`, and the
+pre-push hook refuses a push where the two disagree. A name is only written out
+if a bridge actually handles it, so the list cannot claim support that is not
+there.

@@ -1,0 +1,132 @@
+{
+    "library": "gg_lib",
+    "source": "bridge/manifest.lua",
+    "total": 69,
+    "categories": [
+        {
+            "id": "framework",
+            "label": "Frameworks",
+            "required": true,
+            "count": 3,
+            "resources": [
+                "es_extended",
+                "qb-core",
+                "qbx_core"
+            ]
+        },
+        {
+            "id": "inventory",
+            "label": "Inventories",
+            "required": true,
+            "count": 13,
+            "resources": [
+                "ak47_inventory",
+                "codem-inventory",
+                "core_inventory",
+                "jaksam_inventory",
+                "jpr-inventory",
+                "lj-inventory",
+                "one_inventory",
+                "origen_inventory",
+                "ox_inventory",
+                "ps-inventory",
+                "qb-inventory",
+                "qs-inventory",
+                "tgiann-inventory"
+            ]
+        },
+        {
+            "id": "target",
+            "label": "Target systems",
+            "required": true,
+            "count": 4,
+            "resources": [
+                "lation_interact",
+                "ox_target",
+                "qb-target",
+                "sleepless_interact"
+            ]
+        },
+        {
+            "id": "dispatch",
+            "label": "Dispatch",
+            "required": true,
+            "count": 17,
+            "resources": [
+                "bub-mdt",
+                "cd_dispatch",
+                "dusa_dispatch",
+                "emergencydispatch",
+                "fd_dispatch",
+                "kartik-mdt",
+                "l2s-dispatch",
+                "lb-tablet",
+                "linden_outlawalert",
+                "origen_police",
+                "piotreq_gpt",
+                "ps-dispatch",
+                "qs-dispatch",
+                "rcore_dispatch",
+                "redutzu-mdt",
+                "tk_dispatch",
+                "wasabi_mdt"
+            ]
+        },
+        {
+            "id": "fuel",
+            "label": "Fuel",
+            "required": false,
+            "count": 15,
+            "resources": [
+                "bigDaddy-Fuel",
+                "cdn-fuel",
+                "esx-sna-fuel",
+                "frkn-fuelstationv4",
+                "lc_fuel",
+                "LegacyFuel",
+                "okokGasStation",
+                "ox_fuel",
+                "ps-fuel",
+                "qb-fuel",
+                "qs-fuelstations",
+                "rcore_fuel",
+                "Renewed-Fuel",
+                "ti_fuel",
+                "x-fuel"
+            ]
+        },
+        {
+            "id": "keys",
+            "label": "Vehicle keys",
+            "required": false,
+            "count": 16,
+            "resources": [
+                "0r-vehiclekeys",
+                "bhd_garage",
+                "brutal_keys",
+                "cd_garage",
+                "F_RealCarKeysSystem",
+                "mk_vehiclekeys",
+                "mono_carkeys",
+                "MrNewbVehicleKeys",
+                "p_carkeys",
+                "qb-vehiclekeys",
+                "qbx_vehiclekeys",
+                "qs-vehiclekeys",
+                "Renewed-Vehiclekeys",
+                "tgiann-hotwire",
+                "vehicles_keys",
+                "wasabi_carlock"
+            ]
+        },
+        {
+            "id": "phone",
+            "label": "Phones",
+            "required": false,
+            "count": 1,
+            "resources": [
+                "lb-phone"
+            ]
+        }
+    ]
+}
