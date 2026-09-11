@@ -1,19 +1,9 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.1",
+    "latest": "2.0.0",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
-        {
-            "version": "2.0.1",
-            "at": 1789149657,
-            "kind": "patch",
-            "important": false,
-            "title": "Packaging fix",
-            "changes": [
-                "The download no longer carries two files that were never meant to be in it. Nothing in the job itself changed -- no gameplay, settings or database differences from 2.0.0"
-            ]
-        },
         {
             "version": "2.0.0",
             "at": 1787866200,
