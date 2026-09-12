@@ -6,6 +6,7 @@ LocaleNames = LocaleNames or {}
 -- "Japanese" is not that word to anyone who reads Japanese.
 local NAMES = {
     { code = "en",    label = "English" },
+    { code = "ru",    label = "Русский" },
     { code = "de",    label = "Deutsch" },
     { code = "es",    label = "Español" },
     { code = "fr",    label = "Français" },

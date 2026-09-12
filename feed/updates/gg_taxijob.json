@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.0",
+    "latest": "2.0.1",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.1",
+            "at": 1789227168,
+            "kind": "fix",
+            "important": false,
+            "title": "Meter placement, rentals and Russian",
+            "changes": [
+                "The meter can sit in a different place for the driver than it does for the passenger. Both are set once for the whole server, stay inside the screen wherever they are dragged, and go back to where they started from the same panel",
+                "A rental you delete stays deleted. Reloading the vehicle list no longer brings it back, and a vehicle you added by hand survives the same reload",
+                "Russian, throughout -- the job, its settings, the achievements and the meter"
+            ]
+        },
         {
             "version": "2.0.0",
             "at": 1787866200,

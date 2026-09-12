@@ -130,7 +130,16 @@ local function bullets(body)
             text = text:gsub("%s*by%s+@[%w%-]+%s+in%s+https?://%S+", "")
             text = text:gsub("%s*by%s+@[%w%-]+%s+in%s+#%d+", "")
             text = text:gsub("%[([^%]]+)%]%([^%)]*%)", "%1")
-            text = text:gsub("[%*_`]", "")
+
+            -- Asterisks and backticks are markdown the page does not render, so
+            -- they go. Underscores stay. Every resource is named with one, and
+            -- stripping them turned "gg_lib" into "gglib" in our own release
+            -- notes. Do not "fix" that by removing matching pairs either: in
+            -- "gg_lib and gg_taxijob" the pair is the gap between two names, so
+            -- a pair rule eats the middle and yields "gglib and ggtaxijob".
+            -- A literal _emphasis_ reading as underscores is the cheaper miss.
+            text = text:gsub("[%*`]", "")
+
             text = text:gsub("^%s+", ""):gsub("%s+$", "")
 
             if text ~= "" and #out < 12 then out[#out + 1] = text end

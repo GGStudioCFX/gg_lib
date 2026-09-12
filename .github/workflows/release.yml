@@ -104,7 +104,7 @@ jobs:
             "gg_lib/node_modules" \
             "gg_lib/AGENTS.md" \
             "gg_lib/.gitignore" \
-            "gg_lib/server_config.lua"
+            "gg_lib/.githooks"
 
           find "gg_lib" -name '*.tsbuildinfo' -delete
 
@@ -123,8 +123,7 @@ jobs:
             "gg_lib/web/node_modules" \
             "gg_lib/node_modules" \
             "gg_lib/AGENTS.md" \
-            "gg_lib/tools" \
-            "gg_lib/server_config.lua"
+            "gg_lib/tools"
           do
             if [ -e "$BAD" ]; then
               echo "::error::$BAD is in the release and should not be"
@@ -134,6 +133,11 @@ jobs:
 
           if [ ! -f "gg_lib/web/dist/index.html" ]; then
             echo "::error::the built UI is missing from the release"
+            FOUND=1
+          fi
+
+          if [ ! -f "gg_lib/server_config.lua" ]; then
+            echo "::error::server_config.lua is missing from the release. Without it there is nothing to put a license in and gg_lib refuses every login."
             FOUND=1
           fi
 

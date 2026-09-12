@@ -86,6 +86,7 @@ local function describePeers(source)
 
         checkNeeds(payload)
 
+        if Locales then payload = Locales.schema(payload) end
         scripts[#scripts + 1] = payload
     end
 
@@ -274,11 +275,13 @@ GGCallback.register("gg_lib:settings:reset", function(source, data)
 end)
 
 AddEventHandler("onResourceStart", function(resource)
+    if Locales then Locales.forget(resource) end
     SetTimeout(2000, scanPeers)
 end)
 
 AddEventHandler("onResourceStop", function(resource)
     if resource == "gg_lib" then return end
 
+    if Locales then Locales.forget(resource) end
     SetTimeout(100, scanPeers)
 end)
