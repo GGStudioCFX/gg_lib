@@ -9,9 +9,12 @@
             "at": 1789238505,
             "kind": "fix",
             "important": true,
-            "title": "Vehicle pictures are back",
+            "title": "Vehicle pictures, and a live rental outline",
             "changes": [
-                "Every vehicle on the tablet showed the grey placeholder car instead of its photograph. The pictures were being asked for from the resource folder rather than the web folder they are written into, so none of them were ever found. Your captured images were never lost -- they were only being looked for in the wrong place"
+                "Every vehicle on the tablet showed the grey placeholder car instead of its photograph. The pictures were being asked for from the resource folder rather than the web folder they are written into, so none of them were ever found. Your captured images were never lost -- they were only being looked for in the wrong place",
+                "A picture that still cannot be found now falls back to the copy that shipped with the script, so a missing capture leaves one vehicle without a photo rather than an empty list",
+                "The rental outline follows its setting live. Turning it off, or changing its color, now reaches a cab that is already sitting on the forecourt instead of waiting for the next one to spawn",
+                "A rental can no longer be marked twice. Two markers on the same cab left a glow that nothing cleared when the driver got in"
             ]
         },
         {
