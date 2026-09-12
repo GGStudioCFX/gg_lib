@@ -1,9 +1,19 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.1",
+    "latest": "2.0.2",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.2",
+            "at": 1789238505,
+            "kind": "fix",
+            "important": true,
+            "title": "Vehicle pictures are back",
+            "changes": [
+                "Every vehicle on the tablet showed the grey placeholder car instead of its photograph. The pictures were being asked for from the resource folder rather than the web folder they are written into, so none of them were ever found. Your captured images were never lost -- they were only being looked for in the wrong place"
+            ]
+        },
         {
             "version": "2.0.1",
             "at": 1789227168,
