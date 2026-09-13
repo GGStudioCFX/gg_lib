@@ -230,7 +230,27 @@ gg.phone.app.add({
 })
 gg.phone.app.send('gg_taxi', 'taxi_update', { status = 'accepted' })
 gg.phone.app.remove('gg_taxi')
+gg.phone.app.drain('gg_taxi')   -- messages send() could not push; {} on every phone that could
 ```
+
+`drain` exists for JPR (below). A page that polls it through its own resource
+every second or so works on every phone; on the ones that push, it just always
+comes back empty.
+
+### jpr-phonesystem
+
+No export adds an app. JPR's apps are entries in its own `main_config.lua` and a
+`<div class="app-<name>">` pane in its own `index.html`, all in its
+`escrow_ignore`, so the app is installed by hand from the kit the script ships
+under `!SETUP/JPR Phone/`. `add()` therefore has nothing to do and answers
+`true`. The pane is an iframe of the script's own page inside the phone's NUI
+page, and Lua cannot post into another resource's NUI -- so `send()` queues and
+the page drains through `gg.phone.app.drain`.
+
+The number is a client export only (`getPhoneNumber`), so the server asks the
+client over `gg.callback`. Notifications are the phone's own client event with a
+fixed payload whose `app` must stay `"Custom"`. There is no mail export. JPR
+runs on QBCore only.
 
 Wait on `ready()` rather than on `GetResourceState`. On yseries the resource is
 "started" well before `GetDataLoaded()` is true, and `AddCustomApp` before that

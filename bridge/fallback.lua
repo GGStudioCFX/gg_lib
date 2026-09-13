@@ -19,6 +19,7 @@ local function noPhone()
         add       = no,
         remove    = no,
         send      = no,
+        drain     = function() return {} end,
     }
 end
 

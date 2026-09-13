@@ -128,3 +128,7 @@ gg.phone.app.send = function(key, action, data)
         return true
     end) == true
 end
+
+gg.phone.app.drain = function()
+    return {}
+end

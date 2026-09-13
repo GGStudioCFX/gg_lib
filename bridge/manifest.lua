@@ -65,6 +65,7 @@ return {
         },
         phone = {
             "sd-phone",
+            "jpr-phonesystem",
             "yseries",
             "yphone",
             "yflip-phone",
