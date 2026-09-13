@@ -1,0 +1,18 @@
+{
+    "label": "gg_coinshop",
+    "resource": "gg_coinshop",
+    "latest": "1.0.3",
+    "url": "https://discord.gg/DqMXJzATph",
+    "updates": [
+        {
+            "version": "1.0.3",
+            "at": 1789323000,
+            "kind": "fix",
+            "important": true,
+            "title": "One Inventory compatibility fix",
+            "changes": [
+                "Coin Shop now preserves item products when One Inventory has not finished loading its item definitions, preventing products from being deleted during item validation."
+            ]
+        }
+    ]
+}
