@@ -148,7 +148,36 @@ local PROVIDERS = {
     },
 }
 
-local function tuningRows(provider, value)
+local function wordsFor()
+    return (Locales and Locales.strings and Locales.strings()) or {}
+end
+
+local function said(words, key, fallback)
+    local value = words[key]
+
+    return type(value) == "string" and value ~= "" and value or fallback
+end
+
+local function localOptions(words, path, options)
+    if type(options) ~= "table" then return options end
+
+    local out = {}
+
+    for index, option in ipairs(options) do
+        if type(option) == "table" then
+            local copy = {}
+            for key, held in pairs(option) do copy[key] = held end
+            copy.label = said(words, ("schema.%s.options.%s.label"):format(path, tostring(option.value)), option.label)
+            out[index] = copy
+        else
+            out[index] = { value = option, label = said(words, ("schema.%s.options.%s.label"):format(path, tostring(option)), option) }
+        end
+    end
+
+    return out
+end
+
+local function tuningRows(provider, value, words)
     if value ~= "ox" or not provider.tuning then return nil end
 
     local seen = {}
@@ -169,7 +198,7 @@ local function tuningRows(provider, value)
                 path    = option.path,
                 label   = option.label,
                 value   = valueOf(option.path),
-                options = GenericSettings.options(option.path),
+                options = localOptions(words, option.path, GenericSettings.options(option.path)),
             }
         end
     end
@@ -201,6 +230,7 @@ end
 
 local function providerRows()
     local rows = {}
+    local words = wordsFor()
 
     for _, provider in ipairs(PROVIDERS) do
         local stored     = GenericSettings and GenericSettings.get and GenericSettings.get(provider.path)
@@ -219,9 +249,11 @@ local function providerRows()
             local needs = requirementOf(name, provider.resources)
             local met   = needs == nil or running(needs)
 
+            local shown = said(words, ("schema.%s.options.%s.label"):format(provider.path, name), needs or name)
+
             options[#options + 1] = {
                 value    = name,
-                label    = needs and (met and needs or ("%s (not started)"):format(needs)) or name,
+                label    = shown,
                 requires = needs,
                 available = met,
             }
@@ -233,7 +265,7 @@ local function providerRows()
 
         rows[#rows + 1] = {
             id       = provider.id,
-            label    = provider.label,
+            label    = said(words, ("schema.%s.label"):format(provider.path), provider.label),
             path     = provider.path,
             options  = options,
             provider = value,
@@ -241,7 +273,7 @@ local function providerRows()
             source   = configured and "configured" or "default",
             running  = known and met,
             requires = needs,
-            tuning   = tuningRows(provider, value),
+            tuning   = tuningRows(provider, value, words),
             info     = resourceInfo(provider.resources[value]),
             error    = (known and not met)
                 and ("requires '%s', which is not started"):format(needs)
@@ -258,18 +290,19 @@ local function providerRows()
 
     rows[#rows + 1] = {
         id       = "context",
-        label    = "Context Menu",
+        label    = said(words, "schema.interface.contextmenu.label", "Context Menu"),
         path     = "interface.contextmenu",
-        options  = {
+        options  = localOptions(words, "interface.contextmenu", {
             { value = "auto",   label = "Auto detect" },
             { value = "ox",     label = "ox_lib" },
             { value = "lation", label = "lation_ui" },
-        },
+        }),
         provider = menuAuto and "auto" or menuChoice,
         resource = menuLation and CONTEXT_PREFERRED or "ox_lib",
         source   = menuAuto and "detected" or "configured",
         running  = menuUp,
         info     = resourceInfo(menuLation and CONTEXT_PREFERRED or "ox_lib"),
+        requires = not menuUp and CONTEXT_PREFERRED or nil,
         error    = not menuUp and ("requires '%s', which is not started"):format(CONTEXT_PREFERRED) or nil,
     }
 
@@ -352,6 +385,7 @@ GGCallback.register("gg_lib:bridge:fetch", function(source)
         interface    = providerRows(),
         bridges      = (function()
             local rows = {}
+            local words = wordsFor()
 
             -- Detected as the page is opened, not as the server booted.
             for index, row in ipairs(refresh()) do
@@ -363,8 +397,9 @@ GGCallback.register("gg_lib:bridge:fetch", function(source)
                 copy.info     = resourceInfo(row.resource)
                 copy.required = (manifest.required or {})[row.category] == true
                 copy.path     = ("bridge.%s"):format(row.category)
+                copy.label    = said(words, ("schema.bridge.%s.label"):format(row.category), row.category)
 
-                local options = { { value = "", label = "Auto detect" } }
+                local options = { { value = "", label = said(words, ("schema.bridge.%s.options..label"):format(row.category), "Auto detect") } }
                 for _, candidate in ipairs((manifest.categories or {})[row.category] or {}) do
                     options[#options + 1] = { value = candidate, label = candidate }
                 end

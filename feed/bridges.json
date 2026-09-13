@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 73,
+    "total": 76,
     "categories": [
         {
             "id": "framework",
@@ -18,9 +18,10 @@
             "id": "inventory",
             "label": "Inventories",
             "required": true,
-            "count": 13,
+            "count": 14,
             "resources": [
                 "ak47_inventory",
+                "ak47_qb_inventory",
                 "codem-inventory",
                 "core_inventory",
                 "jaksam_inventory",
@@ -99,7 +100,7 @@
             "id": "keys",
             "label": "Vehicle keys",
             "required": false,
-            "count": 16,
+            "count": 17,
             "resources": [
                 "0r-vehiclekeys",
                 "bhd_garage",
@@ -109,6 +110,7 @@
                 "mk_vehiclekeys",
                 "mono_carkeys",
                 "MrNewbVehicleKeys",
+                "okokGarage",
                 "p_carkeys",
                 "qb-vehiclekeys",
                 "qbx_vehiclekeys",
@@ -123,8 +125,9 @@
             "id": "phone",
             "label": "Phones",
             "required": false,
-            "count": 5,
+            "count": 6,
             "resources": [
+                "jpr-phonesystem",
                 "lb-phone",
                 "sd-phone",
                 "yflip-phone",

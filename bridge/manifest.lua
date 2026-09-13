@@ -7,6 +7,8 @@ return {
             "qb-core",
         },
         inventory = {
+            "ak47_qb_inventory",
+            "ak47_inventory",
             "jaksam_inventory",
             "qs-inventory",
             "ps-inventory",
@@ -16,7 +18,6 @@ return {
             "lj-inventory",
             "jpr-inventory",
             "tgiann-inventory",
-            "ak47_inventory",
             "one_inventory",
             "ox_inventory",
             "qb-inventory",
@@ -88,6 +89,7 @@ return {
             "F_RealCarKeysSystem",
             "bhd_garage",
             "cd_garage",
+            "okokGarage",
         },
     },
 

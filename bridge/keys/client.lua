@@ -73,6 +73,11 @@ local providers = {
     ['cd_garage'] = {
         add = function(veh, plate) TriggerEvent('cd_garage:AddKeys', plate) return true end,
     },
+
+    ['okokGarage'] = {
+        add    = function(veh, plate) TriggerServerEvent('okokGarage:GiveKeys', plate) return true end,
+        remove = function(veh, plate) TriggerServerEvent('okokGarage:RemoveKeys', plate, GetPlayerServerId(PlayerId())) return true end,
+    },
 }
 
 providers['qbx_vehiclekeys'] = providers['qb-vehiclekeys']
