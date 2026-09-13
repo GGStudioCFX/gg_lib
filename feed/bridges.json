@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 69,
+    "total": 73,
     "categories": [
         {
             "id": "framework",
@@ -123,9 +123,13 @@
             "id": "phone",
             "label": "Phones",
             "required": false,
-            "count": 1,
+            "count": 5,
             "resources": [
-                "lb-phone"
+                "lb-phone",
+                "sd-phone",
+                "yflip-phone",
+                "yphone",
+                "yseries"
             ]
         }
     ]
