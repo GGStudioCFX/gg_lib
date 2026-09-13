@@ -1,7 +1,10 @@
 {
     "publishedAt": 1789240687,
     "version": "1.0.2",
-    "ticker": [],
+    "ticker": [
+        "Advanced Taxi Job V2 is out — the whole job rebuilt on Script Studio",
+        "Comment on the release post in Discord for a chance to win the upcoming Coil Cab"
+    ],
     "links": {
         "discord": "https://discord.gg/DqMXJzATph",
         "store": "https://www.ggstudio.store"
