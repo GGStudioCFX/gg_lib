@@ -1,9 +1,28 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.2",
+    "latest": "2.0.3",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.3",
+            "at": 1789320922,
+            "kind": "feature",
+            "important": true,
+            "title": "More phone support, editable achievements and meter placement",
+            "changes": [
+                "The Taxi app now supports sd-phone, yseries, yphone and yflip-phone alongside lb-phone. JPR Phone System is supported through the included !SETUP install kit.",
+                "Edit achievement tracking and reward tiers in game, including rides, distance, earnings, player fares, rider classes, pickup and drop-off areas, and vehicles. Existing progress carries over.",
+                "Fixed achievement payout accounts, enforced tier unlock levels and protected claims against duplicate payouts.",
+                "Set the company level cap and XP curve in GG Settings; open tablets refresh when it changes.",
+                "Zone fare multipliers now also apply to XP.",
+                "Player fares have stronger server checks and now contribute to achievements, company progress and statistics.",
+                "Driver and passenger share one meter position, placed using a live drag preview.",
+                "Improved NPC cab fuel initialization, driver spawning and cancellation recovery.",
+                "Updated achievement and settings translations across all nine languages.",
+                "Updated Taxi props to correct the depot fence collision geometry."
+            ]
+        },
         {
             "version": "2.0.2",
             "at": 1789238505,

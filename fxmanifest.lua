@@ -5,7 +5,7 @@ lua54 'yes'
 name 'gg_lib'
 author 'GG Studio'
 license 'LGPL-3.0-or-later'
-version '1.0.2'
+version '1.0.3'
 description 'GG Studio | Import-based library: bridge, gg.* modules, /ggsettings | Discord: https://discord.gg/DqMXJzATph'
 
 ui_page "web/dist/index.html"

@@ -84,9 +84,8 @@ everything back to how it shipped.
 ### Import & Export
 
 Above Factory Reset, every script's page can take its settings out as one JSON
-file and bring them back in. Pick a group and a kind (positions, colours,
-numbers, text, toggles, lists) to export part of a page, or leave both on
-"every" for the lot.
+file and bring them back in. Export opens with every group switched on; switch
+off the ones you do not want, or take the lot.
 
 **Export** copies the file to the clipboard, or saves it on the server as
 `gg_lib/transfer/<script>.json` (next to gg_lib, not on your PC). Beside each
@@ -94,8 +93,9 @@ value the file carries a `$`-guide — label, help, type, allowed options, range
 list columns, which column identifies a row — so an AI or a person editing it
 knows what each setting takes. Server-only values are never exported.
 
-**Import** takes the file back, pasted or loaded from that same path. Chat
-windows' code fences, comments and trailing commas are tolerated. **Check**
+**Import** takes the file back: choose it from your computer, drop it on the
+box, paste it, or load the one saved on the server. Chat windows' code fences,
+comments and trailing commas are tolerated. **Check**
 first looks at the shape — a list that is not a list, a row that lost the key
 the script files it under, two rows with the same key — and then runs every
 value through the script's own validation on the server without writing
