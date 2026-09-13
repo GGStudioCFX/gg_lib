@@ -117,8 +117,16 @@ validators.boolean = function(_, value)
     return false, "expected a true/false value"
 end
 
-validators.number = function(def, value)
+local function finite(value)
     local number = tonumber(value)
+
+    if not number or number ~= number or number == math.huge or number == -math.huge then return nil end
+
+    return number
+end
+
+validators.number = function(def, value)
+    local number = finite(value)
     if not number then return false, "expected a number" end
 
     if def.min and number < def.min then
@@ -140,6 +148,8 @@ validators.integer = function(def, value)
 end
 
 validators.percent = validators.number
+validators.currency = validators.integer
+validators.duration = validators.integer
 
 validators.blipcolor = function(_, value)
     local number = tonumber(value)
@@ -232,8 +242,8 @@ validators.item = function(_, value)
     local name = value:gsub("%s", "")
     if name == "" then return false, "cannot be empty" end
 
-    if not name:match("^[%w_]+$") then
-        return false, "is not an item name (letters, numbers and underscores only)"
+    if not name:match("^[%w_%-]+$") then
+        return false, "is not an item name (letters, numbers, underscores and hyphens only)"
     end
 
     return true, name:lower()
@@ -249,20 +259,20 @@ validators.coords = function(_, value)
     local out = {}
 
     for _, key in ipairs({ "x", "y", "z" }) do
-        local number = tonumber(value[key])
+        local number = finite(value[key])
         if not number then return false, ("is missing its %s"):format(key) end
 
         out[key] = number
     end
 
-    local heading = tonumber(value.heading) or tonumber(value.w) or 0
+    local heading = finite(value.heading) or finite(value.w) or 0
     out.heading = heading % 360
 
     return true, out
 end
 
 validators.blipsprite = function(_, value)
-    local number = tonumber(value)
+    local number = finite(value)
     if not number then return false, "expected a blip sprite" end
 
     number = math.floor(number)
@@ -301,14 +311,39 @@ validators.image = function(_, value)
 end
 
 validators.enum = function(def, value)
-    local choices = type(def.options) == "function" and (select(2, pcall(def.options)) or {}) or def.options
+    local choices = def.options
+    if type(choices) == "function" then
+        local ok, result = pcall(choices)
+        choices = ok and result or nil
+    end
+    if type(choices) ~= "table" then return false, "options are unavailable" end
 
-    for _, option in ipairs(choices or {}) do
+    for _, option in ipairs(choices) do
         local candidate = type(option) == "table" and option.value or option
         if candidate == value then return true, value end
     end
 
-    return false, "is not one of the allowed options"
+    -- Older pickers saved numeric options as text. Restore the declared type.
+    if type(value) == "string" then
+        for _, option in ipairs(choices) do
+            local candidate = type(option) == "table" and option.value or option
+            if type(candidate) == "number" and tostring(candidate) == value then return true, candidate end
+        end
+    elseif type(value) == "number" then
+        for _, option in ipairs(choices) do
+            local candidate = type(option) == "table" and option.value or option
+            if type(candidate) == "string" and (candidate == tostring(value) or tonumber(candidate) == value) then return true, candidate end
+        end
+    end
+
+    local shown = {}
+    for index, option in ipairs(choices) do
+        if index > 20 then shown[#shown + 1] = "…" break end
+        local candidate = type(option) == "table" and option.value or option
+        shown[#shown + 1] = type(candidate) == "string" and ('"%s"'):format(candidate) or tostring(candidate)
+    end
+
+    return false, ("is not one of the allowed options: %s"):format(table.concat(shown, ", "))
 end
 
 validators.color = function(_, value)
@@ -431,11 +466,36 @@ validators.object = function(def, value)
         ::continue::
     end
 
+    -- A pair of bounds that crossed passes each field on its own and then
+    -- empties every random range drawn from it.
+    for _, field in ipairs(def.fields or {}) do
+        local stem = field.key:match("^(.*)min$")
+
+        if stem and (stem == "" or stem:sub(-1) == ".") then
+            local partner = nil
+            for _, other in ipairs(def.fields) do
+                if other.key == stem .. "max" then partner = other end
+            end
+
+            local low, high = settings.read(field.key, out), partner and settings.read(partner.key, out)
+
+            if type(low) == "number" and type(high) == "number" and low > high then
+                return false, ("%s is above %s"):format(field.label or field.key, partner.label or partner.key)
+            end
+        end
+    end
+
     return true, out
 end
 
 validators.list = function(def, value)
     if type(value) ~= "table" then return false, "expected a list" end
+
+    -- Rows keyed by anything but 1..n are not a list, and a hole in the
+    -- middle makes its length a guess.
+    local seen = 0
+    for _ in pairs(value) do seen = seen + 1 end
+    if seen ~= #value then return false, "expected a list" end
 
     if def.min_items and #value < def.min_items then
         return false, ("needs at least %s entries"):format(def.min_items)
@@ -443,6 +503,36 @@ validators.list = function(def, value)
 
     if def.max_items and #value > def.max_items then
         return false, ("allows at most %s entries"):format(def.max_items)
+    end
+
+    -- The column a row is filed under is the one thing a default cannot
+    -- stand in for: a row without it is some other row, and two rows with
+    -- the same one are one row.
+    local identity = def.merge_key or def.auto_key
+
+    if identity and def.item then
+        local column = nil
+        for _, field in ipairs(def.item) do
+            if field.key == identity then column = field end
+        end
+
+        local named = column and column.label or identity
+        local seen  = {}
+
+        for index = 1, #value do
+            local held = type(value[index]) == "table" and settings.read(identity, value[index]) or nil
+
+            if held == nil or held == "" then
+                return false, ("entry %d is missing its %s"):format(index, named)
+            end
+
+            local first = seen[tostring(held)]
+            if first then
+                return false, ("entry %d has the same %s as entry %d"):format(index, named, first)
+            end
+
+            seen[tostring(held)] = index
+        end
     end
 
     local out = {}
@@ -567,9 +657,23 @@ settings.validators = validators
 
 function settings.validate(def, value)
     local validator = validators[def.type or "string"]
-    if not validator then return true, value end
+    local ok, result = true, value
 
-    return validator(def, value)
+    if validator then ok, result = validator(def, value) end
+    if not ok then return false, result end
+
+    if type(def.validate) == "function" then
+        local ran, valid, reason = pcall(def.validate, result)
+
+        if not ran then
+            logError(("Setting '%s' validation failed: %s"):format(tostring(def.path or def.key), valid))
+            return false, "could not validate this setting"
+        end
+
+        if valid ~= true then return false, reason or "is not valid" end
+    end
+
+    return true, result
 end
 
 local function normalizeNeeds(list)
@@ -1019,6 +1123,8 @@ local function mergeKeyedDefaults(def, value)
     return value
 end
 
+settings.mergeKeyedDefaults = mergeKeyedDefaults
+
 function settings.apply(overrides)
     local changed = {}
 
@@ -1026,7 +1132,13 @@ function settings.apply(overrides)
         local def = settings.schema[path]
 
         if def then
-            local ok, result = settings.validate(def, value)
+            local migrated, migrationError = true, nil
+            if type(def.migrate) == "function" then
+                migrated, migrationError = pcall(def.migrate, deepCopy(value))
+                if migrated then value = migrationError end
+            end
+            local ok, result = false, "could not migrate the stored value"
+            if migrated then ok, result = settings.validate(def, value) end
 
             if ok then
                 if def.merge_key then
@@ -1187,23 +1299,18 @@ settings.resolveOptions = resolveOptions
 local function resolveFields(fields)
     if type(fields) ~= "table" then return fields end
 
-    local out, dynamic = {}, false
-
+    local out = {}
     for index, field in ipairs(fields) do
-        if type(field) == "table" and type(field.options) == "function" then
-            local copy = {}
-
-            for key, value in pairs(field) do copy[key] = value end
-
-            copy.options = resolveOptions(field)
-            out[index]   = copy
-            dynamic      = true
-        else
-            out[index] = field
+        local copy = {}
+        for key, value in pairs(field) do
+            if type(value) ~= "function" then copy[key] = value end
         end
+        copy.options = resolveOptions(field)
+        copy.fields = resolveFields(field.fields)
+        copy.item = resolveFields(field.item)
+        out[index] = copy
     end
-
-    return dynamic and out or fields
+    return out
 end
 
 local function isHidden(def)
@@ -1241,9 +1348,11 @@ function settings.describe()
             min_items   = def.min_items,
             weight_key  = def.weight_key,
             row_fields  = def.row_fields,
+            row_labels  = def.row_labels,
             takeover    = def.takeover,
             row_actions = def.row_actions,
             auto_key    = def.auto_key,
+            merge_key   = def.merge_key,
             max_items   = def.max_items,
             min         = def.min,
             max         = def.max,
@@ -1253,6 +1362,7 @@ function settings.describe()
             depends     = def.depends,
             docs        = def.docs,
             preview_from= def.preview_from,
+            position_editor = def.position_editor,
             preview_model= def.preview_model,
             image_base  = def.image_base,
             min_gap     = def.min_gap,

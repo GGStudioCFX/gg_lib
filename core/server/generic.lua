@@ -5,6 +5,7 @@ GenericSettings.resource = "gg_studio"
 local PSEUDO = GenericSettings.resource
 
 local groups = {
+    { id = "job_panel", label = "Job Panel", icon = "fa-briefcase", help = "Shared placement for every script that uses the job panel." },
     { id = "appearance", label = "Appearance", icon = "fa-palette" },
     { id = "general",    label = "General",    icon = "fa-sliders" },
     { id = "popup",      label = "Popups",     icon = "fa-comment",   help = "gg.popup, shared by every script that shows one" },
@@ -472,7 +473,7 @@ define("popup.position", {
 })
 
 define("popup.panel_side", {
-    group   = "popup",
+    group   = "job_panel",
     label   = "Job Panel Side",
     help    = "Which edge of the screen the job panel sits against.",
     type    = "enum",
@@ -484,9 +485,10 @@ define("popup.panel_side", {
 })
 
 define("popup.panel_height", {
-    group   = "popup",
-    label   = "Job Panel Height",
-    help    = "How far down that edge it sits. 0 is the top, 100 the bottom.",
+    group   = "job_panel",
+    label   = "Job Panel Position",
+    position_editor = { mode = "edge", preview = "web/dist/position-preview.html", preview_resource = "gg_lib", side_path = "popup.panel_side" },
+    help    = "Drag vertically or switch screen edges. Shared by all job panels.",
     type    = "number",
     default = 50,
     min     = 5,
@@ -722,6 +724,7 @@ function GenericSettings.describe()
             type    = def.type,
             group   = def.group,
             fields  = def.fields,
+            position_editor = def.position_editor,
             options    = def.options,
             min        = def.min,
             max        = def.max,
@@ -851,16 +854,9 @@ AddEventHandler("onResourceStop", function(resource)
     subscribers[resource] = nil
 end)
 
-function GenericSettings.apply(changes, actor, expectedRevision)
-    if type(changes) ~= "table" then return false, { _ = "malformed payload" } end
-
-    if expectedRevision ~= nil and tonumber(expectedRevision) ~= loadRevision() then
-        return false, { _ = "settings changed since this page was opened -- refresh and try again" }
-    end
-
+local function validateAll(changes)
     local accepted = {}
     local errors   = {}
-    local changed  = {}
 
     for path, value in pairs(changes) do
         local def = schema[path]
@@ -877,6 +873,27 @@ function GenericSettings.apply(changes, actor, expectedRevision)
             end
         end
     end
+
+    return accepted, errors
+end
+
+function GenericSettings.check(changes)
+    if type(changes) ~= "table" then return { ok = false, errors = { _ = "malformed payload" } } end
+
+    local accepted, errors = validateAll(changes)
+
+    return { ok = next(errors) == nil, errors = errors, accepted = accepted, renamed = {}, revision = loadRevision() }
+end
+
+function GenericSettings.apply(changes, actor, expectedRevision)
+    if type(changes) ~= "table" then return false, { _ = "malformed payload" } end
+
+    if expectedRevision ~= nil and tonumber(expectedRevision) ~= loadRevision() then
+        return false, { _ = "settings changed since this page was opened -- refresh and try again" }
+    end
+
+    local changed = {}
+    local accepted, errors = validateAll(changes)
 
     if next(errors) then return false, errors end
 

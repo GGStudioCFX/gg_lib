@@ -10,6 +10,33 @@ local TIMEOUT = GetConvarInt("gg:callbackTimeout", 300000)
 
 local pending = {}
 
+-- A payload this size on a plain event trips the reliable-stream limit and
+-- the player is dropped for it; a latent event paces it out instead.
+local LATENT_ABOVE = 48 * 1024
+local LATENT_BPS   = 512 * 1024
+
+local function heavy(...)
+    local ok, size = pcall(function(...) return #json.encode({ ... }) end, ...)
+
+    return ok and size > LATENT_ABOVE
+end
+
+local function toServer(name, ...)
+    if heavy(...) then
+        TriggerLatentServerEvent(name, LATENT_BPS, ...)
+    else
+        TriggerServerEvent(name, ...)
+    end
+end
+
+local function toClient(name, target, ...)
+    if heavy(...) then
+        TriggerLatentClientEvent(name, target, LATENT_BPS, ...)
+    else
+        TriggerClientEvent(name, target, ...)
+    end
+end
+
 RegisterNetEvent(EVENT:format(RESOURCE), function(key, ...)
     -- A server answer always carries a source; "" means a local resource forged it.
     if not SERVER and source == "" then return end
@@ -41,9 +68,9 @@ local function ask(name, target, cb, ...)
     local key = keyFor(name, target)
 
     if SERVER then
-        TriggerClientEvent(EVENT:format(name), target, RESOURCE, key, ...)
+        toClient(EVENT:format(name), target, RESOURCE, key, ...)
     else
-        TriggerServerEvent(EVENT:format(name), RESOURCE, key, ...)
+        toServer(EVENT:format(name), RESOURCE, key, ...)
     end
 
     local waiting = not cb and promise.new()
@@ -111,9 +138,9 @@ function GGCallback.register(name, cb)
 
     RegisterNetEvent(EVENT:format(name), function(resource, key, ...)
         if SERVER then
-            TriggerClientEvent(EVENT:format(resource), source, key, answered(pcall(cb, source, ...)))
+            toClient(EVENT:format(resource), source, key, answered(pcall(cb, source, ...)))
         else
-            TriggerServerEvent(EVENT:format(resource), key, answered(pcall(cb, ...)))
+            toServer(EVENT:format(resource), key, answered(pcall(cb, ...)))
         end
     end)
 end

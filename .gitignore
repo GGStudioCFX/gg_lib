@@ -34,3 +34,7 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Settings files written from Script Studio. Every server makes its own.
+transfer/*
+!transfer/README.md

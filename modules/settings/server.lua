@@ -46,6 +46,12 @@ local function ensureTables()
 
         MySQL.query.await("ALTER TABLE `gg_studio_settings_meta` ADD COLUMN `version` VARCHAR(32) NULL DEFAULT NULL")
     end)
+
+    -- TEXT holds 64 KB; a long list of zones or a roster grown by an import
+    -- passes every check and then does not fit.
+    gg.db.migrate("settings_value_mediumtext", function()
+        MySQL.query.await("ALTER TABLE `gg_studio_settings` MODIFY `value` MEDIUMTEXT NOT NULL")
+    end)
 end
 
 local function encode(value)
@@ -231,6 +237,87 @@ function settings.store.isReady()
     return ready
 end
 
+local MAX_VALUE = 1024 * 1024
+
+-- A path a setting used to have, as declared by the one that replaced it.
+local function currentPathOf(old)
+    for path, def in pairs(settings.schema) do
+        local sources = type(def.renamed_from) == "string" and { def.renamed_from } or def.renamed_from
+
+        for _, source in ipairs(type(sources) == "table" and sources or {}) do
+            if source == old then return path end
+        end
+    end
+
+    return nil
+end
+
+local function validateAll(changes)
+    local accepted = {}
+    local errors   = {}
+    local renamed  = {}
+    local count    = 0
+
+    for given, value in pairs(changes) do
+        local path = given
+        local def  = settings.schema[path]
+
+        if not def then
+            local moved = currentPathOf(given)
+
+            if moved and changes[moved] == nil then
+                path, def = moved, settings.schema[moved]
+                renamed[given] = moved
+            end
+        end
+
+        if not def then
+            errors[given] = "is not a known setting"
+        else
+            local ok, result = true, value
+
+            if type(def.migrate) == "function" then
+                ok, result = pcall(def.migrate, settings.deepCopy(value))
+                if not ok then result = "could not be read from an older version" end
+            end
+
+            if ok then ok, result = settings.validate(def, result) end
+
+            if ok and #encode(result) > MAX_VALUE then
+                ok, result = false, "is too large to store"
+            end
+
+            if ok then
+                accepted[path] = result
+                count = count + 1
+            else
+                errors[given] = result
+            end
+        end
+    end
+
+    return accepted, errors, count, renamed
+end
+
+-- The same verdict a save would reach, without the save. Every value that
+-- passed comes back the way it would be stored and shown afterwards,
+-- shipped rows included, so what is put on the page is what a save would
+-- leave there.
+function settings.store.check(changes)
+    if type(changes) ~= "table" then return { ok = false, errors = { _ = "malformed payload" } } end
+    if not ready then return { ok = false, errors = { _ = "settings are still loading" } } end
+
+    local accepted, errors, _, renamed = validateAll(changes)
+
+    for path, value in pairs(accepted) do
+        local def = settings.schema[path]
+
+        if def.merge_key then accepted[path] = settings.mergeKeyedDefaults(def, settings.deepCopy(value)) end
+    end
+
+    return { ok = next(errors) == nil, errors = errors, accepted = accepted, renamed = renamed, revision = revision }
+end
+
 function settings.store.save(changes, actor, expectedRevision)
     if type(changes) ~= "table" then return false, { _ = "malformed payload" } end
     if not ready then return false, { _ = "settings are still loading" } end
@@ -239,26 +326,7 @@ function settings.store.save(changes, actor, expectedRevision)
         return false, { _ = "settings changed since this page was opened -- refresh and try again" }
     end
 
-    local accepted = {}
-    local errors   = {}
-    local count    = 0
-
-    for path, value in pairs(changes) do
-        local def = settings.schema[path]
-
-        if not def then
-            errors[path] = "is not a known setting"
-        else
-            local ok, result = settings.validate(def, value)
-
-            if ok then
-                accepted[path] = result
-                count = count + 1
-            else
-                errors[path] = result
-            end
-        end
-    end
+    local accepted, errors, count = validateAll(changes)
 
     if next(errors) then return false, errors end
     if count == 0 then return true, {} end
@@ -482,6 +550,10 @@ exports("ggSettingsApply", function(changes, actor, expectedRevision)
     local ok, result = settings.store.save(changes, actor, expectedRevision)
 
     return { ok = ok, result = result, revision = settings.store.revision() }
+end)
+
+exports("ggSettingsCheck", function(changes)
+    return settings.store.check(changes)
 end)
 
 exports("ggSettingsReset", function(paths, actor, expectedRevision)

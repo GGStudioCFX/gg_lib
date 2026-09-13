@@ -69,7 +69,8 @@ function Locales.schema(payload)
         for _, key in ipairs({ "label", "help", "action_help", "suffix" }) do
             out[key] = strings[prefix .. "." .. key] or out[key]
         end
-        for _, key in ipairs({ "fields", "item", "options", "row_actions" }) do
+        if node.label_key then out.label = strings[node.label_key] or out.label end
+        for _, key in ipairs({ "fields", "item", "options", "row_actions", "row_labels" }) do
             if type(node[key]) == "table" then
                 out[key] = {}
                 for index, field in ipairs(node[key]) do
@@ -77,7 +78,8 @@ function Locales.schema(payload)
                         local id = field.key or field.id or field.value or index
                         out[key][index] = metadata(field, prefix .. "." .. key .. "." .. tostring(id))
                     else
-                        out[key][index] = field
+                        local label = key == "options" and strings[prefix .. ".options." .. tostring(field) .. ".label"]
+                        out[key][index] = label and { value = field, label = label } or field
                     end
                 end
             end

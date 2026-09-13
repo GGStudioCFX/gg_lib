@@ -81,6 +81,41 @@ browser; native resource URLs always use `https://cfx-nui-<resource>/`.
 Each script also has a **Factory Reset** at the bottom of its page, which puts
 everything back to how it shipped.
 
+### Import & Export
+
+Above Factory Reset, every script's page can take its settings out as one JSON
+file and bring them back in. Pick a group and a kind (positions, colours,
+numbers, text, toggles, lists) to export part of a page, or leave both on
+"every" for the lot.
+
+**Export** copies the file to the clipboard, or saves it on the server as
+`gg_lib/transfer/<script>.json` (next to gg_lib, not on your PC). Beside each
+value the file carries a `$`-guide — label, help, type, allowed options, range,
+list columns, which column identifies a row — so an AI or a person editing it
+knows what each setting takes. Server-only values are never exported.
+
+**Import** takes the file back, pasted or loaded from that same path. Chat
+windows' code fences, comments and trailing commas are tolerated. **Check**
+first looks at the shape — a list that is not a list, a row that lost the key
+the script files it under, two rows with the same key — and then runs every
+value through the script's own validation on the server without writing
+anything, listing what would be refused ("Ped Position is missing its z";
+"is not one of the allowed options: "warn", "block""). **Copy problems** puts
+that list in the clipboard, ready to paste back to whoever made the file. When
+it is clean, **Apply to page** puts the differing values on the page as unsaved
+changes — highlighted like hand edits, one Undo away — and the usual **Save**
+writes them, validating again. With problems present, **Apply the N that
+passed** takes the rest, which is how a file that adds a rider class and then
+refers to it goes in: the class first, then the reference.
+
+The result also says what was ignored (settings this script does not know),
+skipped (settings hidden right now), adjusted on the way in (rounded,
+normalised, or a shipped row put back), or left alone (not in the file). A file
+exported from another script is refused; one from another version is noted.
+
+Only the `value` fields are read on import. Keys starting with `$` are ignored,
+so a file with the guide stripped, or a bare `{ "path": value }` map, works too.
+
 ### Server-only settings
 
 A setting marked **Server Only** — an upload key, an API token — is stored on
