@@ -5,11 +5,21 @@ local function nothing() return nil end
 local function noPhone()
     gg.phone = gg.phone or {}
 
+    gg.phone.resource = nil
+
     gg.phone.notify   = no
     gg.phone.mail     = no
     gg.phone.number   = nothing
     gg.phone.numberOf = nothing
     gg.phone.hasPhone = no
+
+    gg.phone.app = {
+        ready     = no,
+        installed = no,
+        add       = no,
+        remove    = no,
+        send      = no,
+    }
 end
 
 return {

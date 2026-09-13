@@ -64,6 +64,10 @@ return {
             "bigDaddy-Fuel",
         },
         phone = {
+            "sd-phone",
+            "yseries",
+            "yphone",
+            "yflip-phone",
             "lb-phone",
         },
         keys = {

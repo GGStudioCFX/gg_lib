@@ -188,6 +188,80 @@ Not every key resource can take a key back; those answer `false` from
 
 ---
 
+## Phone
+
+Five resource names, one API. Detection order is `sd-phone`, `yseries`,
+`yphone`, `yflip-phone`, then `lb-phone` — lb-phone last for the same reason
+ox and qb are: it is the one most likely to be sitting on a server as a
+dependency of the phone actually in use.
+
+```lua
+-- Either side
+gg.phone.resource               -- the resolved resource name, nil with no phone
+gg.phone.number(source)         -- server takes a source; client takes nothing
+gg.phone.hasPhone(source)
+
+-- Server
+gg.phone.notify(source, { app = 'gg_taxi', title = 'Taxi', content = 'On the way' })
+gg.phone.mail(source_or_number, { sender = 'no-reply', subject = '...', message = '...' })
+
+-- Client
+gg.phone.notify({ app = 'gg_taxi', title = 'Taxi', content = 'On the way' })
+```
+
+### Custom apps
+
+A script registers one app once, against `gg.phone.app`, and never names a
+phone. Pass the ui and icon as full `https://cfx-nui-<resource>/...` URLs; each
+bridge reshapes them to what its phone wants.
+
+```lua
+gg.phone.app.ready()            -- the phone is up and, on yseries, has loaded its data
+gg.phone.app.add({
+    key         = 'gg_taxi',
+    name        = 'Taxi',
+    description = '...',         -- lb-phone only
+    developer   = 'GG Studio',   -- lb-phone only
+    defaultApp  = true,
+    size        = 21400,         -- lb-phone only
+    ui          = 'https://cfx-nui-gg_taxijob/phone/dist/index.html',
+    icon        = 'https://cfx-nui-gg_taxijob/phone/dist/icon.png',
+    fixBlur     = true,          -- lb-phone only
+})
+gg.phone.app.send('gg_taxi', 'taxi_update', { status = 'accepted' })
+gg.phone.app.remove('gg_taxi')
+```
+
+Wait on `ready()` rather than on `GetResourceState`. On yseries the resource is
+"started" well before `GetDataLoaded()` is true, and `AddCustomApp` before that
+is dropped.
+
+### What the app page sees
+
+lb-phone injects `fetchNui`, `useNuiEvent`, `onSettingsChange`, `settings` and
+`resourceName` into the iframe and only posts `componentsLoaded` once it wants
+the page rendered. yseries injects nothing and expects the page to render on its
+own; the bridge appends `?phone=<resource>` to the ui URL so the page knows
+which resource answers `main:get-settings`. A page that checks for the injected
+`fetchNui` and falls back to its own `fetch` runs on every phone here unchanged.
+
+### sd-phone
+
+Ships an lb-phone compatibility layer, on by default, that answers
+`exports['lb-phone']` and serves lb-phone custom apps as they are. Its manifest
+declares `provide 'lb-phone'`, which satisfies dependencies but does not make
+`GetResourceState('lb-phone')` report started — so it has its own entry here
+under `sd-phone`, and that folder runs the lb-phone bridge with the resource
+name swapped and the export name left alone.
+
+### yphone and yflip-phone
+
+yseries under other resource names, same exports. Their folders run the
+`yseries` file with `GG_PHONE_EXPORT` set, the way `lation_interact` runs the
+`ox_target` one.
+
+---
+
 ## Adding a provider
 
 1. Make `bridge/<category>/<resource name>/client.lua` — the folder name must be

@@ -1,11 +1,14 @@
 
 gg.phone = gg.phone or {}
 
+local EXPORT = GG_PHONE_EXPORT or "lb-phone"
+local NAME   = GG_PHONE_RESOURCE or EXPORT
+
 local function attempt(fn, ...)
     local ok, result = pcall(fn, ...)
 
     if not ok then
-        gg.print.warn(("lb-phone call failed: %s"):format(tostring(result)))
+        gg.print.warn(("%s call failed: %s"):format(NAME, tostring(result)))
 
         return nil
     end
@@ -13,9 +16,11 @@ local function attempt(fn, ...)
     return result
 end
 
+gg.phone.resource = NAME
+
 gg.phone.number = function(source)
     return attempt(function()
-        return exports["lb-phone"]:GetEquippedPhoneNumber(source)
+        return exports[EXPORT]:GetEquippedPhoneNumber(source)
     end)
 end
 
@@ -35,7 +40,7 @@ gg.phone.mail = function(target, mail)
     if not number or number == "" then return false end
 
     local sent = attempt(function()
-        return exports["lb-phone"]:SendMail({
+        return exports[EXPORT]:SendMail({
             to      = number,
             sender  = mail.sender or "no-reply",
             subject = mail.subject or "",
