@@ -110,8 +110,6 @@ function GG_FACES.fetchDiscord(discordId, done)
     local token = Admins and Admins.setting and Admins.setting("discord_bot_token")
 
     if not GG_FACES.canAskDiscord() then
-        sayOnce("discord", "No discord_bot_token set, so Discord ids stay ids. Cfx.re and Steam are tried instead. See docs/access.md if you want Discord names and pictures.")
-
         if done then done(nil) end
 
         return nil
@@ -205,11 +203,9 @@ function GG_FACES.fetchFor(source, done)
     local function giveUp()
         local who = GetPlayerName(source) or source
 
-        if held.discord then
-            sayOnce("none_token", ("%s has a Discord account but no discord_bot_token is set, so the studio shows initials"):format(who))
-        elseif held.cfx or held.steam then
+        if held.cfx or held.steam then
             sayOnce("none_private", ("nothing would give a picture for %s -- a private profile answers the same as no profile"):format(who))
-        else
+        elseif not held.discord then
             sayOnce("none_account", ("no Discord, Cfx.re or Steam account on %s, so the studio shows initials"):format(who))
         end
     end
@@ -235,10 +231,6 @@ function GG_FACES.fetchFor(source, done)
     end
 
     if not held.discord or not GG_FACES.canAskDiscord() then
-        if held.discord then
-            sayOnce("discord", "No discord_bot_token set, so Discord pictures are skipped. Cfx.re and Steam are still tried.")
-        end
-
         return tryCfx()
     end
 

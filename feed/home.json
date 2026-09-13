@@ -1,13 +1,7 @@
 {
     "publishedAt": 1789240687,
     "version": "1.0.2",
-    "ticker": [
-        "gg_taxijob 2.0 is out -- the whole job rebuilt on Script Studio",
-        "25% off everything until the end of September -- SUMMER25",
-        "gg_police is coming",
-        "Giveaway: three copies of gg_taxijob",
-        "Script Studio: every setting in every GG script, in one menu"
-    ],
+    "ticker": [],
     "links": {
         "discord": "https://discord.gg/DqMXJzATph",
         "store": "https://www.ggstudio.store"
@@ -17,14 +11,16 @@
         {
             "id": "taxi-2-0",
             "kind": "release",
-            "title": "gg_taxijob 2.0 is out",
+            "title": "Advanced Taxi Job V2 is out",
+            "tag": "Advanced Taxi Job",
+            "icon": "fa-taxi",
+            "accent": "#fcba03",
             "body": "The whole job rebuilt on Script Studio: every depot, vehicle, rider class, contract and reward is edited in game and live the moment it changes. A new meter and job panel, an lb-phone taxi app, a vehicle editor, twelve pickup zones and organizations.",
-            "version": "2.0.0",
-            "resource": "gg_taxijob",
-            "at": 1787866200,
-            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/111a963f5b668486ab0dfa78068f35111a54dafb.png",
+            "version": "2.0.2",
+            "at": 1789238505,
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/fc2c56be6f8e2146f4a059a4513cc6c987364bac.png",
             "url": "https://www.ggstudio.store/scripts/taxi-job",
-            "cta": "Open the taxi job"
+            "cta": "View on the store"
         },
         {
             "id": "summer-sale",

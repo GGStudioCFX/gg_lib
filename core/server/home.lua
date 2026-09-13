@@ -7,7 +7,6 @@ local FIRST_MS     = 5000
 
 local current      = { source = "none" }
 local fingerprints = {}
-local complained   = {}
 
 local function base()
     local override = GetConvar("gg_home_feed", "")
@@ -83,19 +82,13 @@ local function fetch(name, done)
     PerformHttpRequest(busted(address), function(status, body)
         local value = status == 200 and decode(body) or nil
 
+        -- Most resources have no update log of their own, so a miss here is the
+        -- normal answer and is not worth a console line. What was showing stays.
         if not value then
-            if not complained[name] then
-                complained[name] = true
-
-                print(("^3[gg_lib] feed: %s answered %s -- keeping what was showing^0"):format(name, tostring(status)))
-            end
-
             if done then done(nil, nil) end
 
             return
         end
-
-        complained[name] = nil
 
         if done then done(value, body) end
     end, "GET", "", { ["Cache-Control"] = "no-cache" })
@@ -183,18 +176,10 @@ local function fetchReleases(done)
         local log = rows and releaseLog(rows) or nil
 
         if not log then
-            if not complained["releases"] then
-                complained["releases"] = true
-
-                print(("^3[gg_lib] releases answered %s -- keeping the log that shipped^0"):format(tostring(status)))
-            end
-
             if done then done(nil, nil) end
 
             return
         end
-
-        complained["releases"] = nil
 
         if done then done(log, body) end
     end, "GET", "", RELEASE_HEADERS)
