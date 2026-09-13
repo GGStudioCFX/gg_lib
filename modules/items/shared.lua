@@ -38,6 +38,10 @@ end
 
 function gg.items.normalize(key, record)
     if type(record) ~= "table" then return nil end
+    if rawget(record, "__cfx_functionReference") then return nil end
+
+    local meta = getmetatable(record)
+    if type(meta) == "table" and rawget(meta, "__call") then return nil end
 
     local name = record.name or key
 
@@ -53,14 +57,14 @@ function gg.items.normalize(key, record)
 
         image = ok and built or nil
     elseif gg.inventory and gg.inventory.getImageUrl then
-        local ok, url = pcall(gg.inventory.getImageUrl, base)
+        local ok, url = pcall(gg.inventory.getImageUrl, base, record)
 
         image = ok and url or nil
     end
 
     return {
         name        = name,
-        label       = record.label or name,
+        label       = type(record.label) == "string" and record.label or name,
         weight      = tonumber(record.weight) or 0,
         description = record.description,
         stack       = record.stack ~= false,
@@ -91,11 +95,13 @@ local function build()
     local out, total = {}, 0
 
     for key, record in pairs(list) do
-        local item = gg.items.normalize(key, record)
+        local ok, item = pcall(gg.items.normalize, key, record)
 
-        if item then
+        if ok and item then
             out[item.name] = item
             total = total + 1
+        elseif not ok and gg.print and gg.print.warn then
+            gg.print.warn(("skipped item '%s' while building the catalogue: %s"):format(tostring(key), tostring(item)))
         end
     end
 

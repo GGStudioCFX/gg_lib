@@ -236,16 +236,44 @@ gg.framework.InsertVehiclePlayerGarage = function(payload)
     return true
 end
 
-local function playerLoaded(source)
-    if not source then return end
+local loadedPlayers = {}
 
-    TriggerEvent(("%s:server:OnPlayerLoaded"):format(GetCurrentResourceName()), source)
+local function playerLoaded(playerSource)
+    playerSource = tonumber(playerSource)
+    if not playerSource or playerSource <= 0 then return end
+
+    local current = qbx_core:GetPlayer(playerSource)
+    local identifier = current and current.PlayerData and current.PlayerData.citizenid
+
+    if not identifier or loadedPlayers[playerSource] == identifier then return end
+
+    loadedPlayers[playerSource] = identifier
+    TriggerEvent(("%s:server:OnPlayerLoaded"):format(GetCurrentResourceName()), playerSource)
 end
 
-AddEventHandler("QBCore:Server:OnPlayerLoaded", function(player)
-    playerLoaded(player and player.PlayerData and player.PlayerData.source)
+RegisterNetEvent("QBCore:Server:OnPlayerLoaded", function(player)
+    local playerSource = tonumber(source)
+
+    -- A network caller can only announce its own server-side player.
+    if not playerSource or playerSource <= 0 then
+        playerSource = type(player) == "table" and type(player.PlayerData) == "table"
+            and tonumber(player.PlayerData.source) or nil
+    end
+
+    playerLoaded(playerSource)
 end)
 
-AddEventHandler("qbx_core:server:onPlayerLoaded", function(source)
-    playerLoaded(source)
+AddEventHandler("qbx_core:server:onPlayerLoaded", function(playerSource)
+    playerLoaded(playerSource)
+end)
+
+local function playerUnloaded(playerSource)
+    loadedPlayers[tonumber(playerSource) or 0] = nil
+end
+
+AddEventHandler("QBCore:Server:OnPlayerUnload", playerUnloaded)
+AddEventHandler("qbx_core:server:playerLoggedOut", playerUnloaded)
+
+AddEventHandler("playerDropped", function()
+    playerUnloaded(source)
 end)

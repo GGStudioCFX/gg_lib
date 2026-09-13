@@ -86,7 +86,9 @@ CreateThread(function()
 
     local ok, answered, snapshot = pcall(GGCallback.await, "gg_lib:generic:snapshot")
 
-    if ok and answered and type(snapshot) == "table" then readPlacement(snapshot.values) end
+    if ok and answered and type(snapshot) == "table" and readPlacement(snapshot.values) and state.enabled then
+        send("panel_update", { side = placement.side, height = placement.height })
+    end
 end)
 
 RegisterNetEvent("gg_lib:generic:sync", function(payload)

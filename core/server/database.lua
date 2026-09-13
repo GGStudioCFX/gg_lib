@@ -77,6 +77,16 @@ local TABLES = {
     ROW_FORMAT=DYNAMIC;
     ]=],
     [=[
+    CREATE TABLE IF NOT EXISTS `gg_studio_admin_imports` (
+        `identifier` VARCHAR(96) NOT NULL COLLATE 'utf8mb4_general_ci',
+        `imported_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (`identifier`) USING BTREE
+    )
+    COLLATE='utf8mb4_general_ci'
+    ENGINE=InnoDB
+    ROW_FORMAT=DYNAMIC;
+    ]=],
+    [=[
     CREATE TABLE IF NOT EXISTS `gg_studio_admin_seen` (
         `identifier` VARCHAR(96) NOT NULL COLLATE 'utf8mb4_general_ci',
         `name` VARCHAR(100) DEFAULT NULL COLLATE 'utf8mb4_general_ci',

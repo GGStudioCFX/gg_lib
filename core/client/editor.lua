@@ -1,5 +1,21 @@
 
 local open = false
+local positionPreview = nil
+
+local function clearPositionPreview()
+    if not positionPreview then return end
+    TriggerEvent("gg_lib:settings:positionPreview", positionPreview, false)
+    positionPreview = nil
+end
+
+RegisterNUICallback("settings_position_preview", function(data, cb)
+    clearPositionPreview()
+    if open and type(data) == "table" and data.active == true and type(data.resource) == "string" then
+        positionPreview = data.resource
+        TriggerEvent("gg_lib:settings:positionPreview", positionPreview, true)
+    end
+    cb({ ok = open })
+end)
 
 GG_PAUSE_GUARD = GG_PAUSE_GUARD or { holders = 0 }
 
@@ -544,13 +560,16 @@ RegisterNUICallback("settings_close", function(_, cb)
         TriggerServerEvent("gg_lib:presence:leave")
     end
 
+    clearPositionPreview()
     open = false
     SetNuiFocus(false, false)
     cb({})
 end)
 
 AddEventHandler("onResourceStop", function(resource)
+    if resource == positionPreview then clearPositionPreview() end
     if resource ~= "gg_lib" then return end
+    clearPositionPreview()
     if open then SetNuiFocus(false, false) end
 
     GG_PAUSE_GUARD.holders = 0

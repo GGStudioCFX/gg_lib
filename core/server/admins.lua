@@ -2,6 +2,7 @@
 Admins = {}
 
 local CONFIG_FILE = "server_config.lua"
+local EXAMPLE_LICENSE = "6e713bc45df69b1338e94c292948ef0053ffb638"
 
 local ACE_EDIT = "gg.settings"
 local ACE_VIEW = "gg.settings.view"
@@ -17,6 +18,12 @@ local DEFAULT_TYPE = "license2"
 local config       = { ace = true }
 local fromConfig   = {}   -- "type:value" -> entry as written
 local fromDatabase = {}
+local pendingImports = {}
+
+local function isExample(identifier)
+    local kind, value = identifier:match("^([^:]+):(.+)$")
+    return (kind == "license" or kind == "license2") and value == EXAMPLE_LICENSE
+end
 
 local function normalize(entry)
     if type(entry) ~= "string" then return nil, "is not a string" end
@@ -74,7 +81,11 @@ local function loadConfig()
     end
 
     config     = result
-    fromConfig = loaded
+    fromConfig, pendingImports = {}, {}
+    for key, entry in pairs(loaded) do
+        if isExample(key) then fromConfig[key] = entry
+        else pendingImports[key] = true end
+    end
 
     return true, count
 end
@@ -238,6 +249,7 @@ function Admins.roleOf(source)
     local player = tonumber(source)
 
     if player then
+        local best
         for _, identifier in ipairs(GetPlayerIdentifiers(player) or {}) do
             local key = identifier:lower()
 
@@ -248,9 +260,11 @@ function Admins.roleOf(source)
             if granted then
                 local role = granted.role
 
-                return (Roles.exists(role) and role) or Roles.DEFAULT
+                if role == Roles.OWNER then return role end
+                best = best or ((Roles.exists(role) and role) or Roles.DEFAULT)
             end
         end
+        if best then return best end
     end
 
     if config.ace ~= false then
@@ -293,6 +307,28 @@ exports("ggIsAdmin", function(source)
 end)
 
 local function loadDatabase()
+    -- Import each configured owner once. Keep the ledger when access is revoked.
+    for identifier in pairs(pendingImports) do
+        local ok, committed = pcall(MySQL.transaction.await, {
+            {
+                query = [[
+                    INSERT INTO gg_studio_admins (identifier, granted_by, role)
+                    SELECT ?, ?, ? WHERE NOT EXISTS (
+                        SELECT 1 FROM gg_studio_admin_imports WHERE identifier = ?
+                    )
+                    ON DUPLICATE KEY UPDATE role = VALUES(role)
+                ]],
+                values = { identifier, CONFIG_FILE, Roles.OWNER, identifier },
+            },
+            {
+                query = "INSERT IGNORE INTO gg_studio_admin_imports (identifier) VALUES (?)",
+                values = { identifier },
+            },
+        })
+        if not ok or not committed then
+            print("^1[gg_lib] could not save a configured owner; check the database and restart gg_lib^0")
+        end
+    end
     local ok, rows = pcall(MySQL.query.await, "SELECT identifier, name, role FROM gg_studio_admins")
 
     if not ok then return end
@@ -337,7 +373,7 @@ function Admins.setRole(identifier, role)
     local current = fromDatabase[identifier]
     if not current then return false, "that identifier is not an admin here" end
     if not Roles.exists(role) then return false, "no such role" end
-    if role == Roles.OWNER then return false, "owner comes from server_config.lua" end
+    if role == Roles.OWNER then return false, "new owners are imported from server_config.lua" end
 
     local ok = pcall(MySQL.query.await,
         "UPDATE gg_studio_admins SET role = ? WHERE identifier = ?", { role, identifier })
@@ -438,6 +474,7 @@ local function listAdmins()
         local identifier = normalize(row.identifier)
 
         if identifier and not seen[identifier] then
+            seen[identifier] = true
             list[#list + 1] = {
                 identifier = identifier,
                 name       = names[identifier] or row.name,

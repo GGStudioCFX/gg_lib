@@ -237,12 +237,30 @@ gg.framework.InsertVehiclePlayerGarage = function(payload)
     return true
 end
 
-local function playerLoaded(source)
-    if not source then return end
+local loadedPlayers = {}
 
-    TriggerEvent(("%s:server:OnPlayerLoaded"):format(GetCurrentResourceName()), source)
-end
+RegisterNetEvent("QBCore:Server:OnPlayerLoaded", function(player)
+    local playerSource = tonumber(source)
 
-AddEventHandler("QBCore:Server:OnPlayerLoaded", function(player)
-    playerLoaded(player and player.PlayerData and player.PlayerData.source)
+    -- A network caller can only announce its own server-side player.
+    if not playerSource or playerSource <= 0 then
+        playerSource = type(player) == "table" and type(player.PlayerData) == "table"
+            and tonumber(player.PlayerData.source) or nil
+    end
+    if not playerSource or playerSource <= 0 then return end
+
+    local current = QBCore.Functions.GetPlayer(playerSource)
+    local identifier = current and current.PlayerData and current.PlayerData.citizenid
+    if not identifier or loadedPlayers[playerSource] == identifier then return end
+
+    loadedPlayers[playerSource] = identifier
+    TriggerEvent(("%s:server:OnPlayerLoaded"):format(GetCurrentResourceName()), playerSource)
+end)
+
+AddEventHandler("QBCore:Server:OnPlayerUnload", function(playerSource)
+    loadedPlayers[tonumber(playerSource) or 0] = nil
+end)
+
+AddEventHandler("playerDropped", function()
+    loadedPlayers[tonumber(source) or 0] = nil
 end)

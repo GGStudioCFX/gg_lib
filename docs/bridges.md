@@ -11,12 +11,9 @@ What gg_lib connects our scripts to, and how to override it.
 The **Bridges** page shows what gg_lib connected to and whether each connection
 worked. If a script is not behaving, look here first.
 
-Everything is detected automatically. To force a choice instead, open
-`utility.lua` and name the resource:
-
-```lua
-framework = "qb-core",   -- leave blank to auto detect
-```
+Everything is detected automatically. To force a choice instead, select the
+resource on the **Bridges** page. Clear that selection to return to automatic
+detection.
 
 A forced name that is not running is shown in red on the Bridges page, so a typo
 is visible instead of silent.
@@ -24,6 +21,29 @@ is visible instead of silent.
 The same page lets you choose who draws notifications, progress bars and text
 prompts. Those apply the moment you pick them — no restart.
 
+
+---
+
+## AK47 inventory
+
+`ak47_qb_inventory` is checked first, followed by `ak47_inventory`, before the
+other inventory providers. Start the framework and inventory before gg_lib's
+job consumers. An explicit saved inventory selection still takes priority;
+clear an old compatibility-provider selection on **Bridges** to use detection.
+
+Both bridges use `web/build/images/` under the detected resource's NUI host.
+Item definitions can supply their own image filename, extension or full URL.
+The QBCore variant uses its original export namespace through version 12.5
+and the unified namespace on newer versions, while keeping its own image host.
+
+For a customized image directory, set **Generic → Items → Item Image Path**,
+for example `https://cfx-nui-ak47_qb_inventory/web/build/images/%s.png`.
+Leave it empty to use the bridge. Restart the consuming jobs after changing
+inventory selection; verify an item icon and an item reward on the server.
+
+The export selection and image directories follow the author's
+[inventory integration](https://github.com/MenanAk47/ak47_lib/blob/ee901dcab76335ec13a7a47e30eddf3e88673372/integration/client/inventory.lua)
+and [export documentation](https://docs.menanak47.com/qbcore/ak47_qb_inventory/exports/server).
 
 ---
 
