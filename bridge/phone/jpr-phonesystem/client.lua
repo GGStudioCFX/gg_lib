@@ -74,6 +74,10 @@ gg.phone.app = {}
 
 local queues = {}
 
+-- The page only drains while its pane is on screen, and a server with the
+-- phone but not the kit never drains at all, so the oldest give way.
+local QUEUE_LIMIT = 50
+
 gg.phone.app.ready = function()
     return GetResourceState(NAME) == "started"
 end
@@ -103,6 +107,8 @@ gg.phone.app.send = function(key, action, data)
     queues[key] = queue
 
     queue[#queue + 1] = { action = action, data = data }
+
+    if #queue > QUEUE_LIMIT then table.remove(queue, 1) end
 
     return true
 end
