@@ -1,8 +1,8 @@
 {
-    "publishedAt": 1789320922,
-    "version": "1.0.3",
+    "publishedAt": 1789403546,
+    "version": "1.0.4",
     "ticker": [
-        "Taxi Job 2.0.3 and gg_lib 1.0.3: phone bridges, editable achievements and live meter placement",
+        "gg_lib 1.0.4: native p_vehiclekeys support for Taxi and other GG jobs",
         "Comment on the release post in Discord for a chance to win the upcoming Coil Cab"
     ],
     "links": {

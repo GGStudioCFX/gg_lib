@@ -72,6 +72,23 @@ automatic bridges, default modules and missing-provider warnings.
 
 ---
 
+## p_vehiclekeys
+
+`p_vehiclekeys` is detected before the legacy keys providers. Its native client
+exports handle giving and removing keys, so its compatibility shims can be off.
+Install its dependencies and inventory items using the
+[provider's installation guide](https://github.com/PiotreeQ/p_vehiclekeys#installation),
+then start `p_vehiclekeys` before `gg_lib` and the consuming jobs such as
+`gg_taxijob`.
+
+If you previously forced a different keys provider, clear the saved **Keys**
+selection on the **Bridges** page or select `p_vehiclekeys`, then restart the
+consuming jobs. Vehicle creation must finish networking the entity before keys
+are requested. The provider sends key requests asynchronously; the bridge does
+not report whether the inventory accepted the key.
+
+---
+
 ## Adding a fuel or keys script
 
 Fuel and keys live in one file each — `bridge/fuel/client.lua` and

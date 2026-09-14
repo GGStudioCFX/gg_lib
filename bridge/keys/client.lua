@@ -61,6 +61,11 @@ local providers = {
         remove = function(veh, plate) TriggerServerEvent('p_carkeys:RemoveKeys', plate) return true end,
     },
 
+    ['p_vehiclekeys'] = {
+        add    = function(veh, plate) return exports['p_vehiclekeys']:createKey(plate, veh) end,
+        remove = function(veh, plate) return exports['p_vehiclekeys']:removeKey(plate, veh) end,
+    },
+
     ['qb-vehiclekeys'] = {
         add = function(veh, plate) TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate) return true end,
     },

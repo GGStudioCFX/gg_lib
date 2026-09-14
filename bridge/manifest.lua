@@ -73,6 +73,7 @@ return {
             "lb-phone",
         },
         keys = {
+            "p_vehiclekeys",
             "qbx_vehiclekeys",
             "qb-vehiclekeys",
             "qs-vehiclekeys",
