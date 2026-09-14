@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 76,
+    "total": 77,
     "categories": [
         {
             "id": "framework",
@@ -100,7 +100,7 @@
             "id": "keys",
             "label": "Vehicle keys",
             "required": false,
-            "count": 17,
+            "count": 18,
             "resources": [
                 "0r-vehiclekeys",
                 "bhd_garage",
@@ -112,6 +112,7 @@
                 "MrNewbVehicleKeys",
                 "okokGarage",
                 "p_carkeys",
+                "p_vehiclekeys",
                 "qb-vehiclekeys",
                 "qbx_vehiclekeys",
                 "qs-vehiclekeys",
