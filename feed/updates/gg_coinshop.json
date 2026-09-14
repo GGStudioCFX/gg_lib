@@ -1,9 +1,23 @@
 {
     "label": "gg_coinshop",
     "resource": "gg_coinshop",
-    "latest": "1.0.3",
+    "latest": "1.0.4",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.4",
+            "at": 1789422991,
+            "kind": "feature",
+            "important": false,
+            "title": "Saved reward protection and coin rewards",
+            "changes": [
+                "Playtime and Battle Pass keep saved item rewards and images when inventory lookups are unavailable.",
+                "Add or remove premium coins from trusted server scripts with AddCoins and RemoveCoins exports.",
+                "Choose Coins as a Playtime or Battle Pass reward, with the usual earning and premium requirements.",
+                "Coin rewards credit the wallet and record the claim together to prevent duplicate awards.",
+                "Failed Battle Pass item or vehicle delivery no longer consumes the reward claim."
+            ]
+        },
         {
             "version": "1.0.3",
             "at": 1789323000,
