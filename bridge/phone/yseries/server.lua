@@ -80,7 +80,7 @@ end
 
 -- The client bridge has no notification export to call, so it sends its own
 -- notifications up here. It can only ever address itself.
-RegisterNetEvent("gg_lib:phone:notify", function(notification)
+RegisterNetEvent(GetCurrentResourceName() .. ":server:phone:notify", function(notification)
     local src = source
 
     if type(notification) ~= "table" then return end

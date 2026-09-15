@@ -508,7 +508,7 @@ validators.list = function(def, value)
     -- The column a row is filed under is the one thing a default cannot
     -- stand in for: a row without it is some other row, and two rows with
     -- the same one are one row.
-    local identity = def.merge_key or def.auto_key
+    local identity = def.unique_key or def.merge_key or def.auto_key
 
     if identity and def.item then
         local column = nil
@@ -1353,6 +1353,7 @@ function settings.describe()
             row_actions = def.row_actions,
             auto_key    = def.auto_key,
             merge_key   = def.merge_key,
+            unique_key  = def.unique_key,
             max_items   = def.max_items,
             min         = def.min,
             max         = def.max,

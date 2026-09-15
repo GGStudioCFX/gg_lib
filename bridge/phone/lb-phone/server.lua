@@ -56,7 +56,7 @@ end
 gg.phone.notify = function(source, notification)
     if type(notification) ~= "table" then return false end
 
-    TriggerClientEvent("gg_lib:phone:notify", source, notification)
+    TriggerClientEvent(GetCurrentResourceName() .. ":client:phone:notify", source, notification)
 
     return true
 end

@@ -20,10 +20,12 @@ end
 gg.phone.resource = NAME
 
 -- Notifications are a server export on yseries, so the client hands them up.
+-- Every importing resource registers this relay, so the event is named after
+-- this one: a shared name would show the notification once per resource.
 gg.phone.notify = function(notification)
     if type(notification) ~= "table" then return false end
 
-    TriggerServerEvent("gg_lib:phone:notify", notification)
+    TriggerServerEvent(GetCurrentResourceName() .. ":server:phone:notify", notification)
 
     return true
 end
@@ -96,7 +98,7 @@ gg.phone.app.add = function(spec)
 
     local icon = spec.icon
 
-    local result = attempt(function()
+    local ok, result = pcall(function()
         return exports[NAME]:AddCustomApp({
             key        = spec.key,
             name       = spec.name or spec.key,
@@ -106,7 +108,8 @@ gg.phone.app.add = function(spec)
         })
     end)
 
-    if result == nil then return false, ("%s refused AddCustomApp"):format(NAME) end
+    if not ok then return false, tostring(result) end
+    if result == false then return false, ("%s refused AddCustomApp"):format(NAME) end
 
     return true
 end

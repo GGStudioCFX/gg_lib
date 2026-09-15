@@ -1,8 +1,8 @@
 {
-    "publishedAt": 1789403546,
-    "version": "1.0.4",
+    "publishedAt": 1789473628,
+    "version": "1.0.5",
     "ticker": [
-        "gg_lib 1.0.4: native p_vehiclekeys support for Taxi and other GG jobs",
+        "gg_lib 1.0.5: GKS Phone support and saved-settings fixes",
         "Comment on the release post in Discord for a chance to win the upcoming Coil Cab"
     ],
     "links": {
@@ -14,13 +14,13 @@
         {
             "id": "taxi-2-0",
             "kind": "release",
-            "title": "Taxi Job 2.0.3",
+            "title": "Taxi Job 2.0.4",
             "tag": "Advanced Taxi Job",
             "icon": "fa-taxi",
             "accent": "#fcba03",
-            "body": "More phone support, editable achievements and reward tiers, configurable company levels, and a shared meter with live drag placement. Update Taxi Job and gg_lib together, including the latest Taxi props.",
-            "version": "2.0.3",
-            "at": 1789320922,
+            "body": "Saved settings stay saved, company creation follows your settings, and GKS Phone joins the supported phones. Global Job Requirement is optional and off by default. Update Taxi Job and gg_lib together, including the bundled Taxi props.",
+            "version": "2.0.4",
+            "at": 1789473628,
             "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/fc2c56be6f8e2146f4a059a4513cc6c987364bac.png",
             "url": "https://www.ggstudio.store/scripts/taxi-job",
             "cta": "View on the store"

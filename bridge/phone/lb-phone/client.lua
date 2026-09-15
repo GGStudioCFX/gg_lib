@@ -54,7 +54,8 @@ gg.phone.mail = function()
     return false
 end
 
-RegisterNetEvent("gg_lib:phone:notify", function(notification)
+-- Named after this resource: every importing resource registers the relay.
+RegisterNetEvent(GetCurrentResourceName() .. ":client:phone:notify", function(notification)
     gg.phone.notify(notification)
 end)
 

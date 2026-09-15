@@ -1,9 +1,24 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.3",
+    "latest": "2.0.4",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.4",
+            "at": 1789473628,
+            "kind": "feature",
+            "important": true,
+            "title": "Saved settings, global job access and GKS Phone",
+            "changes": [
+                "Renamed depots and edited lists now stay as saved instead of restoring default rows after reloads.",
+                "Added Global Job Requirement in General, OFF by default. Enable it to require one framework job everywhere; leave it off to use each depot's saved requirement.",
+                "Company creation now displays and uses your configured required level and deposit, including a zero deposit.",
+                "Preserved explicitly saved panel keybinds during startup instead of changing G back to the default.",
+                "Added automatic GKS Phone v2 Taxi app support with theme, open/close and keyboard-focus handling. Removed the misleading custom-app registration warning.",
+                "Updated the affected settings text across all nine languages. Install gg_lib 1.0.5 with this update and replace both included Taxi resource folders."
+            ]
+        },
         {
             "version": "2.0.3",
             "at": 1789320922,

@@ -190,8 +190,8 @@ Not every key resource can take a key back; those answer `false` from
 
 ## Phone
 
-Five resource names, one API. Detection order is `sd-phone`, `yseries`,
-`yphone`, `yflip-phone`, then `lb-phone` — lb-phone last for the same reason
+Seven resource names, one API. Detection order is `gksphone`, `sd-phone`,
+`jpr-phonesystem`, `yseries`, `yphone`, `yflip-phone`, then `lb-phone` — lb-phone last for the same reason
 ox and qb are: it is the one most likely to be sitting on a server as a
 dependency of the phone actually in use.
 
@@ -251,6 +251,23 @@ The number is a client export only (`getPhoneNumber`), so the server asks the
 client over `gg.callback`. Notifications are the phone's own client event with a
 fixed payload whose `app` must stay `"Custom"`. There is no mail export. JPR
 runs on QBCore only.
+
+### gksphone
+
+GKS Phone v2 registers apps automatically through its client `AddCustomApp`.
+The bridge maps the key to `name`, UI to `appurl`, and icon to `icons`, with
+`startapp` for default apps and optional `labelLangs`. No phone files need edits.
+Start `gksphone` before importing resources. The app URL gets `phone=gksphone`;
+the page can use the injected `window.gksphone` for theme changes. Taxi callbacks
+must still POST to Taxi's own resource; GKS `fetchNui` addresses the phone.
+`NuiSendMessage` pushes messages into the calling resource's iframe. Optional
+`gg.phone.app.focus(boolean)` calls `InputChange` to protect typing.
+
+There is no documented custom-app removal/query export. `installed` tracks this
+consumer's registration, not the player's App Gallery installation. `remove`
+returns false for a registered app; disable the setting and restart the phone
+and consumer to clear it. Resource stop closes the app. Online mail accepts a
+player source or phone number; unsupported offline/action payloads are not mapped.
 
 Wait on `ready()` rather than on `GetResourceState`. On yseries the resource is
 "started" well before `GetDataLoaded()` is true, and `AddCustomApp` before that

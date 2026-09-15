@@ -65,6 +65,7 @@ return {
             "bigDaddy-Fuel",
         },
         phone = {
+            "gksphone",
             "sd-phone",
             "jpr-phonesystem",
             "yseries",
