@@ -200,8 +200,8 @@ GGCallback.register("gg_lib:settings:save", function(source, data)
             for index = 1, #resetResult do changed[#changed + 1] = resetResult[index] end
         end
 
-        if #changed > 0 then
-            print(("[gg_lib] %s changed %d generic setting(s)"):format(actor, #changed))
+        if #changed > 0 and GlobalState.gg_debug == true then
+            print(("[gg_lib] [DEBUG] %s changed %d generic setting(s)"):format(actor, #changed))
         end
 
         return true, changed
@@ -242,8 +242,8 @@ GGCallback.register("gg_lib:settings:save", function(source, data)
         for index = 1, #resetResponse.result do changed[#changed + 1] = resetResponse.result[index] end
     end
 
-    if #changed > 0 then
-        print(("[gg_lib] %s changed %d setting(s) in %s"):format(actor, #changed, target))
+    if #changed > 0 and GlobalState.gg_debug == true then
+        print(("[gg_lib] [DEBUG] %s changed %d setting(s) in %s"):format(actor, #changed, target))
     end
 
     return true, changed

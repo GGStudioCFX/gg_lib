@@ -989,8 +989,8 @@ function GenericSettings.reset(paths, actor)
     pushGeneric(targets)
     TriggerEvent("gg_lib:generic:changed", targets)
 
-    if actor then
-        print(("[gg_lib] %s reset %d generic setting(s)"):format(actor, #targets))
+    if actor and GlobalState.gg_debug == true then
+        print(("[gg_lib] [DEBUG] %s reset %d generic setting(s)"):format(actor, #targets))
     end
 
     return true, targets
@@ -1014,7 +1014,9 @@ local function reconcileStoredRows()
                     if ok then
                         loaded[path] = loaded[old]
                         loaded[old] = nil
-                        print(("[gg_lib] generic settings: migrated stored override '%s' -> '%s'"):format(old, path))
+                        if loaded["debug.enabled"] == true then
+                            print(("[gg_lib] [DEBUG] generic settings: migrated stored override '%s' -> '%s'"):format(old, path))
+                        end
                     end
 
                     break
@@ -1032,9 +1034,9 @@ local function reconcileStoredRows()
         end
     end
 
-    if #names > 0 then
+    if #names > 0 and loaded["debug.enabled"] == true then
         table.sort(names)
-        print(("^3[gg_lib] generic settings: %d stored override(s) no longer match a declared setting (kept; prune via gg_settings_prune): %s^0")
+        print(("[gg_lib] [DEBUG] generic settings: %d stored override(s) no longer match a declared setting (kept; prune via gg_settings_prune): %s")
             :format(#names, table.concat(names, ", ")))
     end
 end
@@ -1077,4 +1079,3 @@ AddEventHandler("gg_lib:database:ready", function()
 
     GenericSettings.publishGlobals()
 end)
-

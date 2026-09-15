@@ -104,7 +104,7 @@ local function applyRenames(loaded)
                     if ok then
                         loaded[path] = loaded[old]
                         loaded[old] = nil
-                        gg.print.log(("Settings: migrated stored override '%s' -> '%s'"):format(old, path))
+                        gg.print.debug(("Settings: migrated stored override '%s' -> '%s'"):format(old, path))
                     end
 
                     break
@@ -129,7 +129,7 @@ local function partitionOrphans(loaded)
 
     if #names > 0 then
         table.sort(names)
-        gg.print.warn(("Settings: %d stored override(s) no longer match a declared setting (kept; prune via gg_settings_prune): %s")
+        gg.print.debug(("Settings: %d stored override(s) no longer match a declared setting (kept; prune via gg_settings_prune): %s")
             :format(#names, table.concat(names, ", ")))
     end
 
@@ -382,7 +382,7 @@ function settings.store.save(changes, actor, expectedRevision)
             gg.print.error(("Settings: the database accepted the write but %d row(s) are not there: %s")
                 :format(#missing, table.concat(missing, ", ")))
         else
-            gg.print.log(("Settings: %s stored %d override(s)"):format(actor or "someone", #written))
+            gg.print.debug(("Settings: %s stored %d override(s)"):format(actor or "someone", #written))
         end
     end
 
@@ -466,7 +466,7 @@ function settings.store.reset(paths, actor, expectedRevision)
     broadcast(changed)
 
     if actor then
-        gg.print.log(("%s reset %d setting(s)"):format(actor, #targets))
+        gg.print.debug(("%s reset %d setting(s)"):format(actor, #targets))
     end
 
     return true, changed

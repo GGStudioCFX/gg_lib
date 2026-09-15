@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.4",
+    "latest": "2.0.5",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.5",
+            "at": 1789511636,
+            "kind": "fix",
+            "important": false,
+            "title": "Rental menu closes immediately",
+            "changes": [
+                "Taking out a rental now closes the Taxi menu immediately while the vehicle finishes preparing.",
+                "This prevents the menu from staying over gameplay after the rental appears.",
+                "Install gg_lib 1.0.6 with this update and replace both included Taxi resource folders."
+            ]
+        },
         {
             "version": "2.0.4",
             "at": 1789473628,
