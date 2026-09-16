@@ -54,10 +54,15 @@ gg.phone.mail = function()
     return false
 end
 
--- Named after this resource: every importing resource registers the relay.
-RegisterNetEvent(GetCurrentResourceName() .. ":client:phone:notify", function(notification)
-    gg.phone.notify(notification)
-end)
+-- Named after this resource: every importing resource registers the relay. This file
+-- can load twice in one resource (a chosen phone that starts later), so it is added once.
+if not GG_PHONE_CLIENT_RELAY then
+    GG_PHONE_CLIENT_RELAY = true
+
+    RegisterNetEvent(GetCurrentResourceName() .. ":client:phone:notify", function(notification)
+        gg.phone.notify(notification)
+    end)
+end
 
 gg.phone.resource = NAME
 

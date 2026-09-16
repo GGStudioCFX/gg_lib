@@ -79,14 +79,19 @@ gg.phone.notify = function(source, notification)
 end
 
 -- The client bridge has no notification export to call, so it sends its own
--- notifications up here. It can only ever address itself.
-RegisterNetEvent(GetCurrentResourceName() .. ":server:phone:notify", function(notification)
-    local src = source
+-- notifications up here. It can only ever address itself. This file can load twice
+-- in one resource (a chosen phone that starts later), so the relay is added once.
+if not GG_PHONE_SERVER_RELAY then
+    GG_PHONE_SERVER_RELAY = true
 
-    if type(notification) ~= "table" then return end
+    RegisterNetEvent(GetCurrentResourceName() .. ":server:phone:notify", function(notification)
+        local src = source
 
-    gg.phone.notify(src, notification)
-end)
+        if type(notification) ~= "table" then return end
+
+        gg.phone.notify(src, notification)
+    end)
+end
 
 gg.callback.register("gg_lib:phone:number", function(source)
     return gg.phone.number(source)
