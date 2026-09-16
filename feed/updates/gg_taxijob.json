@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.6",
+    "latest": "2.0.7",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.7",
+            "at": 1789577512,
+            "kind": "fix",
+            "important": false,
+            "title": "Company challenge menu fix",
+            "changes": [
+                "Fixed the company management menu crashing after a company challenge pays a cash reward.",
+                "Challenge rewards now appear correctly in the treasury, with safe handling for unfamiliar transfer types.",
+                "Updated the new treasury labels in all nine languages. Continue using gg_lib 1.0.7; no new library update is required."
+            ]
+        },
         {
             "version": "2.0.6",
             "at": 1789556762,
