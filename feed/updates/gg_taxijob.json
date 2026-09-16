@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.5",
+    "latest": "2.0.6",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.6",
+            "at": 1789556762,
+            "kind": "fix",
+            "important": false,
+            "title": "Rental keys at custom depots",
+            "changes": [
+                "Rental counter keys now use a standalone streamed prop so custom depots do not depend on the original depot interior being loaded.",
+                "Each depot keeps its own Key Desk position. Use Vehicles > Collect Keys From the Depot to enable or disable counter pickup.",
+                "Install gg_lib 1.0.7 for cd_garage rental-key removal. Replace both included Taxi resource folders and restart gg_lib before gg_taxijob."
+            ]
+        },
         {
             "version": "2.0.5",
             "at": 1789511636,

@@ -76,7 +76,8 @@ local providers = {
     },
 
     ['cd_garage'] = {
-        add = function(veh, plate) TriggerEvent('cd_garage:AddKeys', plate) return true end,
+        add    = function(veh, plate) TriggerEvent('cd_garage:AddKeys', plate) return true end,
+        remove = function(veh, plate) TriggerEvent('cd_garage:RemoveKeys', plate) return true end,
     },
 
     ['okokGarage'] = {
