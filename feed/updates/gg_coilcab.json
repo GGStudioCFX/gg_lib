@@ -1,9 +1,20 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.2",
+    "latest": "1.0.3",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.3",
+            "at": 1789751999,
+            "kind": "fix",
+            "important": false,
+            "title": "Language fixes",
+            "changes": [
+                "The cabin screen key in FiveM's key bindings is now labelled in your server's language instead of always English.",
+                "The phone app's description is written in your server's language when the app is added."
+            ]
+        },
         {
             "version": "1.0.2",
             "at": 1789749812,
