@@ -89,11 +89,49 @@ local function scripts()
     return out
 end
 
-local function bridges()
-    local out = {}
+-- The Bridges page's own report, cut down to what a ticket needs. Built here
+-- rather than fetched, because the Bridges tool is not everyone's who can send
+-- a bundle.
+local function report()
+    local ok, full = pcall(function() return Bridges and Bridges.report and Bridges.report(false) end)
 
-    for _, category in ipairs({ "framework", "inventory", "target", "dispatch", "fuel", "keys", "phone" }) do
-        out[#out + 1] = { category = category, resource = Bridges and Bridges.wired and Bridges.wired(category) or "?" }
+    if not ok or type(full) ~= "table" then return {} end
+
+    local function versionOf(info) return info and info.version or nil end
+
+    local out = { dependencies = {}, bridges = {}, interface = {}, problems = full.problems or {} }
+
+    for _, row in ipairs(full.dependencies or {}) do
+        out.dependencies[#out.dependencies + 1] = {
+            resource = row.resource,
+            running  = row.running,
+            version  = versionOf(row.info),
+        }
+    end
+
+    for _, row in ipairs(full.bridges or {}) do
+        out.bridges[#out.bridges + 1] = {
+            category = row.category,
+            resource = row.resource,
+            version  = versionOf(row.info),
+            source   = row.source,
+            stub     = row.stub,
+            required = row.required,
+            loaded   = row.loaded,
+            stopped  = row.stopped,
+            pending  = row.pending and row.selected or nil,
+        }
+    end
+
+    for _, row in ipairs(full.interface or {}) do
+        out.interface[#out.interface + 1] = {
+            id       = row.id,
+            provider = row.provider,
+            resource = row.resource,
+            version  = versionOf(row.info),
+            running  = row.running,
+            source   = row.source,
+        }
     end
 
     return out
@@ -102,23 +140,29 @@ end
 function Support.info(source)
     if Framework and Framework.ensure then pcall(Framework.ensure) end
 
+    local bridged = report()
+
     return {
-        hostname   = GetConvar("sv_hostname", ""),
-        fxserver   = GetConvar("version", ""),
-        build      = GetConvar("sv_enforceGameBuild", ""),
-        onesync    = GetConvar("onesync", ""),
-        txadmin    = GetConvar("txAdmin-version", ""),
-        players    = #GetPlayers(),
-        resources  = GetNumResources(),
-        uptime     = GetGameTimer(),
-        clock      = os.date("!%Y-%m-%d %H:%M:%S UTC"),
-        version    = GetResourceMetadata("gg_lib", "version", 0) or "",
-        mysql      = GetResourceMetadata("oxmysql", "version", 0) or "",
-        language   = GenericSettings and GenericSettings.get and GenericSettings.get("general.language") or "en",
-        who        = GGName and GGName.both and GGName.both(source) or "",
-        identifier = GGName and GGName.identifier and GGName.identifier(source) or "",
-        scripts    = scripts(),
-        bridges    = bridges(),
+        hostname     = GetConvar("sv_hostname", ""),
+        fxserver     = GetConvar("version", ""),
+        build        = GetConvar("sv_enforceGameBuild", ""),
+        onesync      = GetConvar("onesync", ""),
+        txadmin      = GetConvar("txAdmin-version", ""),
+        players      = #GetPlayers(),
+        resources    = GetNumResources(),
+        uptime       = GetGameTimer(),
+        clock        = os.date("!%Y-%m-%d %H:%M:%S UTC"),
+        version      = GetResourceMetadata("gg_lib", "version", 0) or "",
+        mysql        = GetResourceMetadata("oxmysql", "version", 0) or "",
+        language     = GenericSettings and GenericSettings.get and GenericSettings.get("general.language") or "en",
+        who          = GGName and GGName.both and GGName.both(source) or "",
+        identifier   = GGName and GGName.identifier and GGName.identifier(source) or "",
+        scripts      = scripts(),
+        bridges      = bridged.bridges,
+        dependencies = bridged.dependencies,
+        interface    = bridged.interface,
+        problems     = bridged.problems,
+        dependants   = Boot and Boot.stoppedDependants and Boot.stoppedDependants() or nil,
     }
 end
 

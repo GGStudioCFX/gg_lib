@@ -135,3 +135,21 @@ end
 gg.phone.app.drain = function()
     return {}
 end
+
+-- The phone keeps game keys live while an app is open; the app says when a field
+-- wants the keyboard, or typing into it reaches the game as well.
+local typing = false
+
+gg.phone.app.focus = function(focused)
+    typing = focused == true
+
+    return attempt(function()
+        exports[NAME]:SetNuiFocusKeepInput(not typing)
+
+        return true
+    end) == true
+end
+
+AddEventHandler("onResourceStop", function(resource)
+    if resource == GetCurrentResourceName() and typing then gg.phone.app.focus(false) end
+end)

@@ -122,6 +122,34 @@ from one script to the next, so they stay separate files.
 
 ---
 
+## HUDs
+
+Our scripts can hide your HUD while they need the screen — a tablet, a
+preview, a cutscene — and bring it back afterwards. The **Bridges** page shows
+which HUD was found. If a script stops or restarts while your HUD is hidden,
+the HUD comes back on its own.
+
+Some HUDs cannot be hidden by another resource at all, because they never
+added a way to: qb-hud, ps-hud and Renewed-Hud among them. With one of those,
+our scripts hide the game's minimap but your HUD stays on screen. qbx_hud can
+only hide its speedometer, and only while standing still.
+
+If you hid your HUD yourself, most HUDs will show it again when our script is
+done — they give us no way to ask whether it was showing.
+
+To add a HUD that is not detected, add a row to `bridge/hud/client.lua` and its
+name to `hud` in `bridge/manifest.lua`:
+
+```lua
+['my_hud'] = {
+    hide = function() exports['my_hud']:SetVisible(false) end,
+    show = function() exports['my_hud']:SetVisible(true) end,
+},
+```
+
+
+---
+
 ## Start order and restarts
 
 A script does not have to start after its target script, and it does not

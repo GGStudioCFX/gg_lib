@@ -22,10 +22,26 @@ gg.phone.hasPhone = function(source)
     return type(n) == "string" and n ~= ""
 end
 
-gg.phone.mail = function()
-    gg.print.warn(("%s has no mail export; gg.phone.mail does nothing on it"):format(NAME))
+-- Online mail is the phone's own server event, addressed to a player source. The
+-- phone has no server-side lookup from a number to a player, so a number is refused.
+gg.phone.mail = function(target, mail)
+    if type(mail) ~= "table" then return false end
 
-    return false
+    if type(target) ~= "number" or target <= 0 then
+        gg.print.warn(("%s mail needs a player source; it cannot address a phone number"):format(NAME))
+
+        return false
+    end
+
+    if GetResourceState(NAME) ~= "started" then return false end
+
+    TriggerEvent("jpr-phonesystem:server:sendEmail", {
+        subject = mail.subject or "",
+        message = mail.message or mail.body or "",
+        sender  = mail.sender or "no-reply",
+    }, target)
+
+    return true
 end
 
 gg.phone.notify = function(source, notification)

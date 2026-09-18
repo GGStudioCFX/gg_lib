@@ -114,4 +114,13 @@ return {
         gg.keys.AddKeys    = function() return true end
         gg.keys.RemoveKeys = no
     end,
+
+    -- Hiding still works without a HUD resource: the holders are kept and the
+    -- game's own HUD is hidden when asked. Only the client has a HUD.
+    hud = function()
+        if gg.context ~= "client" then return end
+
+        gg.hud.resource = nil
+        gg.hud.backend  = nil
+    end,
 }

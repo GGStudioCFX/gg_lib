@@ -83,6 +83,31 @@ local function detect(category)
         end
     end
 
+    -- Nothing running. One that is installed but stopped is usually the whole
+    -- story -- a dependant taken down by a restart that nobody started again --
+    -- so those come ahead of ones that were stopped on purpose.
+    local stopped = {}
+
+    for _, candidate in ipairs((manifest.categories or {})[category] or {}) do
+        if GetResourceState(candidate) == "stopped" then stopped[#stopped + 1] = candidate end
+    end
+
+    if #stopped > 1 and Boot and Boot.stoppedDependants then
+        local down, ordered = {}, {}
+
+        for _, name in ipairs(Boot.stoppedDependants()) do down[name] = true end
+
+        for _, name in ipairs(stopped) do
+            if down[name] then ordered[#ordered + 1] = name end
+        end
+
+        for _, name in ipairs(stopped) do
+            if not down[name] then ordered[#ordered + 1] = name end
+        end
+
+        stopped = ordered
+    end
+
     return {
         category = category,
         resource = "default",
@@ -90,10 +115,12 @@ local function detect(category)
         state    = "started",
         loaded   = true,
         stub     = true,
+        stopped  = #stopped > 0 and stopped or nil,
     }
 end
 
-local DEPENDENCIES = { "oxmysql" }
+-- Not every one is gg_lib's own dependency, but every GG script needs them.
+local DEPENDENCIES = { "ox_lib", "oxmysql" }
 
 local function dependencyRows()
     local rows = {}
@@ -377,42 +404,82 @@ function Bridges.wired(category)
     return "default"
 end
 
+local function bridgeRows(withOptions)
+    local rows = {}
+    local words = wordsFor()
+
+    -- Detected as the page is opened, not as the server booted.
+    for index, row in ipairs(refresh()) do
+        local copy = {}
+        for key, value in pairs(row) do copy[key] = value end
+
+        local stored = GenericSettings.get(("bridge.%s"):format(row.category))
+        copy.selected = type(stored) == "string" and stored or ""
+        copy.info     = resourceInfo(row.resource)
+        copy.required = (manifest.required or {})[row.category] == true
+        copy.path     = ("bridge.%s"):format(row.category)
+        copy.label    = said(words, ("schema.bridge.%s.label"):format(row.category), row.category)
+        copy.pending  = copy.selected ~= "" and copy.selected ~= copy.resource
+
+        if withOptions then
+            local options = { { value = "", label = said(words, ("schema.bridge.%s.options..label"):format(row.category), "Auto detect") } }
+            for _, candidate in ipairs((manifest.categories or {})[row.category] or {}) do
+                options[#options + 1] = { value = candidate, label = candidate }
+            end
+            copy.options = options
+        end
+
+        rows[index] = copy
+    end
+
+    return rows
+end
+
+-- The one list of what is wrong, so the Bridges page and the support bundle
+-- can never disagree about it.
+local function problemsOf(dependencies, interface, bridges)
+    local out = {}
+
+    for _, row in ipairs(dependencies) do
+        if not row.running then
+            out[#out + 1] = { kind = "dependency", resource = row.resource }
+        end
+    end
+
+    for _, row in ipairs(bridges) do
+        if row.stub and row.required then
+            out[#out + 1] = { kind = "missing", category = row.category, label = row.label, stopped = row.stopped }
+        elseif not row.loaded then
+            out[#out + 1] = { kind = "forced", category = row.category, label = row.label, resource = row.resource }
+        end
+    end
+
+    for _, row in ipairs(interface) do
+        if not row.running then
+            out[#out + 1] = { kind = "provider", category = row.id, label = row.label, resource = row.requires or row.provider }
+        end
+    end
+
+    return out
+end
+
+function Bridges.report(withOptions)
+    local dependencies = dependencyRows()
+    local interface    = providerRows()
+    local bridges      = bridgeRows(withOptions)
+
+    return {
+        dependencies = dependencies,
+        interface    = interface,
+        bridges      = bridges,
+        problems     = problemsOf(dependencies, interface, bridges),
+    }
+end
+
 GGCallback.register("gg_lib:bridge:fetch", function(source)
     if not Admins.can(source, "bridges") then return false end
 
-    return true, {
-        dependencies = dependencyRows(),
-        interface    = providerRows(),
-        bridges      = (function()
-            local rows = {}
-            local words = wordsFor()
-
-            -- Detected as the page is opened, not as the server booted.
-            for index, row in ipairs(refresh()) do
-                local copy = {}
-                for key, value in pairs(row) do copy[key] = value end
-
-                local stored = GenericSettings.get(("bridge.%s"):format(row.category))
-                copy.selected = type(stored) == "string" and stored or ""
-                copy.info     = resourceInfo(row.resource)
-                copy.required = (manifest.required or {})[row.category] == true
-                copy.path     = ("bridge.%s"):format(row.category)
-                copy.label    = said(words, ("schema.bridge.%s.label"):format(row.category), row.category)
-
-                local options = { { value = "", label = said(words, ("schema.bridge.%s.options..label"):format(row.category), "Auto detect") } }
-                for _, candidate in ipairs((manifest.categories or {})[row.category] or {}) do
-                    options[#options + 1] = { value = candidate, label = candidate }
-                end
-                copy.options = options
-
-                copy.pending = copy.selected ~= "" and copy.selected ~= copy.resource
-
-                rows[index] = copy
-            end
-
-            return rows
-        end)(),
-    }
+    return true, Bridges.report(true)
 end)
 
 local EDITABLE = {

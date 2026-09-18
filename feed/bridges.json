@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 78,
+    "total": 106,
     "categories": [
         {
             "id": "framework",
@@ -126,15 +126,51 @@
             "id": "phone",
             "label": "Phones",
             "required": false,
-            "count": 7,
+            "count": 8,
             "resources": [
                 "gksphone",
                 "jpr-phonesystem",
                 "lb-phone",
                 "sd-phone",
+                "sky_phone",
                 "yflip-phone",
                 "yphone",
                 "yseries"
+            ]
+        },
+        {
+            "id": "hud",
+            "label": "HUDs",
+            "required": false,
+            "count": 27,
+            "resources": [
+                "0r-hud-v3",
+                "17mov_Hud",
+                "17mov_Interface",
+                "ak47_hud",
+                "Codem-BlackHUDV2",
+                "codem-supreme-hud",
+                "cx-hud",
+                "dusa_hud",
+                "envi-hud",
+                "esx_hud",
+                "gfx-hud_aty",
+                "izzy-hudv5",
+                "izzy-hudv6",
+                "izzy-hudv8",
+                "jg-hud",
+                "mHud",
+                "mhud",
+                "qbx_hud",
+                "qs-interface",
+                "rhud",
+                "tgiann-hud",
+                "tgiann-lumihud",
+                "vms_hud",
+                "wais-hudv5",
+                "wais-hudv6",
+                "ZSX_UI",
+                "ZSX_UIV2"
             ]
         }
     ]

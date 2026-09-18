@@ -1,9 +1,9 @@
 
 gg.phone = gg.phone or {}
 
--- sd-phone loads this file with its own resource name here. Its compatibility
--- layer answers the lb-phone export, so EXPORT stays lb-phone for it and only
--- NAME -- what GetResourceState is asked about -- changes.
+-- sd-phone and sky_phone load this file with their own resource name here. Their
+-- compatibility layers answer the lb-phone export, so EXPORT stays lb-phone for
+-- them and only NAME -- what GetResourceState is asked about -- changes.
 local EXPORT = GG_PHONE_EXPORT or "lb-phone"
 local NAME   = GG_PHONE_RESOURCE or EXPORT
 
@@ -19,10 +19,12 @@ local function attempt(fn, ...)
     return result
 end
 
+-- lb-phone documents no return value, so there only a throw counts as failure.
+-- sky_phone, answering for it, returns false with a reason instead.
 gg.phone.notify = function(notification)
     if type(notification) ~= "table" then return false end
 
-    local sent = attempt(function()
+    return attempt(function()
         return exports[EXPORT]:SendNotification({
             app         = notification.app,
             title       = notification.title or "",
@@ -30,10 +32,8 @@ gg.phone.notify = function(notification)
             timeout     = notification.timeout,
             onClick     = notification.onClick,
             keepOnClick = notification.keepOnClick,
-        })
-    end)
-
-    return sent ~= nil and sent ~= false
+        }) ~= false
+    end) == true
 end
 
 gg.phone.number = function()
