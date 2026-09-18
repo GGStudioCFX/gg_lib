@@ -1,0 +1,25 @@
+{
+    "label": "gg_coilcab",
+    "resource": "gg_coilcab",
+    "latest": "1.0.1",
+    "url": "https://discord.gg/DqMXJzATph",
+    "updates": [
+        {
+            "version": "1.0.1",
+            "at": 1789746930,
+            "kind": "major",
+            "important": true,
+            "title": "First release",
+            "changes": [
+                "Book an autonomous CoilCab from the phone app with an upfront fare and a live map of the cab on its way. A cab that spawns far away drives at a faster pace until it is close.",
+                "Board from either passenger door. Press E in a passenger seat for the cabin screen: trip details, Normal, Quick or Mad Max driving, music, video and cab controls.",
+                "Continue Last Video plays the video a rider was watching on their last trip, or their saved videos, when they get back in.",
+                "Door Hold: stepping out mid-ride stops the cab with the doors open for 20 seconds. It carries on once everyone is back, otherwise drives the remaining passengers on, and ends the ride when nobody is aboard.",
+                "Rate and tip from the receipt. The service rating shown in the app is the real average once enough rides are rated.",
+                "Works on lb-phone, sd-phone, Sky Phone, GKS Phone, yseries, yphone and yflip-phone automatically, and on JPR Phone through the included manual setup kit.",
+                "Fares, fleet size, paint, cab themes, suggested places, driving limits, outside audio and departure timing are all set live in GG Lib's Script Studio.",
+                "Nine languages included. Requires gg_lib 1.0.8 or newer."
+            ]
+        }
+    ]
+}
