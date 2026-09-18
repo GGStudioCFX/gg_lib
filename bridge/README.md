@@ -239,13 +239,20 @@ comes back empty.
 
 ### jpr-phonesystem
 
-No export adds an app. JPR's apps are entries in its own `main_config.lua` and a
+No export adds an app, and this has been checked against JPR's own documentation
+rather than assumed: its [Custom APPs page][jpr-apps] installs one entirely inside
+the phone, and its [exports list][jpr-exports] carries `isPhoneOpen`, `openPhone`,
+`closePhone`, `isCamaraOpen`, `getPhoneNumber`, `sendWhatsapp` and `sendiMessage`,
+with nothing that registers an app. JPR's apps are entries in its own `main_config.lua` and a
 `<div class="app-<name>">` pane in its own `index.html`, all in its
 `escrow_ignore`, so the app is installed by hand from the kit the script ships
 under `!SETUP/JPR Phone/`. `add()` therefore has nothing to do and answers
 `true`. The pane is an iframe of the script's own page inside the phone's NUI
 page, and Lua cannot post into another resource's NUI -- so `send()` queues and
 the page drains through `gg.phone.app.drain`.
+
+[jpr-apps]: https://joaos-organization-3.gitbook.io/jpresources-documentation/installation/phone-system/custom-apps
+[jpr-exports]: https://joaos-organization-3.gitbook.io/jpresources-documentation/installation/phone-system/events-and-commands
 
 The number is a client export only (`getPhoneNumber`), so the server asks the
 client over `gg.callback`. Notifications are the phone's own client event with a

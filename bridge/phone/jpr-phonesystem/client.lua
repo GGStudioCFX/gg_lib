@@ -62,10 +62,14 @@ end)
 -- MARK: Custom apps
 --------------------------------------------------
 
--- JPR has no export that adds an app. Its apps are entries in the phone's own
--- config and a pane in its own index.html, both in escrow_ignore, so the app is
--- installed by hand from the kit the script ships. add() has nothing to do at
--- runtime and says so by answering true.
+-- JPR has no export that adds an app, and that is by design rather than an
+-- oversight: its own "Custom APPs" documentation installs one as an entry in
+-- configs/main_config.lua (AppLabels, AppStoreApps, AppSizes) plus a
+-- div.app-<name> pane in html/index.html, all inside the phone and all in its
+-- escrow_ignore. Its exports list carries isPhoneOpen, openPhone, closePhone,
+-- isCamaraOpen, getPhoneNumber, sendWhatsapp and sendiMessage, and nothing that
+-- registers an app. So the app is installed by hand from the kit the script
+-- ships, and add() has nothing to do at runtime and says so by answering true.
 --
 -- The pane is an iframe of the script's own page inside the phone's NUI page.
 -- Lua cannot post into another resource's NUI, so send() queues and the page
@@ -78,8 +82,15 @@ local queues = {}
 -- phone but not the kit never drains at all, so the oldest give way.
 local QUEUE_LIMIT = 50
 
+-- Started is not the same as ready: the phone answers its exports only once it
+-- has loaded. Asking it for the player's number is the cheapest question it
+-- answers, and a phone that cannot answer cannot show an app either.
 gg.phone.app.ready = function()
-    return GetResourceState(NAME) == "started"
+    if GetResourceState(NAME) ~= "started" then return false end
+
+    local ok = pcall(function() return exports[NAME]:getPhoneNumber() end)
+
+    return ok
 end
 
 gg.phone.app.installed = function(key)
