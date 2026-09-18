@@ -1,9 +1,22 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.3",
+    "latest": "1.0.4",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.4",
+            "at": 1789771573,
+            "kind": "fix",
+            "important": true,
+            "title": "Cabs that never set off",
+            "changes": [
+                "Fixed cabs that appeared but never drove off, which left the phone on \"No ride available\". This mostly happened on busy servers and on servers with stricter entity control settings.",
+                "A new cab now appears on a road nearer the rider than anyone else, so the rider's game can take charge of it.",
+                "A cab now loads the road under it even when the game driving it is far away, so a cab left behind by a failed ride drives off instead of sitting frozen.",
+                "If a cab still cannot be handed to the rider, the server console now names the player whose game is holding it."
+            ]
+        },
         {
             "version": "1.0.3",
             "at": 1789751999,
