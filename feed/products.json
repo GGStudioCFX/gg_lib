@@ -1,5 +1,5 @@
 {
-    "publishedAt": 1787927784,
+    "publishedAt": 1789749586,
     "products": [
         {
             "id": "gg_hunting",
@@ -22,6 +22,16 @@
             "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/40a02f21ea58e810268f81310766bdfd33e3e293.webp",
             "url": "https://www.ggstudio.store/scripts/boosting",
             "hot": true
+        },
+        {
+            "id": "gg_taxijob",
+            "resource": "gg_taxijob",
+            "name": "Advanced Taxi Job 2.0",
+            "blurb": "A complete FiveM taxi job featuring a custom MLO, taxi organizations, phone app, in-game Taxi Creator, progression, achievements, leaderboards, and player-driven rides.",
+            "price": "$24.95",
+            "icon": "fa-taxi",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/fc2c56be6f8e2146f4a059a4513cc6c987364bac.png",
+            "url": "https://www.ggstudio.store/scripts/taxi-job"
         },
         {
             "id": "gg_towjob",
@@ -74,16 +84,6 @@
             "url": "https://www.ggstudio.store/scripts/garbage-job"
         },
         {
-            "id": "gg_taxijob",
-            "resource": "gg_taxijob",
-            "name": "Advanced Taxi Job",
-            "blurb": "A fully interactive taxi system featuring player-driven rides, diverse passenger types, fleet customization, and progression-based unlocks that keep every trip engaging.",
-            "price": "$19.95",
-            "icon": "fa-taxi",
-            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/111a963f5b668486ab0dfa78068f35111a54dafb.png",
-            "url": "https://www.ggstudio.store/scripts/taxi-job"
-        },
-        {
             "id": "gg_gopostal",
             "resource": "gg_gopostal",
             "name": "Go Postal Job System",
@@ -113,6 +113,16 @@
             "icon": "fa-bus",
             "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/42a36fea4c9fcbf120eb4277112f5430c933457e.png",
             "url": "https://www.ggstudio.store/scripts/bus-job"
+        },
+        {
+            "id": "gg_coilcab",
+            "resource": "gg_coilcab",
+            "name": "CoilCab Robotaxi System",
+            "blurb": "Book a driverless cab from the phone app, watch it come to you, and ride with a cabin screen for music, video and driving modes.",
+            "status": "SOON",
+            "icon": "fa-bolt",
+            "image": "https://raw.githubusercontent.com/GGStudioCFX/gg_lib/main/feed/images/coilcab.webp",
+            "url": "https://www.ggstudio.store"
         }
     ]
 }

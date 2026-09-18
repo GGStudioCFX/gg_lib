@@ -291,6 +291,8 @@ RegisterNUICallback("settings_refresh", function(_, cb)
         UI_THEME = payload.theme,
         UI_FADE = payload.fade,
         UI_FADE_TO = payload.fade_to,
+        -- A save can change the language; the page swaps its own words too.
+        UI_LANG = payload.ui_lang,
     })
 end)
 
