@@ -1,9 +1,21 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.1",
+    "latest": "1.0.2",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.2",
+            "at": 1789749812,
+            "kind": "feature",
+            "important": false,
+            "title": "Script Studio in your language",
+            "changes": [
+                "CoilCab's Script Studio page is now translated into German, Spanish, French, Japanese, Dutch, Brazilian Portuguese, Russian and Simplified Chinese, following GG Lib's language setting.",
+                "Every group, setting, help text, unit and list column is covered. Driving mode names match what riders see in the app.",
+                "Install gg_lib 1.0.9 so a language change shows across the whole page as soon as you save."
+            ]
+        },
         {
             "version": "1.0.1",
             "at": 1789746930,
