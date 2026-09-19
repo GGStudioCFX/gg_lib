@@ -4,6 +4,22 @@ local EXISTS_TIMEOUT_MS = 5000
 
 local PROPS_BAG = "gg_props"
 
+-- Cars this resource put in the world, so a client naming one by net id can be
+-- told apart from one naming any car on the server.
+local spawned = {}
+
+gg.vehicleManager.spawnedHere = function(entity)
+    if type(entity) ~= "number" or entity == 0 or not spawned[entity] then return false end
+
+    if not DoesEntityExist(entity) then
+        spawned[entity] = nil
+
+        return false
+    end
+
+    return true
+end
+
 gg.vehicleManager.spawnVehicle = function(model, coords, options)
     local hash = type(model) == "string" and GetHashKey(model) or model
 
@@ -24,6 +40,8 @@ gg.vehicleManager.spawnVehicle = function(model, coords, options)
         Wait(0)
         waited = waited + 1
     end
+
+    spawned[vehicle] = true
 
     if type(options) == "table" then
         local look = {}
@@ -74,6 +92,8 @@ gg.vehicleManager.removeVehicle = function(netid)
     if not netid or type(entity) ~= "number" or entity == 0 then
         return false
     end
+
+    spawned[entity] = nil
 
     if GetResourceState("AdvancedParking") == "started" then
             exports["AdvancedParking"]:DeleteVehicle(entity, false)

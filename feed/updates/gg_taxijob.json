@@ -1,9 +1,26 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.7",
+    "latest": "2.0.8",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.8",
+            "at": 1789841644,
+            "kind": "feature",
+            "important": false,
+            "title": "Vehicle image storage",
+            "changes": [
+                "Taxi vehicle captures save the confirmed FiveManage URL or full local image path. Changing the local folder later does not redirect captured photos.",
+                "Bulk fleet photography saves each successful image to its matching rental entry; failed captures leave existing images in place.",
+                "Qbox vehicle keys are now granted from the server for GG Lib spawned depot vehicles, including pickup away from the car.",
+                "The Downtown Cab Co interior now ships in the included gg_cabco_mlo resource.",
+                "The Local Vehicle Image Folder setting shows the path under gg_taxijob/web/dist, accepts safe nested folders and controls new local captures and bare filenames. FiveManage URLs use their saved address.",
+                "After a local photo is captured, the vehicle editor shows a restart reminder beside the saved path. The Add Entry example Taxi remains available.",
+                "This package includes gg_taxijob, gg_taxijob_props and the new required gg_cabco_mlo. Install all three, start gg_cabco_mlo before gg_taxijob, and install gg_lib 1.0.10 first.",
+                "Choose Automatic, local or FiveManage storage in GG Settings > Generic Settings > Screenshots; the FiveManage key stays server-only."
+            ]
+        },
         {
             "version": "2.0.7",
             "at": 1789577512,

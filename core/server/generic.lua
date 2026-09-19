@@ -602,10 +602,23 @@ define("actions.webhook_avatar", {
     default = "",
 })
 
+define("screenshot.storage", {
+    group   = "screenshot",
+    label   = "Image Storage",
+    help    = "Choose where new screenshots are saved. Automatic uses FiveManage when an API key is set, otherwise the script's web folder.",
+    type    = "enum",
+    options = {
+        { value = "auto", label = "Automatic" },
+        { value = "local", label = "Local web folder" },
+        { value = "fivemanage", label = "FiveManage" },
+    },
+    default = "auto",
+})
+
 define("screenshot.upload_key", {
     group       = "screenshot",
-    label       = "Upload API Key",
-    help        = "Leave empty to save images into the script's own web folder instead of uploading them. Stored on the server only -- once set it is never sent back out, so it can be replaced but not read.",
+    label       = "FiveManage API Key",
+    help        = "Server-only key for FiveManage uploads. Once saved, it can be replaced but never read back. Leave empty for local storage in Automatic mode.",
     type        = "string",
     server_only = true,
     default     = "",

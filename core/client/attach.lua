@@ -943,7 +943,7 @@ local function applyKit(id)
     publishJob()
 end
 
-local function runJob(options)
+local function runJob(options, owner)
     if open then return "the placement editor is already open" end
     if type(options) ~= "table" then return "nothing to place" end
 
@@ -975,6 +975,7 @@ local function runJob(options)
     end
 
     job = {
+        owner   = owner,
         title   = options.title or "Placement",
         subject = options.subject,
         vehicle = options.vehicle,
@@ -994,6 +995,7 @@ local function runJob(options)
 
     if not known then job.kit = kits[1].id end
 
+    state.subject  = "prop"
     state.target   = "vehicle"
     state.boneName = (type(options.bone) == "string" and options.bone ~= "") and options.bone or "chassis"
     state.pos      = vec3of(options.pos)
@@ -1448,7 +1450,10 @@ RegisterNUICallback("attach_job", function(_, cb)
 end)
 
 AddEventHandler("onClientResourceStop", function(resource)
-    if resource ~= RESOURCE then return end
+    if resource ~= RESOURCE then
+        if job and job.owner == resource then exit() end
+        return
+    end
 
     clearProp()
     clearCar()
@@ -1485,7 +1490,7 @@ AddEventHandler("gg_lib:attach:place", function(resource, id, options)
         if open then
             answer = "the placement editor is already open"
         else
-            local ok, result = pcall(runJob, options)
+            local ok, result = pcall(runJob, options, resource)
 
             if ok then
                 answer = result

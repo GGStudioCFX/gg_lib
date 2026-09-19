@@ -155,6 +155,10 @@ gg.vehicles.categories()
 
 One call, whatever MDT is installed.
 
+Dispatch is optional. A missing or stopped dispatch provider stays quiet at
+startup; the first attempted `gg.dispatch.alert` prints one warning and returns
+`false`. Later attempts return `false` without repeating the warning.
+
 ```lua
 gg.dispatch.alert({
     message  = 'Taxi driver robbed',
@@ -185,6 +189,12 @@ gg.keys.RemoveKeys(vehicle)
 
 Not every key resource can take a key back; those answer `false` from
 `RemoveKeys` rather than pretending.
+
+A key script that only trusts a request made beside the car gets its keys from
+this resource's server instead, and only for a car spawned with
+`gg.vehicleManager.spawnVehicle`. Anything else falls back to the plain request.
+`RemoveKeys` waits for that answer when it can, so deleting the car straight
+after it is safe.
 
 ---
 

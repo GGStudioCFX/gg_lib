@@ -2,6 +2,8 @@
 local RESOURCE = GetCurrentResourceName()
 
 local CHUNK_SIZE = 8192
+local MAX_BODY = 4 * 1024 * 1024
+local MAX_CHUNKS = 512
 
 local busy = false
 local vehicle = nil
@@ -9,6 +11,8 @@ local backdrop = false
 
 local pending = {}
 local nextRequest = 0
+local pendingStorage = {}
+local nextStorage = 0
 
 local FALLBACK_SPOT = vector4(-1324.13, -2257.61, 48.77, 260.0)
 
@@ -169,8 +173,24 @@ RegisterNUICallback("gg_screenshot_done", function(data, cb)
     promise:resolve(data)
 end)
 
-local function sendToServer(id, webpB64, target, folder)
+RegisterNetEvent("gg_lib:screenshot:stored", function(id, location, request, reason)
+    local waiting = request and pendingStorage[request]
+    if not waiting then return end
+
+    pendingStorage[request] = nil
+    waiting:resolve({ location = location, error = reason })
+end)
+
+local function sendToServer(id, webpB64, target, folder, storage)
     local total = math.ceil(#webpB64 / CHUNK_SIZE)
+    if total < 1 or total > MAX_CHUNKS or #webpB64 > MAX_BODY then
+        return { error = "image exceeded the size limit" }
+    end
+
+    nextStorage = nextStorage + 1
+    local request = tostring(nextStorage)
+    local waiting = promise.new()
+    pendingStorage[request] = waiting
 
     for index = 1, total do
         local from = (index - 1) * CHUNK_SIZE + 1
@@ -181,12 +201,24 @@ local function sendToServer(id, webpB64, target, folder)
             index  = index,
             total  = total,
             body   = webpB64:sub(from, to),
+            request = request,
             target = target,
             folder = folder,
+            storage = storage,
         })
 
         Wait(10)
     end
+
+    CreateThread(function()
+        Wait(30000)
+        if pendingStorage[request] then
+            pendingStorage[request] = nil
+            waiting:resolve({ error = "storage timed out" })
+        end
+    end)
+
+    return Citizen.Await(waiting)
 end
 
 local function capture(entries, options)
@@ -217,7 +249,7 @@ local function capture(entries, options)
     backdrop = true
     drawBackdrop(at)
 
-    local done, failed = {}, {}
+    local done, failed, stored = {}, {}, {}
     local stopped = false
 
     local ok, err = pcall(function()
@@ -276,8 +308,14 @@ local function capture(entries, options)
                 goto continue
             end
 
-            sendToServer(tostring(entry.id), processed.webpB64, target, folder)
+            local saved = sendToServer(tostring(entry.id), processed.webpB64, target, folder, options.storage)
+            if not saved or not saved.location then
+                failed[#failed + 1] = { id = entry.id, error = (saved and saved.error) or "storage failed" }
+                goto continue
+            end
+
             done[#done + 1] = entry.id
+            stored[entry.id] = saved.location
 
             ::continue::
         end
@@ -296,7 +334,7 @@ local function capture(entries, options)
 
     if not ok then return false, tostring(err) end
 
-    return true, { captured = done, failed = failed, stopped = stopped }
+    return true, { captured = done, failed = failed, stored = stored, stopped = stopped }
 end
 
 exports("ggCaptureVehicles", function(entries, options)

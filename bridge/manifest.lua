@@ -131,7 +131,6 @@ return {
         framework = true,
         inventory = true,
         target    = true,
-        dispatch  = true,
     },
 
     client_only = {

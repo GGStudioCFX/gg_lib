@@ -1,6 +1,7 @@
 
 local function no() return false end
 local function nothing() return nil end
+local warnedDispatch = false
 
 local function noPhone()
     gg.phone = gg.phone or {}
@@ -84,7 +85,13 @@ return {
     dispatch = function()
         gg.dispatch = gg.dispatch or {}
 
-        gg.dispatch.alert = no
+        gg.dispatch.alert = function()
+            if not warnedDispatch then
+                warnedDispatch = true
+                print(("[gg_lib] %s: dispatch alert skipped because no dispatch bridge is running; check /ggsettings > Dev Tools > Bridges"):format(GetCurrentResourceName()))
+            end
+            return false
+        end
     end,
 
     fuel = function()

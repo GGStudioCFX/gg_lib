@@ -18,6 +18,10 @@ detection.
 A forced name that is not running is shown in red on the Bridges page, so a typo
 is visible instead of silent.
 
+Dispatch is optional. When no dispatch bridge is running, gg_lib waits until a
+script actually attempts an alert before printing one plain warning. Repeated
+alerts do not repeat that warning.
+
 The same page lets you choose who draws notifications, progress bars and text
 prompts. Those apply the moment you pick them — no restart.
 
@@ -86,6 +90,19 @@ selection on the **Bridges** page or select `p_vehiclekeys`, then restart the
 consuming jobs. Vehicle creation must finish networking the entity before keys
 are requested. The provider sends key requests asynchronously; the bridge does
 not report whether the inventory accepted the key.
+
+---
+
+## qbx_vehiclekeys
+
+Newer `qbx_vehiclekeys` builds only hand out keys when the player is standing
+right next to the car. A job that gives keys at a desk or from a clerk would be
+turned down, so on those servers the keys are given by the job's own server
+instead. It works the same on older builds, and returning the vehicle now takes
+the key back too.
+
+Nothing needs configuring. Start `qbx_vehiclekeys` before `gg_lib` and the
+jobs, and keep its folder named `qbx_vehiclekeys`.
 
 ---
 

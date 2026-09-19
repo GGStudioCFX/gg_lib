@@ -295,19 +295,40 @@ validators.string = function(def, value)
     return true, value
 end
 
-validators.image = function(_, value)
+validators.image = function(def, value)
     if value == nil then return true, "" end
     if type(value) ~= "string" then return false, "expected a file name" end
 
-    local name = value:gsub("%s", "")
+    local name = value:match("^%s*(.-)%s*$")
 
     if name == "" then return true, "" end
 
-    if name:find("/", 1, true) or name:find("\\", 1, true) then
-        return false, "is a file name, not a path"
+    if name:match("^https://") then
+        if #name > 2048 or name:find("%s") or name:find("\\", 1, true) then
+            return false, "expected a valid HTTPS image URL"
+        end
+
+        return true, name
     end
 
-    return true, name
+    if name:find("\\", 1, true) then
+        return false, "expected a file name or relative image path"
+    end
+
+    if name:find("/", 1, true) then
+        if not def.image_root or #name > 256 or name:find("[^%w%-%._/]")
+            or name:find("//", 1, true) or name:sub(1, 1) == "/" then
+            return false, "expected a safe relative image path"
+        end
+        for part in name:gmatch("[^/]+") do
+            if part == "." or part == ".." then
+                return false, "expected a safe relative image path"
+            end
+        end
+        return true, name
+    end
+
+    return true, (name:gsub("%s", ""))
 end
 
 validators.enum = function(def, value)
@@ -1305,6 +1326,10 @@ local function resolveFields(fields)
         for key, value in pairs(field) do
             if type(value) ~= "function" then copy[key] = value end
         end
+        if type(field.image_base) == "function" then
+            local ok, base = pcall(field.image_base)
+            if ok and type(base) == "string" then copy.image_base = base end
+        end
         copy.options = resolveOptions(field)
         copy.fields = resolveFields(field.fields)
         copy.item = resolveFields(field.item)
@@ -1365,7 +1390,9 @@ function settings.describe()
             preview_from= def.preview_from,
             position_editor = def.position_editor,
             preview_model= def.preview_model,
-            image_base  = def.image_base,
+            image_base  = type(def.image_base) == "string" and def.image_base or nil,
+            image_root  = def.image_root,
+            path_root   = def.path_root,
             min_gap     = def.min_gap,
             edit_mode   = def.edit_mode,
             live        = def.live,

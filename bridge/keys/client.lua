@@ -1,3 +1,38 @@
+-- Some key scripts only honor a key request made beside the car, and a depot
+-- hands its keys over at a desk. Those go through this resource's server, with
+-- the plain request kept for a car the server will not vouch for.
+local GRANT   = GetCurrentResourceName() .. ":gg_keys"
+local WAIT_MS = { add = 5000, remove = 2000 }
+
+local function viaServer(action, veh, fallback)
+    if GetResourceState("qbx_vehiclekeys") ~= "started" or not NetworkGetEntityIsNetworked(veh) then
+        return fallback()
+    end
+
+    local answered = promise.new()
+    local settled = false
+
+    local function settle(granted)
+        if settled then return end
+
+        settled = true
+
+        answered:resolve(granted == true or fallback())
+    end
+
+    gg.callback.request(GRANT, settle, action, VehToNet(veh))
+
+    SetTimeout(WAIT_MS[action], settle)
+
+    -- A car is usually deleted straight after its key is taken back, and once
+    -- it is gone the server has nothing left to take the key from.
+    if action == "remove" and coroutine.isyieldable() then
+        return Citizen.Await(answered)
+    end
+
+    return true
+end
+
 local providers = {
     ['0r-vehiclekeys'] = {
         add    = function(veh, plate) return exports['0r-vehiclekeys']:GiveKeys(plate) end,
@@ -67,7 +102,17 @@ local providers = {
     },
 
     ['qb-vehiclekeys'] = {
-        add = function(veh, plate) TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate) return true end,
+        add = function(veh, plate)
+            return viaServer("add", veh, function()
+                TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
+
+                return true
+            end)
+        end,
+        -- The plate request to take a key back matches far more than one car.
+        remove = function(veh, plate)
+            return viaServer("remove", veh, function() return false end)
+        end,
     },
 
     ['vehicles_keys'] = {

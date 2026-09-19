@@ -51,7 +51,7 @@
         {
             "id": "dispatch",
             "label": "Dispatch",
-            "required": true,
+            "required": false,
             "count": 17,
             "resources": [
                 "bub-mdt",

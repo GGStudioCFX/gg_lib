@@ -33,30 +33,19 @@ local function decodeBase64(text)
     end))
 end
 
-local function encodeBase64(data)
-    return ((data:gsub(".", function(char)
-        local byte, bits = string.byte(char), ""
-        for position = 8, 1, -1 do
-            bits = bits .. (byte % 2 ^ position - byte % 2 ^ (position - 1) > 0 and "1" or "0")
-        end
-
-        return bits
-    end) .. "0000"):gsub("%d%d%d?%d?%d?%d?", function(bits)
-        if #bits < 6 then return "" end
-
-        local index = 0
-        for position = 1, 6 do
-            index = index + (bits:sub(position, position) == "1" and 2 ^ (6 - position) or 0)
-        end
-
-        return ALPHABET:sub(index + 1, index + 1)
-    end) .. ({ "", "==", "=" })[#data % 3 + 1])
-end
-
 local function safeName(name)
     name = tostring(name or ""):gsub("[^%w%-_]", "")
 
     return name ~= "" and name or nil
+end
+
+local function safeFolder(folder)
+    if type(folder) ~= "string" then return nil end
+    folder = folder:gsub("\\", "/"):gsub("/+$", "")
+    folder = folder:gsub("^web/dist/", "")
+    if folder == "" or #folder > 128 or folder:sub(1, 1) == "/" or folder:find("[^%w%-%_/]", 1)
+        or folder:find("//", 1, true) then return nil end
+    return folder
 end
 
 local function saveLocally(target, folder, name, binary)
@@ -89,16 +78,25 @@ local function saveLocally(target, folder, name, binary)
     return ("%s/%s.webp"):format(folder, name)
 end
 
-local function uploadOrSave(key, target, folder, name, binary, source)
+local function uploadOrSave(storage, key, target, folder, name, base64, source, request)
+    local function report(location, reason)
+        TriggerClientEvent("gg_lib:screenshot:stored", source, name, location, request, reason)
+    end
+
     local function fallback(reason)
         if reason then print(("^3[gg_lib] screenshot: upload failed (%s), saving locally^0"):format(reason)) end
 
-        local relative = saveLocally(target, folder, name, binary)
-        TriggerClientEvent("gg_lib:screenshot:stored", source, name, relative)
+        local relative = saveLocally(target, folder, name, decodeBase64(base64))
+        report(relative, relative and nil or "local write failed")
     end
 
-    if not key or key == "" then
+    if storage == "local" or (storage == "auto" and (not key or key == "" or key == "YOUR_API_KEY")) then
         fallback(nil)
+        return
+    end
+
+    if not key or key == "" or key == "YOUR_API_KEY" then
+        fallback("FiveManage API key is missing")
         return
     end
 
@@ -107,16 +105,17 @@ local function uploadOrSave(key, target, folder, name, binary, source)
             local ok, parsed = pcall(json.decode, body)
             local url = ok and parsed and parsed.data and parsed.data.url
 
-            if url then
-                TriggerClientEvent("gg_lib:screenshot:stored", source, name, url)
+            if type(url) == "string" and url:match("^https://") then
+                report(url)
                 return
             end
         end
 
         fallback("HTTP " .. tostring(status))
     end, "POST", json.encode({
-        base64   = "data:image/webp;base64," .. encodeBase64(binary),
+        base64   = "data:image/webp;base64," .. base64,
         filename = name .. ".webp",
+        path     = target .. "/" .. folder,
     }), {
         ["Content-Type"]  = "application/json",
         ["Authorization"] = key,
@@ -129,6 +128,7 @@ RegisterNetEvent("gg_lib:screenshot:chunk", function(payload)
     if type(payload) ~= "table" then return end
 
     local name  = safeName(payload.id)
+    local request = safeName(payload.request) or name
     local index = tonumber(payload.index)
     local total = tonumber(payload.total)
 
@@ -136,24 +136,29 @@ RegisterNetEvent("gg_lib:screenshot:chunk", function(payload)
     if total < 1 or total > MAX_CHUNKS or index < 1 or index > total then return end
     if type(payload.body) ~= "string" then return end
 
-    if not Admins.canEdit(source) then
+    local target = safeName(payload.target) or RESOURCE
+
+    if not Admins.canEdit(source, target) then
         print(("^3[gg_lib] screenshot: blocked upload from %s^0"):format(Admins.actor(source)))
         return
     end
 
-    local key = ("%s:%s"):format(source, name)
+    local key = ("%s:%s"):format(source, request)
     local job = incoming[key]
 
-    if index == 1 or not job then
+    if index == 1 then
         job = { parts = {}, size = 0, total = total }
         incoming[key] = job
     end
 
+    if not job or job.blocked or job.total ~= total then return end
+
     job.size = job.size + #payload.body
 
     if job.size > MAX_BODY then
-        job.parts = {}
+        incoming[key] = { blocked = true }
         print(("^3[gg_lib] screenshot: '%s' exceeded the size limit^0"):format(name))
+        TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image exceeded the size limit")
         return
     end
     job.parts[index] = payload.body
@@ -162,14 +167,35 @@ RegisterNetEvent("gg_lib:screenshot:chunk", function(payload)
 
     incoming[key] = nil
 
+    for part = 1, total do
+        if type(job.parts[part]) ~= "string" then
+            TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image transfer was incomplete")
+            return
+        end
+    end
+
     local joined = table.concat(job.parts)
     local comma  = joined:find(",", 1, true)
     local body   = comma and joined:sub(comma + 1) or joined
 
-    local target = safeName((payload.target or ""):gsub("[^%w%-_]", "")) or RESOURCE
-    local folder = safeName(payload.folder) or "vehicle_images"
+    if body == "" then
+        TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image was empty")
+        return
+    end
 
-    uploadOrSave(GenericSettings.get("screenshot.upload_key"), target, folder, name, decodeBase64(body), source)
+    local folder = payload.folder == nil and "vehicle_images" or safeFolder(payload.folder)
+    if not folder then
+        TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image folder must be under the resource web root")
+        return
+    end
+
+    local storage = payload.storage
+    if storage ~= "local" and storage ~= "fivemanage" then
+        storage = GenericSettings.get("screenshot.storage") or "auto"
+    end
+    if storage ~= "local" and storage ~= "fivemanage" then storage = "auto" end
+
+    uploadOrSave(storage, GenericSettings.get("screenshot.upload_key"), target, folder, name, body, source, request)
 end)
 
 GGCallback.register("gg_lib:screenshot:spot", function()

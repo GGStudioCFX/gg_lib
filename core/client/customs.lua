@@ -218,6 +218,8 @@ local function scan(vehicle)
 
     local neonR, neonG, neonB = GetVehicleNeonLightsColour(vehicle)
     local xenonColour         = GetVehicleXenonLightsColor and GetVehicleXenonLightsColor(vehicle) or -1
+    local nativeLiveries      = math.max(0, GetVehicleLiveryCount(vehicle))
+    local modLiveries         = math.max(0, GetNumVehicleMods(vehicle, 48))
 
     return {
         model      = GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)):lower(),
@@ -239,7 +241,12 @@ local function scan(vehicle)
         },
         smoke   = smoke,
         tint    = GetVehicleWindowTint(vehicle),
-        livery  = { current = GetVehicleLivery(vehicle), count = GetVehicleLiveryCount(vehicle) },
+        livery  = {
+            current = GetVehicleLivery(vehicle),
+            count = nativeLiveries,
+            modCurrent = GetVehicleMod(vehicle, 48),
+            modCount = modLiveries,
+        },
         plate   = GetVehicleNumberPlateTextIndex(vehicle),
         xenon   = { on = IsToggleModOn(vehicle, 22), colour = xenonColour },
         neon    = {
@@ -295,6 +302,8 @@ local function apply(kind, id, value, extra)
         SetVehicleWindowTint(vehicle, value)
     elseif kind == "livery" then
         SetVehicleLivery(vehicle, value)
+    elseif kind == "modlivery" then
+        SetVehicleMod(vehicle, 48, value, false)
     elseif kind == "plate" then
         SetVehicleNumberPlateTextIndex(vehicle, value)
     elseif kind == "xenoncolour" then

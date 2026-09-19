@@ -306,6 +306,10 @@ exports("ggIsAdmin", function(source)
     return Admins.isAdmin(source)
 end)
 
+exports("ggCanEdit", function(source, resource)
+    return Admins.canEdit(source, resource)
+end)
+
 local function loadDatabase()
     -- Import each configured owner once. Keep the ledger when access is revoked.
     for identifier in pairs(pendingImports) do

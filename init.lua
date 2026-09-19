@@ -133,7 +133,7 @@ local function loadDefaults()
             local overrideState = GetResourceState(override)
             local running = overrideState == "started" or overrideState == "starting"
 
-            if not running then
+            if not running and category ~= "dispatch" then
                 print(("^3[gg_lib] the Bridges page picks %s = '%s', but that resource is not started^0"):format(category, override))
             end
 
@@ -369,7 +369,11 @@ local function loadDefaults()
 
             local ok, err = true, nil
 
-            if chunk then
+            if category == "dispatch" and not detail.running then
+                local install = fallback[category]
+                if install then pcall(install) end
+                ok = false
+            elseif chunk then
                 ok, err = pcall(chunk)
             elseif shared then
                 ok, err = pcall(function()
@@ -387,8 +391,10 @@ local function loadDefaults()
 
             loaded = ok
 
-            if not ok then
+            if not ok and err then
                 failure = tostring(err)
+
+                if category == "dispatch" and fallback.dispatch then pcall(fallback.dispatch) end
 
                 if not quiet then
                     print(("^1[gg_lib] bridge %s/%s failed to load in %s: %s^0"):format(category, resolved, RESOURCE, err))
