@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.8",
+    "latest": "2.0.9",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.9",
+            "at": 1789843698,
+            "kind": "fix",
+            "important": true,
+            "title": "Vehicle image captures",
+            "changes": [
+                "The Downtown Cab Co interior is bundled inside gg_taxijob_props again. Taxi requires only gg_taxijob and gg_taxijob_props; there is no separate MLO dependency.",
+                "Vehicle captures keep the confirmed FiveManage URL or local image path, and a local capture shows when gg_taxijob must be restarted to display the new photo.",
+                "Install the two Taxi folders together and update gg_lib first. Existing saved vehicle image paths continue to resolve."
+            ]
+        },
         {
             "version": "2.0.8",
             "at": 1789841644,
