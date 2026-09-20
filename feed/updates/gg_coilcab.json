@@ -1,9 +1,20 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.4",
+    "latest": "1.0.5",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.5",
+            "at": 1789918707,
+            "kind": "feature",
+            "important": false,
+            "title": "RoadPhone Pro support",
+            "changes": [
+                "CoilCab's phone app now supports RoadPhone Pro for booking, ride updates, notifications and text input.",
+                "Use the included RoadPhone Pro setup kit to add the app entry and icons to RoadPhone's AppStore config once. Install gg_lib 1.0.11 first."
+            ]
+        },
         {
             "version": "1.0.4",
             "at": 1789771573,

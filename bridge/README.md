@@ -200,8 +200,8 @@ after it is safe.
 
 ## Phone
 
-Eight resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
-`jpr-phonesystem`, `yseries`, `yphone`, `yflip-phone`, then `lb-phone` — sd-phone and
+Nine resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
+`jpr-phonesystem`, `roadphone`, `yseries`, `yphone`, `yflip-phone`, then `lb-phone` — sd-phone and
 sky_phone first because each stands in for several of the others (below),
 lb-phone last for the same reason ox and qb are: it is the one most likely to be
 sitting on a server as a dependency of the phone actually in use.
@@ -277,6 +277,30 @@ documented server event, `jpr-phonesystem:server:sendEmail`, with `subject`,
 server-side lookup from a number to a player, so a phone-number target answers
 `false`. Its optional `event` button and its offline `sendNewMailToOffline`
 export are not mapped. JPR's documentation covers QBCore, QBox, ESX and VRPex.
+
+### roadphone
+
+RoadPhone Pro registers custom apps from its `public/static/config/config.json`
+`AppStore` array. Its public client and server export lists do not expose a
+runtime custom-app registration or removal call. The product's `!SETUP` kit
+provides the one-time entries and icons. Selecting `roadphone` in the Bridges
+page (or detecting it) routes phone numbers and notifications through its
+documented exports; `app.add` records a logical registration but cannot edit
+RoadPhone's app catalog. `app.remove` clears that registration and any queued
+messages, not the phone's config entry.
+
+RoadPhone's custom-app iframe loads each product page with `?phone=roadphone`.
+There is no documented custom-app push channel. `send()` keeps at most 50 updates
+per app until the page drains them through the product's NUI callback. The page
+calls `window.parent.roadphone.inputFocus` for text fields and reads its dark-mode
+setting. The app entries use `default: true`, so players see them after the
+operator adds the entries and restarts RoadPhone. The public references are
+[Custom App API][roadphone-apps], [Client Exports][roadphone-client], and
+[Server Exports][roadphone-server].
+
+[roadphone-apps]: https://docs.roadshop.org/roadphonepro/custom-apps
+[roadphone-client]: https://docs.roadshop.org/roadphonepro/api/client
+[roadphone-server]: https://docs.roadshop.org/roadphonepro/api/server
 
 ### gksphone
 

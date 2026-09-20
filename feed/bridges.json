@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 106,
+    "total": 107,
     "categories": [
         {
             "id": "framework",
@@ -126,11 +126,12 @@
             "id": "phone",
             "label": "Phones",
             "required": false,
-            "count": 8,
+            "count": 9,
             "resources": [
                 "gksphone",
                 "jpr-phonesystem",
                 "lb-phone",
+                "roadphone",
                 "sd-phone",
                 "sky_phone",
                 "yflip-phone",

@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.9",
+    "latest": "2.0.10",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.10",
+            "at": 1789918707,
+            "kind": "fix",
+            "important": true,
+            "title": "Company capacity and RoadPhone Pro",
+            "changes": [
+                "Company member limits now follow the configured upgrade tier for new and existing companies; the creation preview shows the configured starting capacity.",
+                "Company challenges now choose cabs the company owns and has unlocked, and rider classes at its level. If a target becomes unavailable, its progress resets and an attainable goal replaces it.",
+                "RoadPhone Pro support is included. Add the included AppStore entry and icons to RoadPhone once, then GG Lib detects the phone and delivers live Taxi updates. Install gg_lib 1.0.11 first."
+            ]
+        },
         {
             "version": "2.0.9",
             "at": 1789843698,

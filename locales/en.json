@@ -534,6 +534,7 @@
     "schema.bridge.phone.label": "Phone",
     "schema.bridge.phone.options..label": "Auto detect",
     "schema.bridge.phone.options.lb-phone.label": "lb-phone",
+    "schema.bridge.phone.options.roadphone.label": "RoadPhone Pro",
     "schema.bridge.phone.options.sd-phone.label": "sd-phone",
     "schema.bridge.phone.options.yflip-phone.label": "yflip-phone",
     "schema.bridge.phone.options.yphone.label": "yphone",

@@ -69,6 +69,7 @@ return {
             "sky_phone",
             "gksphone",
             "jpr-phonesystem",
+            "roadphone",
             "yseries",
             "yphone",
             "yflip-phone",
