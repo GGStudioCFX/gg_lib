@@ -1,9 +1,20 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.5",
+    "latest": "1.0.6",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.6",
+            "at": 1789939447,
+            "kind": "fix",
+            "important": false,
+            "title": "Two-person boarding",
+            "changes": [
+                "The second rider now enters an available front passenger seat instead of the hidden cab controller seat.",
+                "Boarding pauses while the cab prepares its driver, preventing another rider from taking the controller seat."
+            ]
+        },
         {
             "version": "1.0.5",
             "at": 1789918707,
