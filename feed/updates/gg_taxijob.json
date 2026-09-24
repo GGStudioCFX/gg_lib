@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.10",
+    "latest": "2.0.11",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.11",
+            "at": 1790279707,
+            "kind": "fix",
+            "important": true,
+            "title": "Taxi menu and NPC pickup recovery",
+            "changes": [
+                "The Taxi tablet no longer crashes when daily reward settings arrive without a complete reward table. The overview uses configured values and safely handles partial menu data.",
+                "NPC pickup riders now retry after a failed spawn or if the ped disappears, instead of leaving the route waiting on a missing passenger.",
+                "Install gg_lib 1.0.11 first, then replace both included Taxi folders and restart gg_taxijob."
+            ]
+        },
         {
             "version": "2.0.10",
             "at": 1789918707,
