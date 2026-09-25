@@ -1,9 +1,21 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.6",
+    "latest": "1.0.7",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.7",
+            "at": 1790328075,
+            "kind": "feature",
+            "important": false,
+            "title": "Longer custom routes",
+            "changes": [
+                "Maximum Trip Distance can now be set as high as 30,000 m for longer rides on custom maps. The default stays at 6,000 m and existing saved limits remain as set.",
+                "Suggested Places are configured separately from the distance limit. Add or correct custom destinations so riders can select them in the phone app.",
+                "Install gg_lib 1.0.11, replace the included gg_coilcab folder, and restart CoilCab only when no rides are active."
+            ]
+        },
         {
             "version": "1.0.6",
             "at": 1789939447,
