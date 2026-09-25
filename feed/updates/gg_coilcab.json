@@ -1,9 +1,21 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.7",
+    "latest": "1.0.8",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.8",
+            "at": 1790329457,
+            "kind": "fix",
+            "important": false,
+            "title": "Longer trips by default",
+            "changes": [
+                "New CoilCab installations now start with Maximum Trip Distance at 30,000 m, matching the available ceiling, so long rides do not require changing the default setting.",
+                "Existing servers keep their saved Maximum Trip Distance until an operator changes it in Script Studio; the update does not overwrite custom settings.",
+                "Install CoilCab 1.0.8 with gg_lib 1.0.11, and restart gg_lib before CoilCab when no rides are active."
+            ]
+        },
         {
             "version": "1.0.7",
             "at": 1790328075,
