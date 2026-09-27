@@ -200,8 +200,8 @@ after it is safe.
 
 ## Phone
 
-Nine resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
-`jpr-phonesystem`, `roadphone`, `yseries`, `yphone`, `yflip-phone`, then `lb-phone` — sd-phone and
+Ten resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
+`jpr-phonesystem`, `roadphone`, `codem-phone`, `yseries`, `yphone`, `yflip-phone`, then `lb-phone` — sd-phone and
 sky_phone first because each stands in for several of the others (below),
 lb-phone last for the same reason ox and qb are: it is the one most likely to be
 sitting on a server as a dependency of the phone actually in use.
@@ -301,6 +301,35 @@ operator adds the entries and restarts RoadPhone. The public references are
 [roadphone-apps]: https://docs.roadshop.org/roadphonepro/custom-apps
 [roadphone-client]: https://docs.roadshop.org/roadphonepro/api/client
 [roadphone-server]: https://docs.roadshop.org/roadphonepro/api/server
+
+### codem-phone
+
+CodeM mPhone 2.5 registers apps at runtime through its client `AddCustomApp`.
+The bridge maps the key to `identifier` and passes `name`, `description`,
+`developer`, `icon` and `fixBlur`. A `defaultApp` goes on the home grid; any
+other app is published to the phone's App Store (`addAppStore`) for players to
+install. The ui URL is iframed as given, with `?phone=codem-phone` appended.
+Every added app is registered again two seconds after `codem-phone:phoneLoaded`,
+as the phone's own example app does, and a refused add is kept for that retry.
+
+There is no documented push-to-app, removal or installed-query export. `send()`
+keeps at most 50 updates per app until the page drains them through its own NUI
+callback. `remove` returns false for a registered app; disable the setting and
+restart the phone to clear it. `installed` tracks this consumer's registration.
+The page is cross-origin to the phone, so it reports focused text fields through
+`gg.phone.app.focus`, which calls `SetInputFocus`.
+
+The number is a server export only (`GetPhoneNumberBySource`), so the client asks
+the server over `gg.callback`. Notifications are the server `SendNotify`, styled
+by the app key; the client relays its own up. Mail to a source uses
+`SendMailBySource`; a number is turned into the phone's address with
+`GetSocialMediaUsername(number, 'mail')` and sent with `SendMail`, which also
+reaches offline owners. References: [Custom App][codem-apps],
+[Client Exports][codem-client], [Server Exports][codem-server].
+
+[codem-apps]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/custom-app
+[codem-client]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/exports-and-events/client-exports
+[codem-server]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/exports-and-events/server-exports
 
 ### gksphone
 

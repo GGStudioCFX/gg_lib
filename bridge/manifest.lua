@@ -70,6 +70,7 @@ return {
             "gksphone",
             "jpr-phonesystem",
             "roadphone",
+            "codem-phone",
             "yseries",
             "yphone",
             "yflip-phone",

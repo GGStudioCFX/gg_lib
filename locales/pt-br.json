@@ -533,6 +533,7 @@
     "schema.bridge.keys.options.wasabi_carlock.label": "wasabi_carlock",
     "schema.bridge.phone.label": "Telefone",
     "schema.bridge.phone.options..label": "Detectar automaticamente",
+    "schema.bridge.phone.options.codem-phone.label": "CodeM mPhone",
     "schema.bridge.phone.options.lb-phone.label": "lb-phone",
     "schema.bridge.phone.options.roadphone.label": "RoadPhone Pro",
     "schema.bridge.phone.options.sd-phone.label": "sd-phone",
