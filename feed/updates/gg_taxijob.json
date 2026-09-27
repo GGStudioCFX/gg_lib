@@ -1,9 +1,20 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.11",
+    "latest": "2.0.12",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.12",
+            "at": 1790544768,
+            "kind": "feature",
+            "important": false,
+            "title": "CodeM mPhone support",
+            "changes": [
+                "The Taxi app now works on CodeM mPhone 2.5. GG Lib adds it to the phone automatically, with booking, live ride updates, phone notifications and text fields that keep your typing out of the game.",
+                "Install gg_lib 1.0.12 first, then replace both included Taxi folders and restart gg_taxijob."
+            ]
+        },
         {
             "version": "2.0.11",
             "at": 1790279707,

@@ -1,9 +1,20 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.8",
+    "latest": "1.0.9",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.9",
+            "at": 1790544768,
+            "kind": "feature",
+            "important": false,
+            "title": "CodeM mPhone support",
+            "changes": [
+                "CoilCab's phone app now works on CodeM mPhone 2.5 for booking, ride updates, notifications and text input. GG Lib adds the app automatically, so nothing is installed in the phone.",
+                "Install gg_lib 1.0.12 first, replace the included gg_coilcab folder, and restart CoilCab only when no rides are active."
+            ]
+        },
         {
             "version": "1.0.8",
             "at": 1790329457,
