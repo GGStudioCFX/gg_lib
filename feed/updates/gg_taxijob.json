@@ -1,9 +1,21 @@
 {
     "label": "gg_taxijob",
     "resource": "gg_taxijob",
-    "latest": "2.0.12",
+    "latest": "2.0.13",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.0.13",
+            "at": 1790675745,
+            "kind": "feature",
+            "important": false,
+            "title": "Local cab speed setting",
+            "changes": [
+                "New Local Cab Speed setting under Advanced sets how fast the NPC local cab drives to the caller and to the destination, for both the hail command and the phone app.",
+                "The default stays at 16 m/s (about 58 km/h or 36 mph), so rides are unchanged until you raise it. The range is 8 to 40 m/s, and a change applies to the next local cab ride without a restart.",
+                "Replace both included Taxi folders and restart gg_taxijob. gg_lib 1.0.12 is still the required version."
+            ]
+        },
         {
             "version": "2.0.12",
             "at": 1790544768,
