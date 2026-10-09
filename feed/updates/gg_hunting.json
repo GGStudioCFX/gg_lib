@@ -1,0 +1,19 @@
+{
+    "label": "gg_hunting",
+    "resource": "gg_hunting",
+    "latest": "2.1.8",
+    "url": "https://discord.gg/DqMXJzATph",
+    "updates": [
+        {
+            "version": "2.1.8",
+            "at": 1791569682,
+            "kind": "fix",
+            "important": false,
+            "title": "Rental and selling fixes",
+            "changes": [
+                "The rented four wheeler starts with W and spawns repaired, and a carcass that won't fit no longer blocks the vehicle slot.",
+                "Selling works on one_inventory."
+            ]
+        }
+    ]
+}
