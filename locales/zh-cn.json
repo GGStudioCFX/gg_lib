@@ -121,6 +121,8 @@
     "bridge_issue_stopped": "%s——没有已启动的资源；%s 已安装但已停止。请运行 ensure %s",
     "bridge_no_version": "无版本",
     "bridge_none": "未检测到",
+    "bridge_phone_free": "sd-phone 是目前 FiveM 上最好的免费手机",
+    "bridge_phone_get": "获取 sd-phone",
     "bridge_not_installed": "未安装",
     "bridge_not_running": "未启动",
     "bridge_nothing_started": "没有已启动的资源——请安装一个受支持的资源",

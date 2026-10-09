@@ -121,6 +121,8 @@
     "bridge_issue_stopped": "%s — ничего не запущено; %s установлен, но остановлен. Выполните ensure %s",
     "bridge_no_version": "Нет версии",
     "bridge_none": "Не обнаружено",
+    "bridge_phone_free": "sd-phone — лучший бесплатный телефон для FiveM на сегодня",
+    "bridge_phone_get": "Скачать sd-phone",
     "bridge_not_installed": "Не установлено",
     "bridge_not_running": "Не запущено",
     "bridge_nothing_started": "Ничего не запущено — установите один из поддерживаемых ресурсов",

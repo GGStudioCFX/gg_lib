@@ -121,6 +121,8 @@
     "bridge_issue_stopped": "%s — 起動しているものがありません。%s はインストール済みですが停止中です。ensure %s を実行してください",
     "bridge_no_version": "バージョンなし",
     "bridge_none": "検出なし",
+    "bridge_phone_free": "sd-phone は現在 FiveM で最高の無料スマホです",
+    "bridge_phone_get": "sd-phone を入手",
     "bridge_not_installed": "未インストール",
     "bridge_not_running": "未起動",
     "bridge_nothing_started": "起動しているものがありません — 対応リソースのいずれかをインストールしてください",

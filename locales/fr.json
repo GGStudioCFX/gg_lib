@@ -121,6 +121,8 @@
     "bridge_issue_stopped": "%s -- rien de démarré ; %s est installé mais arrêté. Lance ensure %s",
     "bridge_no_version": "sans version",
     "bridge_none": "Aucun détecté",
+    "bridge_phone_free": "sd-phone est actuellement le meilleur téléphone gratuit pour FiveM",
+    "bridge_phone_get": "Obtenir sd-phone",
     "bridge_not_installed": "Non installé",
     "bridge_not_running": "Non démarré",
     "bridge_nothing_started": "Rien de démarré -- installe une des ressources prises en charge",

@@ -121,6 +121,8 @@
     "bridge_issue_stopped": "%s -- niets gestart; %s is geïnstalleerd maar gestopt. Voer ensure %s uit",
     "bridge_no_version": "geen versie",
     "bridge_none": "Niets gedetecteerd",
+    "bridge_phone_free": "sd-phone is op dit moment de beste gratis telefoon voor FiveM",
+    "bridge_phone_get": "sd-phone downloaden",
     "bridge_not_installed": "Niet geïnstalleerd",
     "bridge_not_running": "Niet gestart",
     "bridge_nothing_started": "Niets gestart -- installeer een van de ondersteunde resources",
