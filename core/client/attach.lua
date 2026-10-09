@@ -51,6 +51,9 @@ local testCar = nil
 local anchorProp = nil
 
 local job = nil
+local liveCamera = nil
+local liveView = nil
+local exit
 
 local followers = {}
 
@@ -144,6 +147,16 @@ local function clamp(value, low, high)
     return value
 end
 
+local function liveLook(dx, dy, nativeInput)
+    if not liveView then return end
+    GG_ATTACH_CABIN.look(liveView, dx, dy, nativeInput)
+end
+
+local function liveMove(forward, right, up, seconds, fast)
+    if not liveView then return end
+    GG_ATTACH_CABIN.move(liveView, forward, right, up, seconds, fast)
+end
+
 local function measureFrame()
     if not (prop and DoesEntityExist(prop)) then return end
 
@@ -218,9 +231,36 @@ local function clearProp()
     prop_centre = { x = 0.0, y = 0.0, z = 0.0 }
 end
 
+local function placementTransform()
+    local x, y, z = math.rad(state.rot.x), math.rad(state.rot.y), math.rad(state.rot.z)
+    local cx, sx, cy, sy, cz, sz = math.cos(x), math.sin(x), math.cos(y), math.sin(y), math.cos(z), math.sin(z)
+    local function direction(a, b, c)
+        return { x = frame.right.x * a + frame.forward.x * b + frame.up.x * c,
+            y = frame.right.y * a + frame.forward.y * b + frame.up.y * c,
+            z = frame.right.z * a + frame.forward.z * b + frame.up.z * c }
+    end
+    local offset = direction(state.pos.x, state.pos.y, state.pos.z)
+    local at = { x = frame.origin.x + offset.x, y = frame.origin.y + offset.y, z = frame.origin.z + offset.z }
+    return at, direction(cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy),
+        direction(-sz * cx, cz * cx, sx), direction(cz * sy + sz * sx * cy, sz * sy - cz * sx * cy, cx * cy)
+end
+
 local function reattach()
     if not (prop and DoesEntityExist(prop)) then return end
 
+    if liveView and frame then
+        local origin, right, forward, up = placementTransform()
+        local low, high = GetModelDimensions(GetEntityModel(prop))
+        local fitted, limited = GG_ATTACH_CABIN.fit(liveView, origin, right, forward, up, low, high)
+        job.blocked, job.limited = fitted == nil, limited
+        if fitted and limited then
+            state.pos, state.rot = toBoneSpace(fitted, right, forward, up)
+        end
+        SetEntityVisible(prop, fitted ~= nil, false)
+        SendNUIMessage({ action = "attach_values", data = {
+            POS = state.pos, ROT = state.rot, LIMITED = limited, BLOCKED = fitted == nil,
+        } })
+    end
     AttachEntityToEntity(
         prop, targetEntity(), boneIndex(),
         state.pos.x, state.pos.y, state.pos.z,
@@ -443,7 +483,7 @@ local function spawn(model)
     prop = made
 
     state.model = model
-    prop_centre = modelCentre(hash)
+    prop_centre = job and job.liveVehicle and job.pivot or modelCentre(hash)
 
     measureFrame()
     reattach()
@@ -479,12 +519,15 @@ local function paintVehicle(vehicle, color)
     end
 end
 local function clearCar()
-    if testCar and DoesEntityExist(testCar) then DeleteEntity(testCar) end
+    if testCar and DoesEntityExist(testCar) and not (job and job.liveVehicle == testCar) then
+        DeleteEntity(testCar)
+    end
 
     testCar = nil
 end
 
 local function spawnCar(model)
+    if job and job.liveVehicle then return false end
     clearCar()
 
     local vehicle, why = GG_EDITOR_STAGE.spawn(model)
@@ -786,7 +829,20 @@ local function enter()
     open = true
     hadFocus = IsNuiFocused()
 
-    GG_EDITOR_STAGE.enter()
+    local liveVehicle = job and job.liveVehicle
+    liveView = nil
+    if liveVehicle then
+        local why
+        liveView, why = GG_ATTACH_CABIN.create(liveVehicle)
+        if not liveView then
+            job.failed = why
+            exit()
+            return
+        end
+    end
+    if not liveVehicle then
+        GG_EDITOR_STAGE.enter()
+    end
 
     cursor = true
 
@@ -794,25 +850,76 @@ local function enter()
 
     watchCursor()
 
-    playerAnimating = false
-
-    settlePlayer()
-
-    CreateThread(function()
-        local mode = GetFollowPedCamViewMode()
-
-        while open do
-            local now = GetFollowPedCamViewMode()
-
-            if now ~= mode then
-                mode = now
-
-                settlePlayer()
+    if liveVehicle then
+        CreateThread(function()
+            while open and job and job.liveVehicle == liveVehicle do
+                for _, control in ipairs({ 21, 38, 44, 46, 51, 52, 54, 59, 60, 61, 62, 63, 64, 71, 72, 75, 76, 241, 242 }) do
+                    DisableControlAction(0, control, true)
+                end
+                if not DoesEntityExist(liveVehicle)
+                    or GetVehiclePedIsIn(PlayerPedId(), false) ~= liveVehicle
+                    or (job.liveSeat ~= nil
+                        and GetPedInVehicleSeat(liveVehicle, job.liveSeat) ~= PlayerPedId()) then
+                    job.failed = "you left the vehicle during placement"
+                    exit()
+                    return
+                end
+                if liveView and not GG_ATTACH_CABIN.stationary(liveView, liveVehicle) then
+                    job.failed = "keep the vehicle parked during placement"
+                    exit()
+                    return
+                end
+                if liveView then
+                    if not cursor then
+                        liveLook(GetControlNormal(0, 1), GetControlNormal(0, 2), true)
+                        local forward = (IsDisabledControlPressed(0, 71) and 1 or 0) - (IsDisabledControlPressed(0, 72) and 1 or 0)
+                        local right = (IsDisabledControlPressed(0, 64) and 1 or 0) - (IsDisabledControlPressed(0, 63) and 1 or 0)
+                        local up = (IsDisabledControlPressed(0, 38) and 1 or 0) - (IsDisabledControlPressed(0, 44) and 1 or 0)
+                        liveMove(forward, right, up, GetFrameTime(), IsDisabledControlPressed(0, 21))
+                        if IsDisabledControlJustPressed(0, 241) then liveMove(1, 0, 0, 0.05, true) end
+                        if IsDisabledControlJustPressed(0, 242) then liveMove(-1, 0, 0, 0.05, true) end
+                    end
+                    local newCamera = false
+                    if not liveCamera then
+                        local created = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+                        if created and created ~= 0 then
+                            liveCamera = created
+                            SetCamNearClip(liveCamera, 0.025)
+                            newCamera = true
+                        end
+                    end
+                    if liveCamera then
+                        local cameraAt, lookingAt = GG_ATTACH_CABIN.camera(liveView)
+                        SetCamCoord(liveCamera, cameraAt.x, cameraAt.y, cameraAt.z)
+                        SetCamFov(liveCamera, liveView.fov)
+                        PointCamAtCoord(liveCamera, lookingAt.x, lookingAt.y, lookingAt.z)
+                        if newCamera then RenderScriptCams(true, false, 0, true, true) end
+                    end
+                end
+                Wait(0)
             end
+        end)
+    else
+        playerAnimating = false
 
-            Wait(250)
-        end
-    end)
+        settlePlayer()
+
+        CreateThread(function()
+            local mode = GetFollowPedCamViewMode()
+
+            while open do
+                local now = GetFollowPedCamViewMode()
+
+                if now ~= mode then
+                    mode = now
+
+                    settlePlayer()
+                end
+
+                Wait(250)
+            end
+        end)
+    end
 
     CreateThread(function()
         while open do
@@ -835,9 +942,9 @@ end
 local function modelTop(name)
     if type(name) ~= "string" or name == "" then return nil end
 
-    local hash = joaat(name)
+    local hash = GG_EDITOR_STAGE.modelHash(name)
 
-    if not IsModelInCdimage(hash) then return nil end
+    if not hash or not IsModelInCdimage(hash) then return nil end
 
     RequestModel(hash)
 
@@ -879,23 +986,34 @@ local function publishJob()
             TITLE   = job.title,
             SUBJECT = job.subject,
             VEHICLE = job.vehicle,
+            LIVE    = job.liveVehicle ~= nil,
             KIT     = job.kit,
             KITS    = job.kitList,
         },
     })
 end
-local function exit()
+exit = function()
     if not open then return end
 
+    local liveVehicle = job and job.liveVehicle
     open = false
     cursor = true
+    liveView = nil
 
     clearProp()
     clearCar()
     clearAnchor()
-    releasePlayer()
-    restorePed()
-    GG_EDITOR_STAGE.leave()
+    if liveVehicle then
+        if liveCamera then
+            RenderScriptCams(false, false, 0, true, true)
+            DestroyCam(liveCamera, false)
+            liveCamera = nil
+        end
+    else
+        releasePlayer()
+        restorePed()
+        GG_EDITOR_STAGE.leave()
+    end
 
     frame = nil
 
@@ -946,6 +1064,12 @@ end
 local function runJob(options, owner)
     if open then return "the placement editor is already open" end
     if type(options) ~= "table" then return "nothing to place" end
+    local liveVehicle = options.liveVehicle
+    if liveVehicle ~= nil and (not DoesEntityExist(liveVehicle) or GetEntityType(liveVehicle) ~= 2
+        or GetVehiclePedIsIn(PlayerPedId(), false) ~= liveVehicle
+        or (options.liveSeat ~= nil and GetPedInVehicleSeat(liveVehicle, options.liveSeat) ~= PlayerPedId())) then
+        return "sit in the vehicle before placing"
+    end
 
     local kits, list = {}, {}
 
@@ -979,6 +1103,11 @@ local function runJob(options, owner)
         title   = options.title or "Placement",
         subject = options.subject,
         vehicle = options.vehicle,
+        liveVehicle = liveVehicle,
+        liveSeat = options.liveSeat,
+        pivot = liveVehicle and type(options.pivot) == "table" and vec3of(options.pivot) or nil,
+        initialPos = vec3of(options.pos),
+        initialRot = vec3of(options.rot),
         color   = type(options.color) == "table" and options.color or nil,
         properties = type(options.properties) == "table" and options.properties or nil,
         kits    = kits,
@@ -1001,7 +1130,7 @@ local function runJob(options, owner)
     state.pos      = vec3of(options.pos)
     state.rot      = vec3of(options.rot)
 
-    if state.pos.x == 0.0 and state.pos.y == 0.0 and state.pos.z == 0.0 then
+    if not liveVehicle and state.pos.x == 0.0 and state.pos.y == 0.0 and state.pos.z == 0.0 then
         local here = modelTop(options.vehicle)
         local authored = modelTop(options.authored_for)
 
@@ -1012,9 +1141,26 @@ local function runJob(options, owner)
         end
     end
 
+    if liveVehicle then
+        testCar = liveVehicle
+        state.vehicle = options.vehicle
+    end
+
+    local answer = job.answer
     enter()
 
+    if not open then return Citizen.Await(answer) end
+
     CreateThread(function()
+        if liveVehicle then
+            if not job or job.liveVehicle ~= liveVehicle then return end
+            local fitted, fitErr = pcall(applyKit, job.kit)
+            if not fitted then
+                if job then job.failed = tostring(fitErr) end
+                exit()
+            end
+            return
+        end
         if not spawnCar(options.vehicle) then
             fault("%s would not spawn", tostring(options.vehicle))
 
@@ -1040,7 +1186,7 @@ local function runJob(options, owner)
         if not fitted then fault("could not fit the kit: %s", tostring(fitErr)) end
     end)
 
-    return Citizen.Await(job.answer)
+    return Citizen.Await(answer)
 end
 
 RegisterNUICallback("attach_enter", function(_, cb)
@@ -1053,6 +1199,23 @@ RegisterNUICallback("attach_look", function(data, cb)
     cb({ ok = true })
 
     setCursor(not (data and data.free == true))
+end)
+
+RegisterNUICallback("attach_camera_input", function(data, cb)
+    if not open or not job or not job.liveVehicle or not cursor or not liveView or type(data) ~= "table" then
+        cb({ ok = false })
+        return
+    end
+    local function finite(value, low, high)
+        if type(value) ~= "number" or value ~= value or value == math.huge or value == -math.huge then return 0.0 end
+        return clamp(value, low, high)
+    end
+    if type(data.preset) == "string" then GG_ATTACH_CABIN.preset(liveView, data.preset) end
+    liveView.fov = clamp(liveView.fov + finite(data.zoom, -5.0, 5.0), 40.0, 80.0)
+    liveLook(finite(data.lookX, -0.25, 0.25), finite(data.lookY, -0.25, 0.25))
+    liveMove(finite(data.forward, -1.0, 1.0), finite(data.right, -1.0, 1.0), finite(data.up, -1.0, 1.0),
+        finite(data.seconds, 0.0, 0.05), data.fast == true)
+    cb({ ok = true })
 end)
 
 RegisterNUICallback("attach_exit", function(_, cb)
@@ -1245,9 +1408,16 @@ RegisterNUICallback("attach_bone", function(data, cb)
 end)
 
 RegisterNUICallback("attach_gizmo", function(data, cb)
-    cb({ ok = true })
-
-    if type(data) ~= "table" or not data.at then return end
+    if not open or not frame or not prop or type(data) ~= "table" then cb({ ok = false }) return end
+    for _, name in ipairs({ "at", "right", "forward", "up" }) do
+        if type(data[name]) ~= "table" then cb({ ok = false }) return end
+        for _, axis in ipairs({ "x", "y", "z" }) do
+            local value = data[name][axis]
+            if type(value) ~= "number" or value ~= value or math.abs(value) == math.huge then
+                cb({ ok = false }) return
+            end
+        end
+    end
 
     local right, forward, up = data.right, data.forward, data.up
 
@@ -1259,13 +1429,31 @@ RegisterNUICallback("attach_gizmo", function(data, cb)
 
     local pos, rot = toBoneSpace(at, right, forward, up)
 
-    if not pos then return end
+    if not pos then cb({ ok = false }) return end
 
     state.pos, state.rot = pos, rot
 
     reattach()
 
-    SendNUIMessage({ action = "attach_values", data = { POS = pos, ROT = rot } })
+    SendNUIMessage({ action = "attach_values", data = { POS = state.pos, ROT = state.rot } })
+    local origin, fittedRight, fittedForward, fittedUp = placementTransform()
+    cb({ ok = true, at = {
+        x = origin.x + fittedRight.x * prop_centre.x + fittedForward.x * prop_centre.y + fittedUp.x * prop_centre.z,
+        y = origin.y + fittedRight.y * prop_centre.x + fittedForward.y * prop_centre.y + fittedUp.y * prop_centre.z,
+        z = origin.z + fittedRight.z * prop_centre.x + fittedForward.z * prop_centre.y + fittedUp.z * prop_centre.z,
+    } })
+end)
+
+RegisterNUICallback("attach_nudge", function(data, cb)
+    if not open or not job or not job.liveVehicle or type(data) ~= "table"
+        or (data.axis ~= "x" and data.axis ~= "y" and data.axis ~= "z")
+        or (data.direction ~= 1 and data.direction ~= -1) then cb({ ok = false }) return end
+    local target = data.rotate == true and state.rot or state.pos
+    local step = data.rotate == true and 2.0 or 0.01
+    target[data.axis] = target[data.axis] + step * data.direction
+    reattach()
+    publishProp()
+    cb({ ok = true })
 end)
 
 RegisterNUICallback("attach_example", function(data, cb)
@@ -1375,8 +1563,8 @@ end)
 RegisterNUICallback("attach_reset", function(_, cb)
     cb({ ok = true })
 
-    state.pos = { x = 0.0, y = 0.0, z = 0.0 }
-    state.rot = { x = 0.0, y = 0.0, z = 0.0 }
+    state.pos = job and job.liveVehicle and vec3of(job.initialPos) or { x = 0.0, y = 0.0, z = 0.0 }
+    state.rot = job and job.liveVehicle and vec3of(job.initialRot) or { x = 0.0, y = 0.0, z = 0.0 }
 
     CreateThread(rebuild)
 
@@ -1430,9 +1618,10 @@ RegisterNUICallback("attach_kit", function(data, cb)
 end)
 
 RegisterNUICallback("attach_save", function(_, cb)
+    if not job then cb({ ok = false }) return end
+    reattach()
+    if job.blocked then cb({ ok = false }) return end
     cb({ ok = true })
-
-    if not job then return end
 
     job.result = {
         kit = job.kit,
@@ -1455,20 +1644,30 @@ AddEventHandler("onClientResourceStop", function(resource)
         return
     end
 
+    local liveVehicle = job and job.liveVehicle
     clearProp()
     clearCar()
     clearAnchor()
-    releasePlayer()
+    if not liveVehicle then releasePlayer() end
 
-    restorePed()
+    if not liveVehicle then restorePed() end
 
     if open then
-        GG_EDITOR_STAGE.leave()
+        if liveVehicle then
+            if liveCamera then
+                RenderScriptCams(false, false, 0, true, true)
+                DestroyCam(liveCamera, false)
+                liveCamera = nil
+            end
+        else
+            GG_EDITOR_STAGE.leave()
+        end
 
         SetNuiFocus(false, false)
 
         open = false
     end
+    liveView = nil
 
     if job then
         local answer = job.answer

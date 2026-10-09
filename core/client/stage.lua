@@ -78,14 +78,28 @@ function GG_EDITOR_STAGE.active()
     return active
 end
 
+function GG_EDITOR_STAGE.modelHash(model)
+    if type(model) ~= "string" or model == "" then return nil end
+
+    if model:sub(1, 5) ~= "hash:" then return joaat(model) end
+
+    local digits = model:sub(6)
+    if not digits:match("^%-?%d+$") then return nil end
+
+    local hash = tonumber(digits)
+    if not hash or hash < -2147483648 or hash > 4294967295 then return nil end
+
+    return hash
+end
+
 function GG_EDITOR_STAGE.spawn(model, heading)
     if type(model) ~= "string" or model == "" then
         return nil, "no vehicle model"
     end
 
-    local hash = joaat(model)
+    local hash = GG_EDITOR_STAGE.modelHash(model)
 
-    if not IsModelInCdimage(hash) then
+    if not hash or not IsModelInCdimage(hash) then
         return nil, ("vehicle model '%s' is not in the game"):format(model)
     end
 
