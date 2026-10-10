@@ -1,6 +1,15 @@
 {
-    "publishedAt": 1789749586,
+    "publishedAt": 1791628088,
     "products": [
+        {
+            "id": "gg_speakersystem",
+            "resource": "gg_speakersystem",
+            "name": "Speaker System",
+            "blurb": "Handheld speakers, placed stereos, music-synced beam and strobe lights and car dash tablets with a subwoofer, all played from the Speaker Connect phone app.",
+            "icon": "fa-volume-high",
+            "url": "https://www.ggstudio.store/scripts/speakers",
+            "hot": true
+        },
         {
             "id": "gg_hunting",
             "resource": "gg_hunting",

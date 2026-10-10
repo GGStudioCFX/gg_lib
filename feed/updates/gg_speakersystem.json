@@ -1,0 +1,19 @@
+{
+    "label": "gg_speakersystem",
+    "resource": "gg_speakersystem",
+    "latest": "1.0.0",
+    "url": "https://discord.gg/DqMXJzATph",
+    "updates": [
+        {
+            "version": "1.0.0",
+            "at": 1791628088,
+            "kind": "feature",
+            "important": false,
+            "title": "Speaker System is here",
+            "changes": [
+                "Speakers, stereos, beam and strobe lights and car dash tablets with a subwoofer, all played from the Speaker Connect phone app.",
+                "Needs gg_lib 1.0.13 or newer."
+            ]
+        }
+    ]
+}

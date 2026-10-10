@@ -2,6 +2,7 @@
     "publishedAt": 1791559586,
     "version": "1.0.14",
     "ticker": [
+        "Speaker System 1.0.0 is out: speakers, light rigs and car tablets",
         "gg_lib 1.0.14: free phone tip on the Bridges page",
         "Comment on the release post in Discord for a chance to win the upcoming Coil Cab"
     ],
@@ -9,8 +10,21 @@
         "discord": "https://discord.gg/DqMXJzATph",
         "store": "https://www.ggstudio.store"
     },
-    "featured": "taxi-2-0",
+    "featured": "speaker-system-1-0",
     "promos": [
+        {
+            "id": "speaker-system-1-0",
+            "kind": "release",
+            "title": "Speaker System 1.0.0",
+            "tag": "Speaker System",
+            "icon": "fa-volume-high",
+            "accent": "#1ED760",
+            "body": "Handheld speakers, placed stereos, beam and strobe lights that keep time with the music, and car dash tablets with an optional subwoofer. Everything is played and linked from the Speaker Connect phone app, and every setting is in Script Studio.",
+            "version": "1.0.0",
+            "at": 1791628088,
+            "url": "https://www.ggstudio.store/scripts/speakers",
+            "cta": "View on the store"
+        },
         {
             "id": "taxi-2-0",
             "kind": "release",
