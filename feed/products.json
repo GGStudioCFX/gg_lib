@@ -8,7 +8,8 @@
             "blurb": "Handheld speakers, placed stereos, music-synced beam and strobe lights and car dash tablets with a subwoofer, all played from the Speaker Connect phone app.",
             "icon": "fa-volume-high",
             "url": "https://www.ggstudio.store/scripts/speakers",
-            "hot": true
+            "hot": true,
+            "releaseAt": 1791648000
         },
         {
             "id": "gg_hunting",

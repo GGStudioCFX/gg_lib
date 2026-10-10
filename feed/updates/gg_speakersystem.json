@@ -6,6 +6,7 @@
     "updates": [
         {
             "version": "1.0.0",
+            "releaseAt": 1791648000,
             "at": 1791628088,
             "kind": "feature",
             "important": false,

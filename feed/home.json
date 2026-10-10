@@ -2,7 +2,11 @@
     "publishedAt": 1791559586,
     "version": "1.0.15",
     "ticker": [
-        "Speaker System 1.0.0 is out: speakers, light rigs and car tablets",
+        "Speaker System 1.0.0: speakers, light rigs and car tablets",
+        {
+            "soon": "Speaker System drops today at 12 PM ET",
+            "releaseAt": 1791648000
+        },
         "gg_lib 1.0.15: release countdowns on the Home page",
         "Comment on the release post in Discord for a chance to win the upcoming Coil Cab"
     ],
@@ -22,6 +26,7 @@
             "body": "Handheld speakers, placed stereos, beam and strobe lights that keep time with the music, and car dash tablets with an optional subwoofer. Everything is played and linked from the Speaker Connect phone app, and every setting is in Script Studio.",
             "version": "1.0.0",
             "at": 1791628088,
+            "releaseAt": 1791648000,
             "url": "https://www.ggstudio.store/scripts/speakers",
             "cta": "View on the store"
         },
