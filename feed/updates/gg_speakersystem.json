@@ -1,9 +1,20 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.0",
+    "latest": "1.0.1",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.1",
+            "at": 1791650605,
+            "kind": "fix",
+            "important": true,
+            "title": "QBCore speaker pick-up fix",
+            "changes": [
+                "Fixed an oversight on QBCore where a picked-up speaker dropped back to the ground a second later.",
+                "It now stays in hand until you set it down or put it away."
+            ]
+        },
         {
             "version": "1.0.0",
             "releaseAt": 1791648000,
