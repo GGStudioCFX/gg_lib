@@ -1,13 +1,13 @@
 {
-    "publishedAt": 1791559586,
-    "version": "1.0.15",
+    "publishedAt": 1791676547,
+    "version": "1.0.16",
     "ticker": [
         "Speaker System 1.0.0: speakers, light rigs and car tablets",
         {
             "soon": "Speaker System drops today at 12 PM ET",
             "releaseAt": 1791648000
         },
-        "gg_lib 1.0.15: release countdowns on the Home page",
+        "gg_lib 1.0.16: Quasar Smartphone V3 and PRO phone support",
         "Comment on the release post in Discord for a chance to win the upcoming Coil Cab"
     ],
     "links": {
