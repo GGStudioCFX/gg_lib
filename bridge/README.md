@@ -200,8 +200,9 @@ after it is safe.
 
 ## Phone
 
-Ten resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
-`jpr-phonesystem`, `roadphone`, `codem-phone`, `yseries`, `yphone`, `yflip-phone`, then `lb-phone` — sd-phone and
+Twelve resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
+`jpr-phonesystem`, `roadphone`, `codem-phone`, `qs-smartphone-pro`, `qs-smartphone`, `yseries`, `yphone`,
+`yflip-phone`, then `lb-phone` — sd-phone and
 sky_phone first because each stands in for several of the others (below),
 lb-phone last for the same reason ox and qb are: it is the one most likely to be
 sitting on a server as a dependency of the phone actually in use.
@@ -248,7 +249,8 @@ Mail on lb-phone and sd-phone goes to the phone's email account: a number or a
 source is looked up with `GetEmailAddress`, and a target containing `@` is used
 as the address itself.
 
-`drain` exists for JPR (below). A page that polls it through its own resource
+`drain` exists for the phones that cannot push into an app (JPR, RoadPhone, CodeM
+and both Quasar phones, below). A page that polls it through its own resource
 every second or so works on every phone; on the ones that push, it just always
 comes back empty.
 
@@ -330,6 +332,69 @@ reaches offline owners. References: [Custom App][codem-apps],
 [codem-apps]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/custom-app
 [codem-client]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/exports-and-events/client-exports
 [codem-server]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/exports-and-events/server-exports
+
+### qs-smartphone and qs-smartphone-pro
+
+Quasar has two phones that take custom apps, with different APIs. One file,
+`qs-smartphone`, speaks both; the `qs-smartphone-pro` folder runs it with
+`GG_PHONE_EXPORT` set, the way yphone runs yseries.
+
+- **Smartphone V3** (also sold as Smartphone 2026), resource `qs-smartphone`.
+  The bridge registers from the client with `addCustomApp({ id, label, icon,
+  iframe = { url } })`, plus `description`, `creator`, `sizeMb` and
+  `appStoreOnly` (set for `defaultApp = false`), as Quasar's own example app does.
+  `removeCustomApp(id)` takes it off, and the phone also drops it by itself when
+  the resource that added it stops. `installed` asks `getCustomApps`.
+  Notifications are a server export, `sendPhoneNotification(source, { appId,
+  title, text })`; the client relays its own up. The number is the server
+  `GetCurrentPhoneNumber(source)`, and the client asks for it over
+  `gg.callback`. Mail is `SendMail(source, subject, message)`. A number target
+  is matched to the online player holding it, because V3 has no lookup from a
+  number. An address target answers false.
+- **Smartphone PRO**, resource `qs-smartphone-pro`. Apps are registered from the
+  client with `addCustomApp({ app, label, ui, image, ... })` and removed with
+  `removeCustomApp(app)`. The bridge fills every field of Quasar's template
+  (`creator`, `category`, `age`, `isGame`, `job`, `blockedJobs`, `timeout`,
+  `extraDescription`), and sends the icon as both `image` and `icon`.
+  Notifications are the client `SendTempNotification({ title, text, app,
+  timeout })`, and the server sends its own down to the client. The number is
+  the server `GetPhoneNumberFromIdentifier(identifier, false)`, tried with the
+  framework's character identifier and then the player's first identifier. PRO
+  documents no mail export, so `gg.phone.mail` answers false and warns once.
+- **The classic Quasar phone** (`qs-smartphone` with `qs-base`) has no custom-app
+  API. `add` then fails, and the reason it gives names this case.
+
+PRO is also found installed in a folder still called `qs-smartphone`, and
+classic shares that name with V3. So under `qs-smartphone` the bridge checks
+which exports the resource answers rather than trusting the name. If
+`getCustomApps` answers, it is V3. Otherwise, if `InPhone` answers, it is PRO
+(or classic). The server makes the same call the first time a V3-only export
+turns out not to exist.
+
+Neither phone offers Lua a way to post into an app's frame. `SendNUIMessage`
+only reaches the calling resource's own `ui_page`, never an iframe inside
+another resource's NUI. Quasar's own V3 example app polls an NUI callback for
+its updates instead. So `send()` keeps at most 50 updates per app, and the page
+drains them through its own resource like on JPR, RoadPhone and CodeM. The ui
+URL is iframed as given, with `?phone=qs-smartphone` or
+`?phone=qs-smartphone-pro` appended. The page's own NUI callbacks
+(`https://<resource>/<name>`) work from inside both phones. Neither phone
+documents an input-focus export, so there is no `gg.phone.app.focus` here.
+
+Quasar ships no lb-phone compatibility layer. None of its docs or manifests
+`provide 'lb-phone'` or implement lb-phone's exports. The phones that do are
+sd-phone and sky_phone, which also `provide 'qs-smartphone'`, and both are
+detected before Quasar. References: [V3 developer API][qs-v3-api],
+[V3 example app][qs-v3-example], [PRO custom apps][qs-pro-apps],
+[PRO app template][qs-pro-template], [PRO notifications][qs-pro-notify],
+[PRO number lookup][qs-pro-number].
+
+[qs-v3-api]: https://www.quasar-store.com/docs/smartphone/developer-api
+[qs-v3-example]: https://github.com/imnotquasar/phone-framebook
+[qs-pro-apps]: https://github.com/imnotquasar/docs/blob/main/player-systems/smartphone-pro/create-custom-apps.md
+[qs-pro-template]: https://github.com/quasar-store-organizations/custom-app-template
+[qs-pro-notify]: https://github.com/imnotquasar/docs/blob/main/player-systems/smartphone-pro/user-guide/using-phone-notifications.md
+[qs-pro-number]: https://github.com/imnotquasar/docs/blob/main/player-systems/smartphone-pro/exports-and-commands/server-side-exports/getphonenumberfromidentifier.md
 
 ### gksphone
 
