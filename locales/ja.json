@@ -266,6 +266,7 @@
     "home_empty": "まだ何も公開されていません",
     "home_ended": "終了",
     "home_ends_in": "残り %s",
+    "home_out_in": "公開まで %s",
     "home_hot": "人気",
     "home_hours": "%s 時間前",
     "home_installed": "gg_lib %s を実行中",

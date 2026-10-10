@@ -266,6 +266,7 @@
     "home_empty": "Пока нет публикаций",
     "home_ended": "Завершено",
     "home_ends_in": "Закончится через %s",
+    "home_out_in": "Выйдет через %s",
     "home_hot": "Популярное",
     "home_hours": "%s ч. назад",
     "home_installed": "Работает gg_lib %s",

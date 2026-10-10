@@ -266,6 +266,7 @@
     "home_empty": "暂无发布内容",
     "home_ended": "已结束",
     "home_ends_in": "%s 后结束",
+    "home_out_in": "%s 后发布",
     "home_hot": "热门",
     "home_hours": "%s 小时前",
     "home_installed": "正在运行 gg_lib %s",

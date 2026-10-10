@@ -96,6 +96,40 @@ pages is drawn as a distance from now.
 }
 ```
 
+### Scheduled releases
+
+Anything can be put up ahead of time and held until it is out: give it a
+`releaseAt`, in unix seconds as `os.time()` gives them (or a date string, as
+above). Until then it counts down instead of showing.
+
+| Where | Before `releaseAt` | From `releaseAt` |
+| --- | --- | --- |
+| a promo | shown with an "Out in 4h 12m" chip, no button and no code | its button, and it is new again: a promo seen while it counted down is badged once more |
+| a `products.json` row | the same chip in place of `status`, no View button | the View button |
+| a ticker line | its `soon` text with the countdown, or nothing without one | its `text` |
+| an update log entry | left out, and so is a `latest` naming it | listed; nobody is told to update before then |
+
+The countdown runs to the second in the last hour, and the page flips by itself
+when the time comes -- no push at release time. A scheduled item is dated from
+its `releaseAt`, so it reads "just now" when it goes out, not when it was pushed.
+
+A ticker line takes either form; the object one holds:
+
+```json
+"ticker": [
+    "gg_lib 1.0.15: release countdowns on the Home page",
+    {
+        "text": "Speaker System 1.0.0 is out",
+        "soon": "Speaker System drops today at 12 PM ET",
+        "releaseAt": 1791648000
+    }
+]
+```
+
+Before gg_lib 1.0.15 `releaseAt` is not read: promos, shop rows and update
+entries show straight away, and object ticker lines are not shown at all. Keep
+anything that must not be seen early worded so it is still true before the time.
+
 ### feed/products.json
 
 The shop. Every row is matched against what this server is running by its

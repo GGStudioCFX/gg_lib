@@ -266,6 +266,7 @@
     "home_empty": "Noch nichts veröffentlicht",
     "home_ended": "Beendet",
     "home_ends_in": "Endet in %s",
+    "home_out_in": "Erscheint in %s",
     "home_hot": "Beliebt",
     "home_hours": "vor %s Std.",
     "home_installed": "gg_lib %s läuft",

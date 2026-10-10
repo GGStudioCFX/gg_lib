@@ -266,6 +266,7 @@
     "home_empty": "Rien de publié pour l’instant",
     "home_ended": "Terminé",
     "home_ends_in": "Se termine dans %s",
+    "home_out_in": "Sort dans %s",
     "home_hot": "Populaire",
     "home_hours": "il y a %s h",
     "home_installed": "gg_lib %s installé",
