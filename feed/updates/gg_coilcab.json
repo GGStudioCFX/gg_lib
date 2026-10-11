@@ -1,9 +1,20 @@
 {
     "label": "gg_coilcab",
     "resource": "gg_coilcab",
-    "latest": "1.0.9",
+    "latest": "1.0.10",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.10",
+            "at": 1791676602,
+            "kind": "feature",
+            "important": false,
+            "title": "Quasar Smartphone support",
+            "changes": [
+                "The phone app now works on Quasar Smartphone V3 and PRO. GG Lib adds it automatically.",
+                "Install gg_lib 1.0.16 first, then replace the gg_coilcab folder."
+            ]
+        },
         {
             "version": "1.0.9",
             "at": 1790544768,
