@@ -2,8 +2,8 @@
 gg.phone = gg.phone or {}
 
 -- Quasar has two phones that take custom apps, and they speak different APIs:
---   Smartphone V3 (qs-smartphone): addCustomApp({ id, label, icon, iframe = { url } }),
---     and getCustomApps lists what is registered.
+--   Smartphone V3 (qs-smartphone): addCustomApp({ id, label, icon, iframe = { url },
+--     category, ... }), and getCustomApps lists what is registered.
 --   Smartphone PRO (qs-smartphone-pro): addCustomApp({ app, label, ui, image }).
 -- qs-smartphone-pro loads this file with its own name here. PRO is also found
 -- installed in a folder still called qs-smartphone, and the classic qs-smartphone
@@ -150,16 +150,25 @@ local function register(spec)
     if not using then return false, ("%s has not started"):format(NAME) end
 
     local ok, added, why = pcall(function()
+        -- V3 3.2.64 refuses an app without a category ("missing_category") although
+        -- its docs show only id, label, icon and iframe. Every field Quasar's own V3
+        -- example app (phone-framebook) sends goes, with its values, so a later
+        -- build that checks one more field still takes the app. The page lives on
+        -- this resource's origin, so that origin may use the phone's JS bridge.
         if using == "v3" then
             return exports[NAME]:addCustomApp({
-                id           = spec.key,
-                label        = spec.name or spec.key,
-                icon         = spec.icon,
-                iframe       = { url = framed(spec.ui) },
-                description  = spec.description,
-                creator      = spec.developer,
-                appStoreOnly = spec.defaultApp == false,
-                sizeMb       = type(spec.size) == "number" and math.floor(spec.size / 102.4 + 0.5) / 10 or nil,
+                id               = spec.key,
+                label            = spec.name or spec.key,
+                icon             = spec.icon,
+                iframe           = { url = framed(spec.ui) },
+                category         = spec.category or "Social",
+                age              = spec.age or "13+",
+                description      = spec.description or spec.name or spec.key,
+                creator          = spec.developer or "GG Studio",
+                appStoreOnly     = spec.defaultApp == false,
+                sizeMb           = type(spec.size) == "number" and math.floor(spec.size / 102.4 + 0.5) / 10 or 1,
+                extraDescription = {},
+                custom           = { bridge = { allowedOrigins = { "https://cfx-nui-" .. RESOURCE } } },
             })
         end
 
@@ -191,7 +200,15 @@ local function register(spec)
         return false, tostring(added)
     end
 
-    if added == false then return false, tostring(why or "app registration refused") end
+    if added == false then
+        why = tostring(why or "app registration refused")
+
+        -- Said here because not every script prints the reason it gets back, and
+        -- without it a refused app is just missing from the phone.
+        gg.print.warn(("%s refused the %s app: %s"):format(NAME, spec.key, why))
+
+        return false, why
+    end
 
     return true
 end
