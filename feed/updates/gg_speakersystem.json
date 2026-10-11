@@ -1,9 +1,19 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.1",
+    "latest": "1.0.2",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.2",
+            "at": 1791677284,
+            "kind": "fix",
+            "important": true,
+            "title": "Shop works on any game build",
+            "changes": [
+                "The shop's computer desk, TV stand and coffee table now ship with the props, so the shop works on game build 3095 and newer."
+            ]
+        },
         {
             "version": "1.0.1",
             "at": 1791650605,
