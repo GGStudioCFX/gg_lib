@@ -1,9 +1,20 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.2",
+    "latest": "1.0.4",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.4",
+            "at": 1791811826,
+            "kind": "fix",
+            "important": true,
+            "title": "Linked volume, yPhone and emoji fixes",
+            "changes": [
+                "Linked speakers turn up and down together, the app stays on yPhone after a restart and emoji song titles save.",
+                "Car tablets are much lighter on FPS."
+            ]
+        },
         {
             "version": "1.0.2",
             "at": 1791677284,
