@@ -4,28 +4,6 @@ gg.inventory.canCarryitem = function(src, data)
     return true
 end
 
-gg.inventory.hasItem = function(src, data)
-    local inventory = gg.framework.GetInventory(src)
-    if not inventory then
-        return false, {err = "Failed to get inventory"}
-    end
-    
-    local count = 0
-    for k,v in pairs(inventory) do
-        if v.name == data.item then
-            local itemAmount = (v.amount or v.count or 0)
-            count = count + tonumber(itemAmount)
-        end
-    end
-
-    local requiredCount = tonumber(data.count) or 1
-    if count < requiredCount then
-        return false, {err = "You do not have enough of this item"}
-    end
-
-    return true
-end
-
 gg.inventory.addItem = function(src, data)
     data.count = data.count or 1
 
@@ -60,4 +38,29 @@ end
 
 gg.inventory.getImageUrl = function(item)
     return string.format('https://cfx-nui-codem-inventory/html/itemimages/%s.png', item)
+end
+
+-- codem keys a player's inventory by their citizenid / ESX identifier.
+gg.inventory.getItems = function(src)
+    local identifier = gg.framework.GetIdentifier and gg.framework.GetIdentifier(src)
+
+    return exports['codem-inventory']:GetInventory(identifier, src)
+end
+
+gg.inventory.getSlot = function(src, slot)
+    return exports['codem-inventory']:GetItemBySlot(src, slot)
+end
+
+gg.inventory.getCount = function(src, item, metadata)
+    if metadata then return nil end
+
+    return exports['codem-inventory']:GetItemsTotalAmount(src, item)
+end
+
+gg.inventory.setMetadata = function(src, slot, metadata)
+    if not exports['codem-inventory']:GetItemBySlot(src, slot) then return false end
+
+    exports['codem-inventory']:SetItemMetadata(src, slot, metadata)
+
+    return true
 end

@@ -12,3 +12,7 @@ gg.inventory.getItemTable = function(item)
     if not item then return exports["tgiann-inventory"]:Items() end
     return exports["tgiann-inventory"]:Items(item) or nil
 end
+
+gg.inventory.getItems = function()
+    return exports["tgiann-inventory"]:GetPlayerItems()
+end

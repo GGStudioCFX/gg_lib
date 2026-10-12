@@ -43,3 +43,25 @@ end
 gg.inventory.getImageUrl = function(item)
     return string.format('https://cfx-nui-one_inventory/web/images/%s.png', item)
 end
+
+gg.inventory.getItems = function(src)
+    return exports.one_inventory:GetInventoryItems(src)
+end
+
+gg.inventory.getSlot = function(src, slot)
+    return exports.one_inventory:GetSlot(src, slot)
+end
+
+gg.inventory.getCount = function(src, item, metadata)
+    if metadata then return nil end
+
+    return exports.one_inventory:GetItemCount(src, item)
+end
+
+gg.inventory.setMetadata = function(src, slot, metadata)
+    if not exports.one_inventory:GetSlot(src, slot) then return false end
+
+    exports.one_inventory:SetItemMetadata(src, slot, metadata)
+
+    return true
+end

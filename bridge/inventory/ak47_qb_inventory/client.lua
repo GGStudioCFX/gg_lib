@@ -40,3 +40,13 @@ gg.inventory.getImageUrl = function(item, record)
 
     return gg.inventory.getImageDirectory() .. image
 end
+
+gg.inventory.getItems = function()
+    return exports[provider]:GetPlayerItems()
+end
+
+gg.inventory.getCount = function(item, metadata)
+    if metadata then return nil end
+
+    return exports[provider]:GetAmount(item)
+end

@@ -13,3 +13,10 @@ gg.inventory.getItemTable = function(item)
     if not item then return payload end
     return payload[item] or nil
 end
+
+gg.inventory.getItems = function()
+    local ok, items = pcall(function() return exports['codem-inventory']:GetClientPlayerInventory() end)
+    if ok and type(items) == "table" then return items end
+
+    return exports['codem-inventory']:getUserInventory()
+end

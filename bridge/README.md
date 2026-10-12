@@ -121,6 +121,52 @@ gg.inventory.hasItem(source, { item = 'water', count = 1 })
 gg.inventory.canCarryitem(source, { item = 'water', count = 5 })
 ```
 
+The same item API works on all fourteen inventories, metadata included. Rows
+always read `{ name, label, count, slot, metadata, weight }`: qb-style `amount`
+and `info` are read as `count` and `metadata`, and `metadata` is always a table.
+Metadata matches the way ox_inventory's `Search` does: every key you ask for has
+to be there with the same value, and the item may carry more.
+
+```lua
+-- Server
+gg.inventory.getItems(source)                          -- every row, sorted by slot
+gg.inventory.getSlot(source, 3)                        -- one row, or nil
+gg.inventory.findItem(source, 'radio', { serial = s }) -- the first matching row
+gg.inventory.getCount(source, 'radio', { serial = s }) -- metadata is optional
+gg.inventory.setMetadata(source, 3, { serial = s })    -- replaces it; true once saved
+gg.inventory.canCarryWeight(source, 2500)
+
+gg.inventory.addItem(source, { item = 'radio', count = 1, metadata = { serial = s } })
+gg.inventory.hasItem(source, { item = 'radio', metadata = { serial = s } })
+gg.inventory.removeItem(source, { item = 'radio', metadata = { serial = s } }) -- that radio, not another
+gg.inventory.removeItem(source, { item = 'radio', slot = 3 })
+
+-- cb(source, row): the inventory's own usable items where it has them
+-- (qs-inventory, jaksam_inventory), the framework's otherwise.
+gg.inventory.registerUsable('radio', function(source, row) end)
+
+-- ox_inventory only: false from cb stops the move. nil on other inventories.
+local hook = gg.inventory.onSwap(function(payload) end, { itemFilter = { radio = true } })
+gg.inventory.removeHook(hook)
+
+gg.inventory.hasMetadata() -- false only on the fallback (no inventory running)
+
+-- Client
+gg.inventory.getItems()
+gg.inventory.getCount('radio', { serial = s })
+gg.inventory.hasItem('radio', 1, { serial = s })
+-- ox_inventory plays the use animation and takes the item, then calls back;
+-- other inventories call back straight away.
+gg.inventory.useItem(data, function(data) end)
+gg.inventory.getImageDirectory()
+```
+
+Never call an inventory's exports from a resource: what an inventory has no
+export for (a slot read on qs-inventory, a metadata count on qb-inventory) is
+worked out here from its rows, so the call is the same everywhere. The shared
+layer is `bridge/inventory/_common/<context>.lua`; it runs after whichever
+bridge (or the fallback) installed, again whenever a late inventory takes over.
+
 For item **data** use the catalogue rather than the bridge — it is normalized,
 cached, and works the same on every inventory:
 
@@ -572,6 +618,9 @@ documentation behind them, and wait for some.
 1. Make `bridge/<category>/<resource name>/client.lua` — the folder name must be
    the resource name exactly, because detection is `GetResourceState(folder)`.
 2. Implement the same functions the other providers in that folder implement.
+   An inventory also defines `getItems` and `setMetadata`, plus `getSlot`,
+   `getCount`, `canCarryWeight` and `registerUsable` where it has exports for
+   them; `_common` builds the rest of the API from those.
 3. Add the name to `manifest.lua`, above `ox_*` and `qb-*`.
 
 A resource that declares `provides { 'ox_target' }` still needs its own entry:

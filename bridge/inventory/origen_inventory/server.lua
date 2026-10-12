@@ -4,25 +4,6 @@ gg.inventory.canCarryitem = function(src, data)
     return exports.origen_inventory:canCarryItem(src, data.item, data.count, data.metadata)
 end
 
-gg.inventory.hasItem = function(src, data)
-    local inventory = exports.origen_inventory:getInventory(src)
-    if not inventory then
-        return false, {err = "Failed to get inventory"}
-    end
-    local count = 0
-    for k,v in pairs(inventory) do
-        if v.name == data.item then
-            count = count + v.count
-        end
-    end
-
-    if count < data.count then
-        return false, {err = "You do not have enough of this item"}
-    end
-
-    return true
-end
-
 gg.inventory.addItem = function(src, data)
     data.count = data.count or 1
 
@@ -56,4 +37,30 @@ end
 
 gg.inventory.getImageUrl = function(item)
     return string.format('https://cfx-nui-origen_inventory/html/images/%s.png', item)
+end
+
+-- Rows read amount / info.
+gg.inventory.getItems = function(src)
+    local ok, items = pcall(function() return exports.origen_inventory:getInventory(src) end)
+    if ok and type(items) == "table" then return items.items or items end
+
+    return exports.origen_inventory:getItems(src)
+end
+
+gg.inventory.getSlot = function(src, slot)
+    return exports.origen_inventory:getSlot(src, slot)
+end
+
+gg.inventory.getCount = function(src, item, metadata)
+    if metadata then return nil end
+
+    return exports.origen_inventory:getItemCount(src, item)
+end
+
+gg.inventory.setMetadata = function(src, slot, metadata)
+    if not gg.inventory.getSlot(src, slot) then return false end
+
+    exports.origen_inventory:setMetadata(src, slot, metadata)
+
+    return true
 end

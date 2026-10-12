@@ -67,3 +67,32 @@ end
 gg.inventory.getImageUrl = function(item)
     return string.format('https://cfx-nui-inventory_images/images/%s.png', item)
 end
+
+gg.inventory.getItems = function(src)
+    return exports["tgiann-inventory"]:GetPlayerItems(src)
+end
+
+-- An empty slot comes back as { amount = 0 }, not nil.
+gg.inventory.getSlot = function(src, slot)
+    local item = exports["tgiann-inventory"]:GetItemBySlot(src, slot)
+
+    if type(item) ~= "table" or not item.name or (tonumber(item.amount or item.count) or 0) <= 0 then return nil end
+
+    return item
+end
+
+gg.inventory.getCount = function(src, item, metadata)
+    if metadata then return nil end
+
+    return exports["tgiann-inventory"]:GetItemCount(src, item)
+end
+
+gg.inventory.setMetadata = function(src, slot, metadata)
+    local item = gg.inventory.getSlot(src, slot)
+
+    if not item then return false end
+
+    exports["tgiann-inventory"]:UpdateItemMetadata(src, item.name, slot, metadata)
+
+    return true
+end

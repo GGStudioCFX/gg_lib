@@ -337,6 +337,19 @@ local function loadDefaults()
         local loaded = false
         local failure
 
+        -- A category with a _common file gets one API on top of every bridge.
+        -- It is built from what the bridge defines, so a bridge installed
+        -- later must not inherit the one before it.
+        local common = loadChunk(("bridge/%s/_common/%s.lua"):format(category, context), moduleEnv)
+
+        if common and type(rawget(gg, category)) == "table" then
+            local api = rawget(gg, category)
+
+            for name, value in pairs(api) do
+                if type(value) == "function" then api[name] = nil end
+            end
+        end
+
         if not detail.running then
             failure = ("'%s' is not started"):format(resolved)
         end
@@ -398,6 +411,18 @@ local function loadDefaults()
 
                 if not quiet then
                     print(("^1[gg_lib] bridge %s/%s failed to load in %s: %s^0"):format(category, resolved, RESOURCE, err))
+                end
+            end
+        end
+
+        if common then
+            local ok, err = pcall(common)
+
+            if not ok then
+                failure = failure or tostring(err)
+
+                if not quiet then
+                    print(("^1[gg_lib] bridge %s/_common failed to load in %s: %s^0"):format(category, RESOURCE, err))
                 end
             end
         end

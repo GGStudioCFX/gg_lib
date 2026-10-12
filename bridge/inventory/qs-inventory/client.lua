@@ -13,3 +13,7 @@ gg.inventory.getItemTable = function(item)
     if not item then return itemList end
     return itemList[item] or nil
 end
+
+gg.inventory.getItems = function()
+    return exports['qs-inventory']:getUserInventory()
+end

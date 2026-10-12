@@ -1,6 +1,23 @@
 gg.inventory = gg.inventory or {}
 
+local core
+
+-- A qb-inventory fork: the player's items live in PlayerData.items (amount, info).
+local function player(src)
+    if GetResourceState('qbx_core') == 'started' then
+        local ok, value = pcall(function() return exports.qbx_core:GetPlayer(src) end)
+        if ok and value then return value end
+    end
+
+    if GetResourceState('qb-core') == 'started' then
+        core = core or exports['qb-core']:GetCoreObject()
+        return core and core.Functions.GetPlayer(src) or nil
+    end
+end
+
 gg.inventory.canCarryitem = function(src, data)
+    local ok, can = pcall(function() return exports['jpr-inventory']:CanAddItem(src, data.item, data.count or 1) end)
+    if ok and can ~= nil then return can == true end
     return true
 end
 
@@ -47,6 +64,28 @@ gg.inventory.removeItem = function(src, data)
     if result == false then return false end
 
     return true
+end
+
+gg.inventory.getItems = function(src)
+    local value = player(src)
+    return value and value.PlayerData and value.PlayerData.items or {}
+end
+
+-- The same write the inventory's own SetItemData makes, aimed at one slot.
+gg.inventory.setMetadata = function(src, slot, metadata)
+    local value = player(src)
+    local items = value and value.PlayerData and value.PlayerData.items
+    if type(items) ~= 'table' then return false end
+
+    for key, item in pairs(items) do
+        if type(item) == 'table' and (tonumber(item.slot) or tonumber(key)) == tonumber(slot) then
+            item.info = metadata
+            value.Functions.SetPlayerData('items', items)
+            return true
+        end
+    end
+
+    return false
 end
 
 gg.inventory.getItemTable = function(item)

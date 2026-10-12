@@ -12,3 +12,13 @@ gg.inventory.getItemTable = function(item)
     if not item then return exports.one_inventory:GetAllItemDefinitions() end
     return exports.one_inventory:GetItemDefinition(item) or nil
 end
+
+gg.inventory.getItems = function()
+    return exports.one_inventory:GetInventoryItems()
+end
+
+gg.inventory.getCount = function(item, metadata)
+    if metadata then return nil end
+
+    return exports.one_inventory:GetItemCount(item)
+end

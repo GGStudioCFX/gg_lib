@@ -67,3 +67,30 @@ gg.inventory.removeItem = function(src, data)
 
     return result ~= false
 end
+
+-- Rows read amount / info. Older ak47_qb_inventory builds without
+-- GetInventoryItems keep the items in QBCore's PlayerData.
+gg.inventory.getItems = function(src)
+    local ok, items = pcall(function() return exports[provider]:GetInventoryItems(src) end)
+    if ok and type(items) == "table" then return items end
+
+    return gg.framework.GetInventory and gg.framework.GetInventory(src) or {}
+end
+
+gg.inventory.getSlot = function(src, slot)
+    return exports[provider]:GetSlot(src, slot)
+end
+
+gg.inventory.getCount = function(src, item, metadata)
+    if metadata then return nil end
+
+    return exports[provider]:GetAmount(src, item)
+end
+
+gg.inventory.setMetadata = function(src, slot, metadata)
+    if not exports[provider]:GetSlot(src, slot) then return false end
+
+    exports[provider]:SetItemInfo(src, slot, metadata)
+
+    return true
+end
