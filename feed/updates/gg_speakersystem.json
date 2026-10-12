@@ -1,9 +1,20 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.4",
+    "latest": "1.0.5",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.5",
+            "at": 1791827646,
+            "kind": "fix",
+            "important": false,
+            "title": "Works on qs-inventory and more",
+            "changes": [
+                "Speaker items now work on qs-inventory and every other inventory gg_lib supports.",
+                "Needs gg_lib 1.0.18 or newer."
+            ]
+        },
         {
             "version": "1.0.4",
             "at": 1791811826,
