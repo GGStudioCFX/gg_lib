@@ -1,9 +1,20 @@
 {
     "label": "gg_hunting",
     "resource": "gg_hunting",
-    "latest": "2.1.8",
+    "latest": "2.1.9",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "2.1.9",
+            "at": 1791906005,
+            "kind": "feature",
+            "important": false,
+            "title": "Custom weapon kill export",
+            "changes": [
+                "New server export registerKill lets your own scripts, like a bow that shoots props, count a kill. See Exports in the docs.",
+                "The server now checks every kill."
+            ]
+        },
         {
             "version": "2.1.8",
             "at": 1791569682,
