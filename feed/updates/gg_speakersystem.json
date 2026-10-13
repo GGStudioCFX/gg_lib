@@ -1,9 +1,20 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.5",
+    "latest": "1.0.6",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.6",
+            "at": 1791901427,
+            "kind": "fix",
+            "important": false,
+            "title": "Speaker System optimizations",
+            "changes": [
+                "Car tablets show a still screen to people outside the car, so nearby PCs stop drawing them. The music sounds the same.",
+                "Setting: Live Screens Outside the Car."
+            ]
+        },
         {
             "version": "1.0.5",
             "at": 1791827646,
