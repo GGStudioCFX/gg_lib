@@ -1375,6 +1375,7 @@ function settings.describe()
             row_fields  = def.row_fields,
             row_labels  = def.row_labels,
             takeover    = def.takeover,
+            away        = def.away == true or nil,
             row_actions = def.row_actions,
             auto_key    = def.auto_key,
             merge_key   = def.merge_key,

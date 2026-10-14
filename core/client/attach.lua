@@ -41,6 +41,7 @@ local state = {
     model   = "",
     bone    = 57005,        -- ped bone id
     boneName = "chassis",   -- vehicle bone name
+    vehicleBone = nil,      -- a job's vehicle bone index, over boneName (0 = the origin)
     vehicle = "taxi",
     ped     = "",           -- test ped model, empty while wearing your own
     pos     = { x = 0.0, y = 0.0, z = 0.0 },
@@ -118,6 +119,8 @@ local function boneIndex()
     if state.target == "prop" then return 0 end
 
     if state.target == "vehicle" then
+        if state.vehicleBone then return state.vehicleBone end
+
         local index = GetEntityBoneIndexByName(entity, state.boneName)
 
         return index
@@ -989,6 +992,8 @@ local function publishJob()
             LIVE    = job.liveVehicle ~= nil,
             KIT     = job.kit,
             KITS    = job.kitList,
+            CHOICE_LABEL = job.choiceLabel,
+            CUSTOM  = job.custom,
         },
     })
 end
@@ -1016,6 +1021,7 @@ exit = function()
     end
 
     frame = nil
+    state.vehicleBone = nil
 
     SetNuiFocus(hadFocus, hadFocus)
 
@@ -1042,8 +1048,24 @@ local function applyKit(id)
 
     if not chosen then return end
 
+    -- A gg.attach.place job keeps each choice's pose, so switching away and
+    -- back finds it where it was left and one save returns every pose moved.
+    if job.perChoice and job.kit and job.kit ~= chosen.id then
+        for _, kit in ipairs(job.kits) do
+            if kit.id == job.kit then
+                kit.pos = { x = state.pos.x, y = state.pos.y, z = state.pos.z }
+                kit.rot = { x = state.rot.x, y = state.rot.y, z = state.rot.z }
+                job.edited[kit.id] = true
+                break
+            end
+        end
+    end
+
     job.kit   = chosen.id
     job.props = chosen.props or {}
+
+    if type(chosen.pos) == "table" then state.pos = vec3of(chosen.pos) end
+    if type(chosen.rot) == "table" then state.rot = vec3of(chosen.rot) end
 
     local primary = job.props[1]
 
@@ -1061,10 +1083,56 @@ local function applyKit(id)
     publishJob()
 end
 
+local function loadAnimDict(dict)
+    RequestAnimDict(dict)
+
+    local deadline = GetGameTimer() + LOAD_TIMEOUT_MS
+
+    while not HasAnimDictLoaded(dict) do
+        if GetGameTimer() > deadline then return false end
+
+        Wait(0)
+    end
+
+    return true
+end
+
+local function playerAnim(anim)
+    if type(anim) ~= "table" or type(anim.dict) ~= "string" or anim.dict == "" or type(anim.name) ~= "string" or anim.name == "" then return end
+
+    local ped = PlayerPedId()
+
+    if not loadAnimDict(anim.dict) then
+        say(("animation dictionary '%s' would not load"):format(anim.dict))
+        return
+    end
+
+    playerAnimating = true
+
+    ClearPedTasksImmediately(ped)
+    TaskPlayAnim(ped, anim.dict, anim.name, 8.0, -8.0, -1, tonumber(anim.flag) or 49, 0.0, false, false, false)
+    RemoveAnimDict(anim.dict)
+end
+
+-- What a job places and what it places it on. A job with neither is Taxi's
+-- roof kit: a prop on a vehicle. gg.attach.place fills them for anything else:
+-- a ped, alive or a body, on a vehicle, on the player's bone or on a prop.
+local function jobKinds(options)
+    local subject = options.subject_kind == "ped" and "ped" or "prop"
+    local target  = (options.target_kind == "ped" or options.target_kind == "prop") and options.target_kind or "vehicle"
+
+    return subject, target
+end
+
 local function runJob(options, owner)
     if open then return "the placement editor is already open" end
     if type(options) ~= "table" then return "nothing to place" end
+    local subjectKind, targetKind = jobKinds(options)
     local liveVehicle = options.liveVehicle
+    if liveVehicle ~= nil and targetKind ~= "vehicle" then return "a live vehicle job places on that vehicle" end
+    if targetKind == "prop" and (type(options.target_model) ~= "string" or options.target_model == "") then
+        return "no prop to place on"
+    end
     if liveVehicle ~= nil and (not DoesEntityExist(liveVehicle) or GetEntityType(liveVehicle) ~= 2
         or GetVehiclePedIsIn(PlayerPedId(), false) ~= liveVehicle
         or (options.liveSeat ~= nil and GetPedInVehicleSeat(liveVehicle, options.liveSeat) ~= PlayerPedId())) then
@@ -1113,6 +1181,10 @@ local function runJob(options, owner)
         kits    = kits,
         kitList = list,
         kit     = options.kit,
+        choiceLabel = type(options.choice_label) == "string" and options.choice_label or nil,
+        custom  = options.custom ~= false,
+        perChoice = options.per_choice == true,
+        edited  = {},
         answer  = promise.new(),
     }
 
@@ -1124,13 +1196,27 @@ local function runJob(options, owner)
 
     if not known then job.kit = kits[1].id end
 
-    state.subject  = "prop"
-    state.target   = "vehicle"
+    state.subject  = subjectKind
+    state.target   = targetKind
+    state.alive    = options.dead ~= true
+    state.anim     = {
+        dict = type(options.subject_anim) == "table" and type(options.subject_anim.dict) == "string" and options.subject_anim.dict or "",
+        name = type(options.subject_anim) == "table" and type(options.subject_anim.name) == "string" and options.subject_anim.name or "",
+    }
+    state.vehicleBone = nil
     state.boneName = (type(options.bone) == "string" and options.bone ~= "") and options.bone or "chassis"
+
+    if targetKind == "vehicle" and type(options.bone) == "number" then
+        state.vehicleBone = math.floor(options.bone)
+    elseif targetKind == "ped" then
+        state.bone = math.floor(tonumber(options.bone) or 0)
+    end
+
     state.pos      = vec3of(options.pos)
     state.rot      = vec3of(options.rot)
 
-    if not liveVehicle and state.pos.x == 0.0 and state.pos.y == 0.0 and state.pos.z == 0.0 then
+    if targetKind == "vehicle" and subjectKind == "prop" and not liveVehicle
+        and state.pos.x == 0.0 and state.pos.y == 0.0 and state.pos.z == 0.0 then
         local here = modelTop(options.vehicle)
         local authored = modelTop(options.authored_for)
 
@@ -1152,6 +1238,24 @@ local function runJob(options, owner)
     if not open then return Citizen.Await(answer) end
 
     CreateThread(function()
+        if targetKind ~= "vehicle" then
+            if targetKind == "prop" and not spawnAnchor(options.target_model) then
+                if job then job.failed = ("%s would not spawn"):format(tostring(options.target_model)) end
+                exit()
+                return
+            end
+
+            if targetKind == "ped" then playerAnim(options.player_anim) end
+
+            if not job then return end
+
+            local fitted, fitErr = pcall(applyKit, job.kit)
+
+            if not fitted then fault("could not place: %s", tostring(fitErr)) end
+
+            return
+        end
+
         if liveVehicle then
             if not job or job.liveVehicle ~= liveVehicle then return end
             local fitted, fitErr = pcall(applyKit, job.kit)
@@ -1628,6 +1732,17 @@ RegisterNUICallback("attach_save", function(_, cb)
         pos = { x = state.pos.x, y = state.pos.y, z = state.pos.z },
         rot = { x = state.rot.x, y = state.rot.y, z = state.rot.z },
     }
+
+    if job.perChoice then
+        local poses = {}
+
+        for _, kit in ipairs(job.kits) do
+            if job.edited[kit.id] and kit.id ~= job.kit then poses[kit.id] = { pos = kit.pos, rot = kit.rot } end
+        end
+
+        poses[job.kit] = { pos = job.result.pos, rot = job.result.rot }
+        job.result.poses = poses
+    end
 
     exit()
 end)

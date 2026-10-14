@@ -242,6 +242,9 @@ end)
 RegisterNUICallback("settings_action", function(data, cb)
     local resource = type(data) == "table" and data.resource or nil
     local path = type(data) == "table" and data.path or nil
+    -- An away action opens the script's own screen (a map, an editor): the
+    -- studio steps aside and lets go of the keyboard and mouse until it ends.
+    local away = type(data) == "table" and data.away == true
 
     if type(resource) ~= "string" or type(path) ~= "string" then
         cb({ ok = false, message = "malformed request" })
@@ -256,9 +259,14 @@ RegisterNUICallback("settings_action", function(data, cb)
     actionWaiting[token] = answer
     actionRunning = token
 
+    if away then
+        SendNUIMessage({ action = "settings_placing", data = { PLACING = true } })
+        SetNuiFocus(false, false)
+    end
+
     TriggerEvent("gg_lib:settings:action", resource, path, token)
 
-    SetTimeout(120000, function()
+    SetTimeout(away and 1800000 or 120000, function()
         if actionWaiting[token] then
             actionWaiting[token] = nil
             answer:resolve({ ok = false, message = "the script did not answer" })
@@ -268,6 +276,11 @@ RegisterNUICallback("settings_action", function(data, cb)
     local result = Citizen.Await(answer)
 
     actionRunning = nil
+
+    if away then
+        SendNUIMessage({ action = "settings_placing", data = { PLACING = false } })
+        if open then SetNuiFocus(true, true) end
+    end
 
     cb(result)
 end)
