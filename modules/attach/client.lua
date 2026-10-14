@@ -230,6 +230,7 @@ function gg.attach.place(options)
         choice_label = options.choice_label,
         custom       = false,
         per_choice   = true,
+        setting      = true,
     })
 
     if type(result) ~= "table" then return result end

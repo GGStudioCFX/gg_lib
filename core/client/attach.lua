@@ -993,6 +993,7 @@ local function publishJob()
             KIT     = job.kit,
             KITS    = job.kitList,
             CHOICE_LABEL = job.choiceLabel,
+            SETTING = job.setting,
             CUSTOM  = job.custom,
         },
     })
@@ -1184,6 +1185,9 @@ local function runJob(options, owner)
         choiceLabel = type(options.choice_label) == "string" and options.choice_label or nil,
         custom  = options.custom ~= false,
         perChoice = options.per_choice == true,
+        -- A script setting (gg.attach.place), not a kit on a vehicle: the panel
+        -- says Save, not Save to vehicle.
+        setting = options.setting == true,
         edited  = {},
         answer  = promise.new(),
     }
