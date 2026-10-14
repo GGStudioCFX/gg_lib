@@ -1,9 +1,20 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.6",
+    "latest": "1.0.7",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.7",
+            "at": 1792021622,
+            "kind": "fix",
+            "important": false,
+            "title": "Lighter speakers and car tablets",
+            "changes": [
+                "Nothing runs while no speaker or tablet car is near, and the car map with a route draws far less.",
+                "Players can turn speakers off for themselves with /speakers."
+            ]
+        },
         {
             "version": "1.0.6",
             "at": 1791901427,
