@@ -119,10 +119,15 @@ function gg.items.all()
     return catalogue or {}
 end
 
+-- Inventories match names loosely: ox_inventory keys weapons WEAPON_X and
+-- finds them from weapon_x, so a script configured with either spelling has
+-- to land on the same item here.
 function gg.items.get(name)
     if type(name) ~= "string" then return nil end
 
-    return gg.items.all()[name]
+    local all = gg.items.all()
+
+    return all[name] or all[name:lower()] or all[name:upper()]
 end
 
 function gg.items.label(name)
