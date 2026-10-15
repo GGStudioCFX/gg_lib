@@ -679,6 +679,30 @@ local function editPoints(list, preview, minGap, mode)
     return result
 end
 
+-- The Studio map draws zone corners from above, so it cannot know how high
+-- the ground is under them. The heightmap does, anywhere on the map and with
+-- nothing streamed in.
+RegisterNUICallback("settings_ground_heights", function(data, cb)
+    local points = type(data) == "table" and type(data.points) == "table" and data.points or {}
+    local heights = {}
+
+    for index = 1, math.min(#points, 256) do
+        local point = points[index]
+        local x = type(point) == "table" and tonumber(point.x)
+        local y = type(point) == "table" and tonumber(point.y)
+        local height = 0.0
+
+        if x and y then
+            local ok, found = pcall(GetApproxHeightForPoint, x + 0.0, y + 0.0)
+            if ok and type(found) == "number" then height = found end
+        end
+
+        heights[index] = height
+    end
+
+    cb({ ok = true, HEIGHTS = heights })
+end)
+
 RegisterNUICallback("settings_edit_points", function(data, cb)
     if not gg.tool or not gg.tool.run then
         cb({ ok = false })

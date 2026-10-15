@@ -1396,6 +1396,7 @@ function settings.describe()
             path_root   = def.path_root,
             min_gap     = def.min_gap,
             edit_mode   = def.edit_mode,
+            view        = def.view,
             live        = def.live,
             advanced    = def.advanced,
         }
