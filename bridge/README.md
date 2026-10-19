@@ -246,8 +246,8 @@ after it is safe.
 
 ## Phone
 
-Twelve resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
-`jpr-phonesystem`, `roadphone`, `codem-phone`, `qs-smartphone-pro`, `qs-smartphone`, `yseries`, `yphone`,
+Thirteen resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
+`jpr-phonesystem`, `roadphone`, `codem-phone`, `17mov_Phone`, `qs-smartphone-pro`, `qs-smartphone`, `yseries`, `yphone`,
 `yflip-phone`, then `lb-phone` — sd-phone and
 sky_phone first because each stands in for several of the others (below),
 lb-phone last for the same reason ox and qb are: it is the one most likely to be
@@ -378,6 +378,48 @@ reaches offline owners. References: [Custom App][codem-apps],
 [codem-apps]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/custom-app
 [codem-client]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/exports-and-events/client-exports
 [codem-server]: https://codem.gitbook.io/codem-documentation/m-series/essentials/mphone-2.5/exports-and-events/server-exports
+
+### 17mov_Phone
+
+17mov's phone registers external apps at runtime through its client
+`AddApplication`, as its own [boilerplate][17mov-boilerplate] does. The bridge maps
+the key to `name` and `name` to `label`, and passes the ui and icon URLs, an
+`iconBackground` (`spec.iconBackground`, default `#151519`), `rating` (default 5),
+`resourceName` (the importing resource) and an optional `job` restriction. A
+`defaultApp` is sent as `default` and `preInstalled`: it shows on every phone,
+existing ones included, and cannot be uninstalled. Any other app waits in the
+phone's store. The phone takes no description or developer; a translated label and
+store text go in the phone's own locale files (`Appname:Title`,
+`Store:Appname:Description`). The ui URL is framed as given, with
+`?phone=17mov_Phone` appended. Every added app is registered again on
+`17mov_Phone:Client:Ready`, and a refused add is kept for that retry. `remove` is
+`RemoveApplication` without `uninstall`, so the player's install stays.
+
+`send()` is `SendAppMessage(key, { action, payload })`. The phone posts that into
+the app's frame, so a page reads `payload` where other phones give `data`, and
+`drain` is always empty. The phone calls the page's `window.LoadRoot()` once it has
+injected its helpers into the frame, and posts to `https://<window.name>/<callback>`,
+where `window.name` is the resource name. Pages hold `setKeepInput(false)` while a
+text field has the keyboard, register their routes with `setExternalRouting`, and
+answer the phone's `window.__dispatchAction` (`GetCurrentRoute`, `Navigate`), as the
+boilerplate's `ExternalRpcBridge` does. `gg.phone.app.focus` has nothing to do here.
+
+The number is the client `GetPlayerNumber` and the server
+`GetNumberFromPlayer(source)`; `hasPhone` on the client is `HasPhoneItem`.
+Notifications are the client `CreateNotification` and the server
+`SendNotificationToSrc`, both `{ app, title, message }`, with `app` defaulting to
+`SYSTEM`. Mail to a source or a number uses `Email_SendEmailBySrc` /
+`Email_SendEmailByNumber` with a named sender (`customUser`), or the system mail
+exports without one. A mail address target answers false. References:
+[Custom apps][17mov-apps], [Registering][17mov-register],
+[Client exports][17mov-client], [Server exports][17mov-server], [Email][17mov-email].
+
+[17mov-boilerplate]: https://github.com/17movement-net/17mov_Phone_app_boilerplate
+[17mov-apps]: https://docs.17movement.net/phone/building-custom-apps
+[17mov-register]: https://docs.17movement.net/phone/building-custom-apps/registering-the-application
+[17mov-client]: https://docs.17movement.net/phone/exports/global-exports/client-exports
+[17mov-server]: https://docs.17movement.net/phone/exports/global-exports/server-exports
+[17mov-email]: https://docs.17movement.net/phone/exports/email/server-exports
 
 ### qs-smartphone and qs-smartphone-pro
 

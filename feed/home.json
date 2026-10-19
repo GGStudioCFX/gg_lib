@@ -1,5 +1,5 @@
 {
-    "publishedAt": 1792075444,
+    "publishedAt": 1792434284,
     "version": "1.0.20",
     "ticker": [
         "Speaker System 1.0.0: speakers, light rigs and car tablets",
@@ -27,6 +27,7 @@
             "version": "1.0.0",
             "at": 1791628088,
             "releaseAt": 1791648000,
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/8896a28a344b399c23ec71f5d388ef3486cf2f14.png",
             "url": "https://www.ggstudio.store/scripts/speakers",
             "cta": "View on the store"
         },

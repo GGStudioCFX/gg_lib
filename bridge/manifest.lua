@@ -71,6 +71,7 @@ return {
             "jpr-phonesystem",
             "roadphone",
             "codem-phone",
+            "17mov_Phone",
             "qs-smartphone-pro",
             "qs-smartphone",
             "yseries",

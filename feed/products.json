@@ -1,15 +1,16 @@
 {
-    "publishedAt": 1791628088,
+    "publishedAt": 1792176486,
     "products": [
         {
             "id": "gg_speakersystem",
             "resource": "gg_speakersystem",
-            "name": "Speaker System",
-            "blurb": "Handheld speakers, placed stereos, music-synced beam and strobe lights and car dash tablets with a subwoofer, all played from the Speaker Connect phone app.",
+            "name": "Speaker & Car Radio System",
+            "blurb": "The ultimate FiveM audio experience: a custom speaker shop MLO, hands-on build and repair scenes, six speakers, beat-synced light shows, car installs with a CarPlay-style dash, and a phone app that runs it all.",
+            "price": "$39.95",
             "icon": "fa-volume-high",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/8896a28a344b399c23ec71f5d388ef3486cf2f14.png",
             "url": "https://www.ggstudio.store/scripts/speakers",
-            "hot": true,
-            "releaseAt": 1791648000
+            "hot": true
         },
         {
             "id": "gg_hunting",
@@ -42,6 +43,16 @@
             "icon": "fa-taxi",
             "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/fc2c56be6f8e2146f4a059a4513cc6c987364bac.png",
             "url": "https://www.ggstudio.store/scripts/taxi-job"
+        },
+        {
+            "id": "gg_coilcab",
+            "resource": "gg_coilcab",
+            "name": "CoilCab RoboTaxi System",
+            "blurb": "A self-driving FiveM robotaxi system featuring a one-of-one CoilCab vehicle, a fully interactive center-screen tablet, a dedicated phone app, three driving modes, synced YouTube, radio, and live GPS navigation.",
+            "price": "$19.95",
+            "icon": "fa-bolt",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/7f62d8edab7cb53b57b45fa79a17ab795c790aed.png",
+            "url": "https://www.ggstudio.store/scripts/coilcab"
         },
         {
             "id": "gg_towjob",
@@ -123,16 +134,6 @@
             "icon": "fa-bus",
             "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/42a36fea4c9fcbf120eb4277112f5430c933457e.png",
             "url": "https://www.ggstudio.store/scripts/bus-job"
-        },
-        {
-            "id": "gg_coilcab",
-            "resource": "gg_coilcab",
-            "name": "CoilCab Robotaxi System",
-            "blurb": "Book a driverless cab from the phone app, watch it come to you, and ride with a cabin screen for music, video and driving modes.",
-            "status": "SOON",
-            "icon": "fa-bolt",
-            "image": "https://raw.githubusercontent.com/GGStudioCFX/gg_lib/main/feed/images/coilcab.webp",
-            "url": "https://www.ggstudio.store"
         }
     ]
 }
