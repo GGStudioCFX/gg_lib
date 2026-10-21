@@ -1,15 +1,7 @@
 {
-    "publishedAt": 1792434284,
+    "publishedAt": 1792591043,
     "version": "1.0.20",
-    "ticker": [
-        "Speaker System 1.0.0: speakers, light rigs and car tablets",
-        {
-            "soon": "Speaker System drops today at 12 PM ET",
-            "releaseAt": 1791648000
-        },
-        "gg_lib 1.0.16: Quasar Smartphone V3 and PRO phone support",
-        "Comment on the release post in Discord for a chance to win the upcoming Coil Cab"
-    ],
+    "ticker": [],
     "links": {
         "discord": "https://discord.gg/DqMXJzATph",
         "store": "https://www.ggstudio.store"
@@ -19,12 +11,11 @@
         {
             "id": "speaker-system-1-0",
             "kind": "release",
-            "title": "Speaker System 1.0.0",
+            "title": "Speaker System",
             "tag": "Speaker System",
             "icon": "fa-volume-high",
             "accent": "#1ED760",
             "body": "Handheld speakers, placed stereos, beam and strobe lights that keep time with the music, and car dash tablets with an optional subwoofer. Everything is played and linked from the Speaker Connect phone app, and every setting is in Script Studio.",
-            "version": "1.0.0",
             "at": 1791628088,
             "releaseAt": 1791648000,
             "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/8896a28a344b399c23ec71f5d388ef3486cf2f14.png",
@@ -34,12 +25,11 @@
         {
             "id": "taxi-2-0",
             "kind": "release",
-            "title": "Taxi Job 2.0.4",
-            "tag": "Advanced Taxi Job",
+            "title": "Taxi Job V2",
+            "tag": "Taxi Job",
             "icon": "fa-taxi",
             "accent": "#fcba03",
-            "body": "Saved settings stay saved, company creation follows your settings, and GKS Phone joins the supported phones. Global Job Requirement is optional and off by default. Update Taxi Job and gg_lib together, including the bundled Taxi props.",
-            "version": "2.0.4",
+            "body": "A complete FiveM taxi job featuring a custom MLO, taxi organizations, phone app, in-game Taxi Creator, progression, achievements, leaderboards, and player-driven rides.",
             "at": 1789473628,
             "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/fc2c56be6f8e2146f4a059a4513cc6c987364bac.png",
             "url": "https://www.ggstudio.store/scripts/taxi-job",
