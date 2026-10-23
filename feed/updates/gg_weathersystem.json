@@ -1,0 +1,19 @@
+{
+    "label": "gg_weathersystem",
+    "resource": "gg_weathersystem",
+    "latest": "1.0.0",
+    "url": "https://discord.gg/DqMXJzATph",
+    "updates": [
+        {
+            "version": "1.0.0",
+            "at": 1792771165,
+            "kind": "feature",
+            "important": false,
+            "title": "Weather System is here",
+            "changes": [
+                "One time and weather for every player, with ten sky looks, Starfall, Aurora, Meteors, a Hurricane and earthquakes, run from /weather and set up in Script Studio.",
+                "Needs gg_lib 1.0.20 or newer. 1.0.21 adds the no-access screen and keeps the access list off players' games."
+            ]
+        }
+    ]
+}
