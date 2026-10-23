@@ -81,6 +81,106 @@ browser; native resource URLs always use `https://cfx-nui-<resource>/`.
 Each script also has a **Factory Reset** at the bottom of its page, which puts
 everything back to how it shipped.
 
+### Row designers
+
+A list whose rows are each designed (the Lucky Wheel's wheels) can open a row
+beside a live picture of it instead of as a plain form: the picture on the
+left, the row's fields in tabs and titled blocks on the right.
+
+```lua
+settings.define('settings.wheels.list', settings.shape.rows({
+    group      = 'wheels',
+    label      = 'Wheels',
+    item       = WHEEL_COLUMNS,
+    row_fields = { 'enabled', 'slots' }, -- said on the row's line in the list
+    tabs = {
+        { id = 'wheel', label = 'Wheel', icon = 'fa-location-dot' },
+        { id = 'look',  label = 'Look',  icon = 'fa-palette' },
+    },
+    sections = {
+        { id = 'spins',  tab = 'wheel', label = 'Spins' },
+        { id = 'design', tab = 'look',  label = 'Design', help = 'Under the slots.' },
+    },
+    designer = {
+        preview = 'web/dist/face/designer.html', -- in the manifest's files
+        build   = 'designer_face',          -- a settings.rowAction, run on every change
+        states  = {
+            { id = 'idle', label = 'Wheel' },
+            { id = 'spin', label = 'Spin', icon = 'fa-rotate-right' },
+        },
+    },
+}))
+```
+
+Each column names its `section` and how many of the block's four columns it
+takes (`span`); lists, positions and objects take the whole width unless given
+one. A nested list (a wheel's slots) takes `sections` of its own. Columns also
+take:
+
+| Field                        | What it does                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `when`                       | Shown only while other fields of the row hold one of these values: `{ kind = { 'cash', 'item' } }` |
+| `view = 'buttons'`           | An enum as a row of buttons                                                    |
+| `view = 'gallery'`           | An enum as a gallery of pictures                                               |
+| `allow_empty`, `empty_label` | A colour that may stay empty and then follows what it sits over                |
+| `placeholder`                | Grey words in an empty box                                                     |
+| `examples`                   | A text field's ready values as pictures over its box: `{ { value = 'nui://my_script/web/bg/gold.webp', label = 'Gold' } }`, `image` for a tile that is not the value |
+| `sets`                       | Other fields put back when this one changes: `sets = { fill_mode = 'design' }` on a design picker |
+
+An enum option may carry `font = { family = 'Impact', weight = 400 }` (an
+installed face) or `font = { file = 'web/dist/fonts/inter-800.woff2', weight = 800 }`
+(a file the script ships, listed in its manifest's `files`): the menu then
+writes each name in its own font.
+
+`type = 'icon'` is a picture picker: the script's own `packs` (files under
+`pack_root`, grouped, `moving = true` for a GIF), the Font Awesome library, an
+item's or a car's picture, words, or any picture or GIF by its address.
+`auto = false` drops Auto (the prize's own picture).
+
+The designer frames `preview` and, on every change, runs the row through the
+`build` row action (on the client, `done(true, data)`) and posts the page:
+
+```js
+{ event: 'gg:row:preview', version: 1, row, state, nonce, focus: { key, index }, data }
+```
+
+`data` is what `build` answered, `state` the button picked under the picture,
+`nonce` changes on every press (a second Spin spins again), and `focus` is the
+row open in the list the picture follows (`designer.list`, else the row's first
+list column). The page sends `{ event: 'gg:editor:ready', version: 1 }` once it
+listens. Like a visual editor's preview it only draws: no gameplay callbacks,
+no saving.
+
+**Templates** come from another list setting. The script ships its looks there
+(`merge_key` brings them back), and **Save as Template** adds the open row's
+look as `saved_1`, `saved_2`... Hovering a card tries it on the picture; its
+buttons put it on as unsaved changes.
+
+```lua
+templates = {
+    from  = 'settings.wheels.templates',
+    modes = {
+        { id = 'look',  label = 'Look',           keys = LOOK_KEYS },
+        { id = 'icons', label = 'Look and Icons', keys = LOOK_KEYS,
+          lists = { slots = { 'icon', 'text' } }, needs = 'slots' },
+    },
+    image    = { { path = '{picture}', when = { design = 'picture' } }, 'web/dist/designs/{design}.jpg' },
+    swatches = { 'fill_all', 'hub_fill' },
+},
+```
+
+A mode copies its `keys` whole and the `lists` columns row by row, round again
+where the template has fewer; `needs` is a key the template must hold for the
+mode to be offered. `image` is the card's picture, a path inside the script, a
+`nui://` or an `https://` address, with `{key}` filled from the template. A
+list is tried in order and the first whose `when` holds and whose keys are all
+filled is used. `swatches` are keys whose colour shows as dots on the card; a
+card with no picture draws them as a small wheel.
+
+Off the game, the development browser (`?scriptPreview=`) posts the build to
+`<previewBase>__gg/row_preview` as `{ action, row }` and expects `{ ok, value }`
+back, so a local preview server can run the script's own Lua. Needs gg_lib 1.0.22.
+
 ### Import & Export
 
 Above Factory Reset, every script's page can take its settings out as one JSON
@@ -164,3 +264,88 @@ settings.define("access.list", settings.shape.rows({
 
 `settings.PRIVATE` is true on a gg_lib that knows it (1.0.21 on); a script for
 older ones can fall back to `server_only` when it is not.
+
+### Dropdowns from another script
+
+An `enum`'s `options` may be a function instead of a list. The server calls it
+each time the Studio opens, so the dropdown shows what another resource holds
+right now (the Casino Wheel Editor's designs, a garage list). A function that
+errors gives an empty list and a line in the console.
+
+When that list can change under a saved pick (a design deleted, the other
+resource stopped), add `allow_unlisted = true`: a stored text the list does not
+hold is kept instead of the whole setting falling back to its default. It must
+still be short (`max_length`, 64 by default) with no control characters. Return
+the stored id as an option of its own ("Deleted design") so the admin sees it.
+
+```lua
+{ key = "design", label = "Design", type = "enum", allow_unlisted = true,
+  options = function()
+      local list = { { value = "", label = "Default design" } }
+      local ok, answer = pcall(function() return exports.gg_casinowheel:getDesigns() end)
+      for _, design in ipairs(ok and answer and answer.designs or {}) do
+          list[#list + 1] = { value = design.id, label = design.name }
+      end
+      return list
+  end },
+```
+
+A rows list can also take `add_label` (the Add button's text) and
+`duplicate = true` (a Duplicate action on every row); see
+[Placing props](#placing-props). Needs gg_lib 1.0.22.
+
+### Placing props
+
+A `coords` column can pick with the prop it stands for instead of a ped: give it
+`preview_object`. Parts listed in `with` sit at their offset from the model's
+origin and turn with it, so a thing made of several models shows whole. The
+picked coordinates are the model's origin on the ground.
+
+```lua
+settings.define("settings.wheels.list", settings.shape.rows({
+    label    = "Wheels",
+    auto_key = "id",
+    -- The Add button places the prop first; the new row starts where it was put down
+    add_place = "coords",
+    add_label = "Add Wheel",
+    duplicate = true,
+    item = {
+        { key = "id", label = "ID", type = "string", hidden = true },
+        settings.column.label(),
+        { key = "coords", label = "Position", type = "coords", nullable = true,
+          preview_object = {
+              model   = "vw_prop_vw_luckywheel_01a",
+              title   = "Place Lucky Wheel",
+              with    = { { model = "vw_prop_vw_luckywheel_02a", offset = { 0.0, 0.0, 1.525 } } },
+              freecam = true,
+          } },
+    },
+    item_default = { id = "1", label = "Lucky Wheel" },
+    default = {},
+}))
+```
+
+| Option | On | What it does |
+| --- | --- | --- |
+| `preview_object` | a `coords` column | `{ model, title?, with?, freecam? }`: the picker shows this prop (and its parts) instead of a ped. `freecam = true` picks from a flying camera instead of the player's eyes |
+| `add_place` | a rows list | The key of a `coords` column. The Add button opens the picker first and the new row starts where the player put it down, then opens so the rest can be set up; cancelling adds nothing |
+| `add_label` | a rows list | The Add button's text, `"Add Wheel"` instead of **Add Entry**. Translated like a label |
+| `duplicate` | a rows list | Each row gets **Duplicate**: a copy with everything the row holds, a new `auto_key` and "(copy)" after its label. With `add_place` the copy is placed first, starting where the original stands; cancelling makes no copy |
+
+The same keys as the ped picker apply: aim to move, Scroll to turn (Shift for fine
+turns), E for the gizmo, Enter to place, Esc to cancel. With `freecam` the prop
+follows the middle of the screen while WASD flies, the mouse looks, Space and Q go
+up and down, and Shift is fast and Ctrl slow; in the gizmo R switches move and
+turn and L-ALT brings up the cursor for the handles. The camera stays within 400 m
+of the player. Needs gg_lib 1.0.22.
+
+While any `gg.tool` is open (this picker included), `LocalPlayer.state.ggTool` is `true` on that
+client. A script with its own E (or other) key mapping checks it and leaves the press alone, so
+placing a lucky wheel next to another one never spins it:
+
+```lua
+RegisterCommand("my_use", function()
+    if LocalPlayer.state.ggTool then return end
+    -- ...
+end, false)
+```

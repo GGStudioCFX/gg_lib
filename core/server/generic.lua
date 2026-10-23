@@ -299,6 +299,20 @@ define("general.currency_type", {
     options = currency_options,
 })
 
+-- Money only: dirty money is an item on most servers, so a script hands it out
+-- as one. A script can still send its own payouts somewhere else.
+define("general.money_account", {
+    group   = "general",
+    label   = "Money Goes To",
+    help    = "Where money a GG script pays out lands: in the pocket (Cash) or straight in the Bank. A script can pick its own.",
+    type    = "enum",
+    default = "cash",
+    options = {
+        { value = "cash", label = "Cash" },
+        { value = "bank", label = "Bank" },
+    },
+})
+
 -- Never listed. It only records that the first-run questions were answered,
 -- so accepting every default still counts as having been asked.
 define("general.setup_done", {

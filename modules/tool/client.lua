@@ -51,6 +51,10 @@ function gg.tool.run(options)
     active  = true
     current = options
 
+    -- Other scripts read this to leave the tool's keys alone (E near a lucky wheel is not a spin
+    -- while a wheel is being placed): LocalPlayer.state.ggTool is true while a tool is open.
+    LocalPlayer.state:set("ggTool", true, false)
+
     local state = options.state or {}
     state.tool  = options
     state.done  = false
@@ -75,8 +79,9 @@ function gg.tool.run(options)
 
             for index = 1, #options.keys do
                 local key = options.keys[index]
-                local pressed = key.repeatable and IsDisabledControlPressed(0, key.control)
-                    or IsDisabledControlJustPressed(0, key.control)
+                -- A key without a control is a legend row only (the tool reads it itself).
+                local pressed = key.control and (key.repeatable and IsDisabledControlPressed(0, key.control)
+                    or IsDisabledControlJustPressed(0, key.control))
 
                 if pressed then
                     if key.cancel then
@@ -100,6 +105,8 @@ function gg.tool.run(options)
     active    = false
     current   = nil
     last_info = nil
+
+    LocalPlayer.state:set("ggTool", nil, false)
 
     hideLegend()
 

@@ -168,7 +168,9 @@ RegisterNUICallback("settings_row_action", function(data, cb)
 
     TriggerEvent("gg_lib:settings:rowAction", resource, id, row, token)
 
-    SetTimeout(900000, function()
+    -- An hour: a row action may open the script's own editor (see
+    -- gg_lib:settings:away below) and wait while the owner works in it.
+    SetTimeout(3600000, function()
         if actionWaiting[token] then
             actionWaiting[token] = nil
             answer:resolve({ ok = false, message = "the script did not answer" })
@@ -182,6 +184,53 @@ RegisterNUICallback("settings_row_action", function(data, cb)
     end
 
     cb(answered)
+end)
+
+-- A row designer's live picture: the script's own row action turns the row as
+-- it stands into whatever its preview page draws. Quiet and quick, as it runs
+-- on every change: no popup, and a script that does not answer is a blank
+-- picture, not a wait.
+RegisterNUICallback("settings_row_preview", function(data, cb)
+    local resource = type(data) == "table" and data.resource or nil
+    local id = type(data) == "table" and data.action or nil
+    local row = type(data) == "table" and data.row or nil
+
+    if type(resource) ~= "string" or type(id) ~= "string" or type(row) ~= "table" then
+        cb({ ok = false })
+        return
+    end
+
+    actionToken = actionToken + 1
+
+    local token = actionToken
+    local answer = promise.new()
+
+    actionWaiting[token] = answer
+
+    TriggerEvent("gg_lib:settings:rowAction", resource, id, row, token)
+
+    SetTimeout(2500, function()
+        if actionWaiting[token] then
+            actionWaiting[token] = nil
+            answer:resolve({ ok = false })
+        end
+    end)
+
+    cb(Citizen.Await(answer))
+end)
+
+-- A row action that opens the script's own screen (a customizer with its
+-- own camera) steps the studio aside the way an away action does:
+-- TriggerEvent("gg_lib:settings:away", true) hides it and lets go of the
+-- keyboard and mouse; false brings it back. Client-side only.
+AddEventHandler("gg_lib:settings:away", function(away)
+    SendNUIMessage({ action = "settings_placing", data = { PLACING = away == true } })
+
+    if away == true then
+        SetNuiFocus(false, false)
+    elseif open then
+        SetNuiFocus(true, true)
+    end
 end)
 
 RegisterNUICallback("settings_model_check", function(data, cb)

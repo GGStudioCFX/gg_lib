@@ -66,11 +66,15 @@ function Locales.schema(payload)
     local function metadata(node, prefix)
         local out = {}
         for key, value in pairs(node) do out[key] = value end
-        for _, key in ipairs({ "label", "help", "action_help", "suffix" }) do
+        for _, key in ipairs({ "label", "help", "action_help", "suffix", "add_label" }) do
             out[key] = strings[prefix .. "." .. key] or out[key]
         end
         if node.label_key then out.label = strings[node.label_key] or out.label end
-        for _, key in ipairs({ "fields", "item", "options", "row_actions", "row_labels" }) do
+        -- A row designer and its templates are one table each, with lists inside.
+        for _, key in ipairs({ "designer", "templates" }) do
+            if type(node[key]) == "table" then out[key] = metadata(node[key], prefix .. "." .. key) end
+        end
+        for _, key in ipairs({ "fields", "item", "options", "row_actions", "row_labels", "sections", "tabs", "states", "modes", "packs", "items" }) do
             if type(node[key]) == "table" then
                 out[key] = {}
                 for index, field in ipairs(node[key]) do

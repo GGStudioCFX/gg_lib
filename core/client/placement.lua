@@ -151,7 +151,150 @@ end
 local pending_ray = nil
 local last_ground = nil
 
-local function groundUnderCursor()
+local groundUnderCursor
+
+-- MARK: Freecam
+
+-- A coords column whose preview_object has `freecam = true` picks from a flying camera instead of
+-- the player's eyes, so a prop goes down anywhere in sight: across the room, up on a stage, over
+-- the road. The prop follows the middle of the screen as it does on foot. WASD flies, the mouse
+-- looks, Space and Q go up and down, Shift is fast and Ctrl slow. The camera World List uses.
+local CAM_SLOW, CAM_NORMAL, CAM_FAST = 0.08, 0.35, 1.1
+local LOOK_SPEED    = 6.0
+local FREECAM_REACH = 120.0
+local FREECAM_LEASH = 400.0
+local FLY_CONTROLS  = { 1, 2, 21, 22, 30, 31, 32, 33, 34, 35, 36, 44 }
+
+local freecam = nil
+
+local function lookAt(from, target)
+    local delta = target - from
+    local flat  = math.sqrt(delta.x * delta.x + delta.y * delta.y)
+
+    return vector3(math.deg(math.atan(delta.z, math.max(flat, 0.001))), 0.0, math.deg(math.atan(-delta.x, delta.y)) % 360)
+end
+
+local function startFreecam(target)
+    local ped  = PlayerPedId()
+    local feet = safeCoords(GetEntityCoords(ped), vector3(0.0, 0.0, 72.0))
+
+    local pos = safeCoords(GetFinalRenderedCamCoord(), nil) or (feet + vector3(0.0, 0.0, 1.2))
+    local rot = GetFinalRenderedCamRot(2)
+
+    rot = vector3(finite(rot.x, 0.0), 0.0, finite(rot.z, 0.0))
+
+    -- Moving or copying something: start a few metres off it, looking at it.
+    if target then
+        local yaw = math.rad(rot.z)
+
+        pos = target + vector3(math.sin(yaw) * 6.0, -math.cos(yaw) * 6.0, 3.0)
+        rot = lookAt(pos, target)
+    end
+
+    local cam = CreateCam("DEFAULT_SCRIPTED_CAMERA", true)
+
+    SetCamCoord(cam, pos.x, pos.y, pos.z)
+    SetCamRot(cam, rot.x, rot.y, rot.z, 2)
+    SetCamFov(cam, 60.0)
+    SetCamActive(cam, true)
+    RenderScriptCams(true, true, 400, true, true)
+
+    FreezeEntityPosition(ped, true)
+    SetEntityVisible(ped, false, false)
+    SetEntityInvincible(ped, true)
+
+    freecam = { cam = cam, pos = pos, rot = rot }
+end
+
+local function stopFreecam()
+    if not freecam then return end
+
+    local ped = PlayerPedId()
+
+    RenderScriptCams(false, true, 400, true, true)
+    DestroyCam(freecam.cam, true)
+    ClearFocus()
+
+    FreezeEntityPosition(ped, false)
+    SetEntityVisible(ped, true, false)
+    SetEntityInvincible(ped, false)
+
+    freecam = nil
+end
+
+local function flyFreecam(looking)
+    if not freecam then return end
+
+    for index = 1, #FLY_CONTROLS do
+        DisableControlAction(0, FLY_CONTROLS[index], true)
+    end
+
+    local speed = CAM_NORMAL
+
+    if IsDisabledControlPressed(0, 21) then speed = CAM_FAST end
+    if IsDisabledControlPressed(0, 36) then speed = CAM_SLOW end
+
+    local rot = freecam.rot
+
+    -- With the cursor up the mouse is for the gizmo, not for looking.
+    if looking then
+        local lookX = GetDisabledControlNormal(0, 1) * LOOK_SPEED
+        local lookY = GetDisabledControlNormal(0, 2) * LOOK_SPEED
+
+        rot = vector3(math.max(-89.0, math.min(89.0, rot.x - lookY)), 0.0, (rot.z - lookX) % 360)
+    end
+
+    local yaw, pitch = math.rad(rot.z), math.rad(rot.x)
+
+    local forward = vector3(-math.sin(yaw) * math.cos(pitch), math.cos(yaw) * math.cos(pitch), math.sin(pitch))
+    local right   = vector3(math.cos(yaw), math.sin(yaw), 0.0)
+    local move    = vector3(0.0, 0.0, 0.0)
+
+    if IsDisabledControlPressed(0, 32) then move = move + forward end
+    if IsDisabledControlPressed(0, 33) then move = move - forward end
+    if IsDisabledControlPressed(0, 34) then move = move - right end
+    if IsDisabledControlPressed(0, 35) then move = move + right end
+    if IsDisabledControlPressed(0, 22) then move = move + vector3(0.0, 0.0, 1.0) end
+    if IsDisabledControlPressed(0, 44) then move = move - vector3(0.0, 0.0, 1.0) end
+
+    local pos = freecam.pos + move * speed
+
+    -- Kept within reach of the player, where the world is loaded.
+    local feet = safeCoords(GetEntityCoords(PlayerPedId()), nil)
+
+    if feet and #(pos - feet) > FREECAM_LEASH then
+        pos = feet + (pos - feet) / #(pos - feet) * FREECAM_LEASH
+    end
+
+    pos = safeCoords(pos, freecam.pos)
+
+    freecam.pos, freecam.rot = pos, rot
+
+    SetCamCoord(freecam.cam, pos.x, pos.y, pos.z)
+    SetCamRot(freecam.cam, rot.x, rot.y, rot.z, 2)
+    SetFocusPosAndVel(pos.x, pos.y, pos.z, 0.0, 0.0, 0.0)
+end
+
+-- What the Studio picker moves around: a ped by default (a column's preview_model / preview_from),
+-- or a prop (preview_object, made in Object placement below). spawn, rest (where it sits on a
+-- ground point), aim (the ground under the cursor), move and destroy.
+local function pedBody(preview)
+    preview = type(preview) == "table" and preview or {}
+
+    return {
+        title   = "Place Ped",
+        scene   = type(preview.scene) == "string" and preview.scene or nil,
+        spawn   = function(coords, heading)
+            preview_ped = spawnPreview(preview.model, preview.scene, coords, heading)
+        end,
+        rest    = function(ground) return vector3(ground.x, ground.y, ground.z + PED_CENTRE_OFFSET) end,
+        aim     = function() return groundUnderCursor() end,
+        move    = movePreview,
+        destroy = destroyPreview,
+    }
+end
+
+function groundUnderCursor(ignore, flags)
     if pending_ray then
         local status, hit, endCoords = GetShapeTestResult(pending_ray)
 
@@ -165,8 +308,8 @@ local function groundUnderCursor()
     end
 
     if not pending_ray then
-        local camCoords = safeCoords(GetGameplayCamCoord(), nil)
-        local rotation  = GetGameplayCamRot(2)
+        local camCoords = freecam and freecam.pos or safeCoords(GetGameplayCamCoord(), nil)
+        local rotation  = freecam and freecam.rot or GetGameplayCamRot(2)
 
         if not camCoords then return last_ground end
 
@@ -175,14 +318,14 @@ local function groundUnderCursor()
         local cos   = math.abs(math.cos(pitch))
 
         local direction = vector3(-math.sin(yaw) * cos, math.cos(yaw) * cos, math.sin(pitch))
-        local target    = safeCoords(camCoords + direction * RAY_DISTANCE, nil)
+        local target    = safeCoords(camCoords + direction * (freecam and FREECAM_REACH or RAY_DISTANCE), nil)
 
         if not target then return last_ground end
 
         pending_ray = StartShapeTestRay(
             camCoords.x, camCoords.y, camCoords.z,
             target.x, target.y, target.z,
-            -1, preview_ped or PlayerPedId(), 4
+            flags or -1, ignore or preview_ped or PlayerPedId(), 4
         )
 
         if not last_ground then
@@ -232,7 +375,7 @@ local function applyGizmoMove(state, payload)
     if heading then state.heading = heading % 360 end
 end
 
-local function pickPosition(initial, preview)
+local function pickPosition(initial, body)
     local ped  = PlayerPedId()
     local here = safeCoords(GetEntityCoords(ped), vector3(0.0, 0.0, 72.0))
 
@@ -242,7 +385,9 @@ local function pickPosition(initial, preview)
     pending_ray = nil
     last_ground = nil
 
-    preview_ped = spawnPreview(preview and preview.model, preview and preview.scene, start, heading)
+    if body.freecam then startFreecam(safeCoords(initial, nil)) end
+
+    body.spawn(start, heading)
 
     local state = {
         coords  = start,
@@ -251,7 +396,7 @@ local function pickPosition(initial, preview)
         fine    = false,
         mode    = "simple",
         cursor  = false,
-        scene   = type(preview) == "table" and type(preview.scene) == "string" and preview.scene or nil,
+        scene   = body.scene,
     }
 
     active_state = state
@@ -306,9 +451,22 @@ local function pickPosition(initial, preview)
         gg.tool.setKeys(simple)
     end }
 
-    simple = { place, cancel, turnUp, turnDown, toAdvanced }
+    -- Legend rows only: the camera reads these keys itself.
+    local fly = body.freecam and {
+        { key = "WASD", label = "Fly" },
+        { key = "SPACE / Q", label = "Up / Down" },
+        { key = "SHIFT / CTRL", label = "Fast / Slow" },
+    } or {}
 
-    advanced = {
+    local function with(keys)
+        for index = 1, #fly do keys[#keys + 1] = fly[index] end
+
+        return keys
+    end
+
+    simple = with({ place, cancel, turnUp, turnDown, toAdvanced })
+
+    advanced = with({
         place, cancel,
         { key = "R", control = 45, label = "Move / Turn", action = function(inner)
             gizmo_mode = gizmo_mode == "translate" and "rotate" or "translate"
@@ -317,20 +475,22 @@ local function pickPosition(initial, preview)
         end },
         toggleCursor,
         toSimple,
-    }
+    })
 
     return gg.tool.run({
-        title = "Place Ped",
+        title = body.title,
         state = state,
         keys  = simple,
         tick  = function(inner)
             inner.fine = IsDisabledControlPressed(0, 21)
 
+            if body.freecam then flyFreecam(not inner.cursor) end
+
             if inner.drag then
-                local ground = groundUnderCursor()
+                local ground = body.aim()
 
                 if ground then
-                    inner.coords = vector3(ground.x, ground.y, ground.z + PED_CENTRE_OFFSET)
+                    inner.coords = body.rest(ground)
                 end
             end
 
@@ -342,7 +502,7 @@ local function pickPosition(initial, preview)
 
             inner.coords = safe
 
-            movePreview(inner)
+            body.move(inner)
 
             gg.tool.setInfo({
                 { label = "X", value = ("%.2f"):format(safe.x) },
@@ -358,9 +518,62 @@ local function pickPosition(initial, preview)
             SetNuiFocusKeepInput(false)
             SendNUIMessage({ action = "gg_gizmo", data = { ACTIVE = false } })
 
-            destroyPreview()
+            body.destroy()
+            stopFreecam()
         end,
     })
+end
+
+-- MARK: Object placement
+
+-- World and objects: a person or a car is never somewhere to set a prop down.
+local OBJECT_FLAGS = 17
+local OBJECT_LIFT  = 0.015
+
+local preview_object = nil
+local preview_parts  = {}
+
+local function destroyObject()
+    if preview_object and DoesEntityExist(preview_object) then
+        DeleteEntity(preview_object)
+    end
+
+    for _, part in ipairs(preview_parts) do
+        if DoesEntityExist(part) then DeleteEntity(part) end
+    end
+
+    preview_object = nil
+    preview_parts  = {}
+end
+
+local function spawnObject(model, coords, heading, tint)
+    local hash = type(model) == "number" and model or joaat(tostring(model))
+
+    if not IsModelInCdimage(hash) or not IsModelValid(hash) then return nil end
+
+    RequestModel(hash)
+
+    local deadline = GetGameTimer() + 5000
+    while not HasModelLoaded(hash) and GetGameTimer() < deadline do Wait(0) end
+
+    if not HasModelLoaded(hash) then return nil end
+
+    local object = CreateObjectNoOffset(hash, coords.x, coords.y, coords.z, false, false, false)
+    SetModelAsNoLongerNeeded(hash)
+
+    if not object or object == 0 then return nil end
+
+    SetEntityCollision(object, false, false)
+    FreezeEntityPosition(object, true)
+    SetEntityHeading(object, heading)
+    SetEntityAlpha(object, 205, false)
+
+    tint = finite(tint, nil)
+    if tint then SetObjectTextureVariation(object, math.floor(tint)) end
+
+    local low = GetModelDimensions(hash)
+
+    return object, finite(low and low.z, 0.0)
 end
 
 RegisterNUICallback("gg_gizmo_move", function(data, cb)
@@ -370,6 +583,80 @@ RegisterNUICallback("gg_gizmo_move", function(data, cb)
 
     cb({})
 end)
+
+-- MARK: Studio picker with a prop
+
+-- A coords column with preview_object = { model, title?, with = { { model, offset = { x, y, z } } } }
+-- picks with that prop on the ground instead of a ped: what is being placed, where it will stand.
+-- Each `with` part sits at its offset from the model's origin, turned with it, so a thing made of
+-- several models (a stand and the wheel on it) shows whole. The picked spot is the model's origin.
+local function partOffset(offset)
+    if type(offset) ~= "table" and type(offset) ~= "vector3" then return vector3(0.0, 0.0, 0.0) end
+
+    return vector3(
+        finite(offset.x or offset[1], 0.0),
+        finite(offset.y or offset[2], 0.0),
+        finite(offset.z or offset[3], 0.0)
+    )
+end
+
+local function objectBody(spec)
+    local entity, low = nil, 0.0
+    local parts = {}
+
+    local function place(coords, heading)
+        if entity and DoesEntityExist(entity) then
+            SetEntityCoordsNoOffset(entity, coords.x, coords.y, coords.z, false, false, false)
+            SetEntityHeading(entity, heading)
+        end
+
+        local h = math.rad(heading)
+        local c, s = math.cos(h), math.sin(h)
+
+        for _, part in ipairs(parts) do
+            if DoesEntityExist(part.entity) then
+                local o = part.offset
+
+                SetEntityCoordsNoOffset(part.entity, coords.x + o.x * c - o.y * s, coords.y + o.x * s + o.y * c, coords.z + o.z, false, false, false)
+                SetEntityHeading(part.entity, heading)
+            end
+        end
+    end
+
+    return {
+        title   = type(spec.title) == "string" and spec.title or "Place Object",
+        spawn   = function(coords, heading)
+            entity, low = spawnObject(spec.model, coords, heading)
+            low = low or 0.0
+
+            for _, part in ipairs(type(spec.with) == "table" and spec.with or {}) do
+                local model = type(part) == "table" and part.model or part
+                local object = model and spawnObject(model, coords, heading)
+
+                if object then
+                    parts[#parts + 1] = { entity = object, offset = partOffset(type(part) == "table" and part.offset) }
+                end
+            end
+
+            place(coords, heading)
+        end,
+        rest    = function(ground) return vector3(ground.x, ground.y, ground.z - low + OBJECT_LIFT) end,
+        aim     = function() return groundUnderCursor(entity, OBJECT_FLAGS) end,
+        move    = function(state)
+            local target = safeCoords(state.coords, nil)
+            if target then place(target, finite(state.heading, 0.0) % 360) end
+        end,
+        destroy = function()
+            if entity and DoesEntityExist(entity) then DeleteEntity(entity) end
+
+            for _, part in ipairs(parts) do
+                if DoesEntityExist(part.entity) then DeleteEntity(part.entity) end
+            end
+
+            entity, parts = nil, {}
+        end,
+    }
+end
 
 RegisterNUICallback("settings_pick_coords", function(data, cb)
     if not gg.tool or not gg.tool.run then
@@ -389,11 +676,21 @@ RegisterNUICallback("settings_pick_coords", function(data, cb)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = "settings_placing", data = { PLACING = true } })
 
-    local ok, picked = pcall(pickPosition, data and data.current, data and data.preview)
+    local preview = data and data.preview
+    local object  = type(preview) == "table" and type(preview.object) == "table" and preview.object.model ~= nil and preview.object or nil
+    local body    = object and objectBody(object) or pedBody(preview)
+
+    body.freecam = object and object.freecam == true or nil
+
+    local ok, picked = pcall(pickPosition, data and data.current, body)
+
+    GG_PAUSE_GUARD.release()
 
     active_state = nil
 
     gg.tool.abort()
+    body.destroy()
+    stopFreecam()
     destroyPreview()
     GG_EDITOR_BUCKET.leave()
 
@@ -401,8 +698,6 @@ RegisterNUICallback("settings_pick_coords", function(data, cb)
 
     SetNuiFocus(true, true)
     SendNUIMessage({ action = "settings_placing", data = { PLACING = false } })
-
-    GG_PAUSE_GUARD.release()
 
     if not ok then
         print(("^1[gg_lib] placement failed: %s^0"):format(picked))
@@ -438,5 +733,7 @@ AddEventHandler("onResourceStop", function(resource)
     if resource ~= "gg_lib" then return end
 
     gg.tool.abort()
+    stopFreecam()
     destroyPreview()
+    destroyObject()
 end)

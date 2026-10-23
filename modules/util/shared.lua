@@ -108,6 +108,19 @@ function gg.util.units()
     return UNITS[chosen] and chosen or DEFAULT_UNITS
 end
 
+-- Where a payout lands: the script's own pick when it made one ("cash" or
+-- "bank"), else Generic Settings' Money Goes To.
+local MONEY_ACCOUNTS = { cash = true, bank = true }
+
+function gg.util.moneyAccount(own)
+    if MONEY_ACCOUNTS[own] then return own end
+
+    local general = genericGeneral()
+    local chosen  = general and general.money_account
+
+    return MONEY_ACCOUNTS[chosen] and chosen or "cash"
+end
+
 local function round(value, decimals)
     if not decimals or decimals <= 0 then
         return math.floor(value + 0.5)

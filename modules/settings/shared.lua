@@ -335,13 +335,26 @@ validators.image = function(def, value)
     return true, (name:gsub("%s", ""))
 end
 
+-- Options another resource supplies (an export answering a list) can be empty on one side or
+-- for a moment: `allow_unlisted` keeps a short text the list does not hold yet, so a stored
+-- pick never throws the whole setting back to its default.
+local function unlisted(def, value)
+    if not def.allow_unlisted or type(value) ~= "string" then return false end
+
+    return #value <= (tonumber(def.max_length) or 64) and not value:find("[%c]")
+end
+
 validators.enum = function(def, value)
     local choices = def.options
     if type(choices) == "function" then
         local ok, result = pcall(choices)
         choices = ok and result or nil
     end
-    if type(choices) ~= "table" then return false, "options are unavailable" end
+    if type(choices) ~= "table" then
+        if unlisted(def, value) then return true, value end
+
+        return false, "options are unavailable"
+    end
 
     for _, option in ipairs(choices) do
         local candidate = type(option) == "table" and option.value or option
@@ -361,6 +374,8 @@ validators.enum = function(def, value)
         end
     end
 
+    if unlisted(def, value) then return true, value end
+
     local shown = {}
     for index, option in ipairs(choices) do
         if index > 20 then shown[#shown + 1] = "…" break end
@@ -371,8 +386,11 @@ validators.enum = function(def, value)
     return false, ("is not one of the allowed options: %s"):format(table.concat(shown, ", "))
 end
 
-validators.color = function(_, value)
+validators.color = function(def, value)
     if type(value) ~= "string" then return false, "expected a color string" end
+
+    -- allow_empty: no colour of its own, so whatever it sits over shows.
+    if value == "" and def.allow_empty then return true, value end
 
     if string.match(value, "^#%x%x%x%x%x%x$")
         or string.match(value, "^#%x%x%x$")
@@ -382,6 +400,40 @@ validators.color = function(_, value)
     end
 
     return false, "expected a hex or rgb() color"
+end
+
+-- An icon: "auto" (the script picks), "" (none), or a kind and what it names:
+-- lib:<Font Awesome name>, item:<item>, vehicle:<model>, pack:<picture in the
+-- field's pack_root>, url:<https:// or nui:// picture or GIF>, text:<words>.
+local ICON_KINDS = {
+    lib     = "^[%w%-]+$",
+    item    = "^[%w_%-%.]+$",
+    vehicle = "^[%w_%-]+$",
+    pack    = "^[%w_%-/]+%.%w+$",
+    url     = "^%a[%w+.-]*://%S+$",
+    img     = "^%a[%w+.-]*://%S+$",
+    text    = "^[^%c]+$",
+}
+
+validators.icon = function(def, value)
+    if type(value) ~= "string" then return false, "expected an icon" end
+    if value == "" or value == "auto" then return true, value end
+
+    if #value > (def.max_length or 512) then return false, "is too long" end
+
+    local kind, rest = value:match("^(%a+):(.+)$")
+    local shape = kind and ICON_KINDS[kind]
+
+    if not shape or not rest:match(shape) then return false, "is not an icon" end
+    if kind == "pack" and rest:find("..", 1, true) then return false, "is not an icon" end
+
+    if (kind == "url" or kind == "img") and not (rest:match("^https?://") or rest:match("^nui://")) then
+        return false, "must be an https:// or nui:// address"
+    end
+
+    if kind == "text" and #rest > 48 then return false, "must be 48 characters or fewer" end
+
+    return true, value
 end
 
 local function hexByte(value)
@@ -1383,7 +1435,14 @@ function settings.describe()
             takeover    = def.takeover,
             away        = def.away == true or nil,
             row_actions = def.row_actions,
+            sections    = def.sections,
+            tabs        = def.tabs,
+            designer    = def.designer,
+            templates   = def.templates,
             auto_key    = def.auto_key,
+            add_place   = def.add_place,
+            add_label   = def.add_label,
+            duplicate   = def.duplicate,
             merge_key   = def.merge_key,
             unique_key  = def.unique_key,
             max_items   = def.max_items,
