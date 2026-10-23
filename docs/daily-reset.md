@@ -10,7 +10,8 @@ The clock every script shares.
 
 One clock for every GG script. Whatever resets each day — progress, streaks,
 claims, payouts — rolls over at the same moment, set once under
-**Generic → Daily Reset** rather than in each script’s own config.
+**Generic → Daily Reset** rather than in each script’s own config. The time is
+read in the server's **Time Zone**, under **Generic → General**.
 
 ```lua
 gg.daily.onReset(function()

@@ -140,3 +140,27 @@ Read it with `settings.read` on the **server** only — a client reading one get
 `nil`, because it was never given a value to hold. Leave `default` empty: config
 files are shared scripts, so anything written there is already on every
 player's disk. gg_lib prints a warning if a server-only setting ships one.
+
+### Private settings
+
+A setting the admins should see and edit but players never get — a list of
+players' identifiers let into a panel — is `private = true` instead. It is kept
+from players exactly as a server-only one is (the client, the live update, the
+log), but the Studio shows and edits it like any other setting, a list with its
+Add button and rows. Only admins who may view the script see it.
+
+```lua
+settings.define("access.list", settings.shape.rows({
+    group   = "access",
+    label   = "Panel Access List",
+    private = true,
+    item    = {
+        { key = "name",       label = "Name",       type = "string" },
+        { key = "identifier", label = "Identifier", type = "string" },
+    },
+    default = {},
+}))
+```
+
+`settings.PRIVATE` is true on a gg_lib that knows it (1.0.21 on); a script for
+older ones can fall back to `server_only` when it is not.

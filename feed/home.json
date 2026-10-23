@@ -1,13 +1,26 @@
 {
-    "publishedAt": 1792591043,
-    "version": "1.0.20",
+    "publishedAt": 1792771414,
+    "version": "1.0.21",
     "ticker": [],
     "links": {
         "discord": "https://discord.gg/DqMXJzATph",
         "store": "https://www.ggstudio.store"
     },
-    "featured": "speaker-system-1-0",
+    "featured": "weather-system-1-0",
     "promos": [
+        {
+            "id": "weather-system-1-0",
+            "kind": "release",
+            "title": "Weather System",
+            "tag": "Weather System",
+            "icon": "fa-cloud-sun",
+            "accent": "#41A9FF",
+            "body": "One time and weather for every player, with ten sky looks, Starfall, Aurora and Meteors at night, a Hurricane that crosses the city and earthquakes that shake the streets. Admins run it from /weather, every setting is in Script Studio, and it is free.",
+            "at": 1792771143,
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/835b92c78bcdff10ae6214436db2664553d0cef1.png",
+            "url": "https://www.ggstudio.store/scripts/weathersystem",
+            "cta": "View on the store"
+        },
         {
             "id": "speaker-system-1-0",
             "kind": "release",

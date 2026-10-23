@@ -146,9 +146,27 @@ local ACE_ROLES = {
     ["qbcore.admin"]     = "admin",
     ["qbx.god"]          = "admin",
     ["qbx.admin"]        = "admin",
+    -- The stock server.cfg gives its admin group every command this way.
+    ["command"]          = "admin",
     ["group.mod"]        = "moderator",
     ["group.moderator"]  = "moderator",
 }
+
+-- Players logged in to the txAdmin menu as an admin, by server id. txAdmin's own resource
+-- (monitor) tells us; anything else sending the event is ignored.
+local txAdmins = {}
+
+AddEventHandler("txAdmin:events:adminAuth", function(data)
+    if GetInvokingResource() ~= "monitor" or type(data) ~= "table" then return end
+
+    local player = tonumber(data.netid)
+
+    if player == -1 then
+        txAdmins = {}
+    elseif player then
+        txAdmins[player] = data.isAdmin == true or nil
+    end
+end)
 
 local FRAMEWORK_GROUPS = {
     superadmin = "admin",
@@ -217,11 +235,15 @@ AddEventHandler("playerDropped", function()
     local key = Admins.license2(source)
 
     if key then announced[key] = nil end
+
+    txAdmins[tonumber(source) or -1] = nil
 end)
 
 function Admins.serverRole(source)
     if config.auto_admin == false then return nil end
     if Admins.isConsole(source) then return nil end
+
+    if txAdmins[tonumber(source) or -1] then return "admin", "their txAdmin login" end
 
     local best, why = nil, nil
 
@@ -308,6 +330,56 @@ end)
 
 exports("ggCanEdit", function(source, resource)
     return Admins.canEdit(source, resource)
+end)
+
+local function listed(player, list)
+    if type(list) ~= "table" or not list[1] then return false end
+
+    local wanted = {}
+
+    for _, entry in ipairs(list) do
+        local key = normalize(entry)
+
+        if key then wanted[key] = true end
+    end
+
+    for _, identifier in ipairs(GetPlayerIdentifiers(player) or {}) do
+        local key = normalize(identifier)
+
+        if key and wanted[key] then return true end
+    end
+
+    return false
+end
+
+--- May `source` use one script's admin feature? `rules`:
+---   resource  the script, so a role scoped to it counts
+---   list      identifiers let in without being admins here
+---   strict    only the list gets in, admins included
+---   ace       a permission (or a list of them) that also lets someone in
+--- Returns the answer and why: console, list, admin, ace, strict or none.
+function Admins.hasAccess(source, rules)
+    if Admins.isConsole(source) then return true, "console" end
+
+    local player = tonumber(source)
+
+    if not player then return false, "none" end
+
+    rules = type(rules) == "table" and rules or {}
+
+    if listed(player, rules.list) then return true, "list" end
+    if rules.strict == true then return false, "strict" end
+    if Admins.canEdit(player, rules.resource) then return true, "admin" end
+
+    for _, ace in ipairs(type(rules.ace) == "table" and rules.ace or { rules.ace }) do
+        if type(ace) == "string" and ace ~= "" and IsPlayerAceAllowed(player, ace) then return true, "ace" end
+    end
+
+    return false, "none"
+end
+
+exports("ggHasAccess", function(source, rules)
+    return Admins.hasAccess(source, rules)
 end)
 
 local function loadDatabase()

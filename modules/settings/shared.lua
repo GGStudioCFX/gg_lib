@@ -3,6 +3,10 @@ settings = settings or {}
 cfg = cfg or {}
 
 settings.schema      = {}  -- path -> definition
+
+-- This gg_lib keeps a `private = true` setting on the server (see settings.isSecret); a script
+-- can fall back to `server_only` on an older one.
+settings.PRIVATE = true
 settings.editors     = {}
 settings.order       = {}  -- declaration order, so the editor reads top to bottom
 settings.groups      = {}  -- group id -> meta
@@ -849,10 +853,12 @@ function settings.group(id, meta)
     return settings.groups[id]
 end
 
+--- Never sent to players: `server_only` (the Studio shows only that it is set) and `private`
+--- (the Studio shows and edits it as usual, for its admins: an access list of identifiers).
 function settings.isSecret(path)
     local def = settings.schema[path]
 
-    return def ~= nil and def.server_only == true
+    return def ~= nil and (def.server_only == true or def.private == true)
 end
 
 function settings.editor(id, definition)
@@ -911,7 +917,7 @@ function settings.define(path, def)
     settings.schema[path] = def
     settings.order[#settings.order + 1] = path
 
-    if def.server_only and not IsDuplicityVersion() then
+    if (def.server_only or def.private) and not IsDuplicityVersion() then
         return def
     end
 

@@ -29,8 +29,11 @@ Restart gg_lib and type **`/ggsettings`** in game.
 
 It probably does, so gg_lib uses it. Anyone holding one of the usual admin
 principals — `group.admin`, `group.god`, `group.superadmin`, or the ones
-qb-core and Qbox register — or sitting in their framework’s admin group gets
-the **Admin** role here without being added to anything.
+qb-core and Qbox register — or every command (`add_ace group.admin command
+allow`, as the stock `server.cfg` has it), sitting in their framework’s admin
+group, or logged in to the txAdmin menu as an admin gets the **Admin** role
+here without being added to anything. A txAdmin login lasts until they leave
+or gg_lib restarts.
 
 They never get **Owner**. Deciding who else gets in stays with the people
 named in `server_config.lua`, because that file is the way back in when
@@ -48,8 +51,9 @@ nowhere is always explainable from the console.
 
 ### Finding your license
 
-Join your server and check the console, or use any admin tool that shows player
-identifiers. You want the one that starts with `license2:`.
+Type **`/ggsettings`** in game. Without access it opens a screen with your
+license and a copy button, and every way in: an admin adding you, a line for
+`server.cfg`, txAdmin, and this file. `license:` and `license2:` both work.
 
 ### Adding everyone else
 
@@ -101,3 +105,48 @@ to be in your server; it is only used to turn an id into a name and an avatar.
 
 Leave it out and everything still works, with initials in place of pictures.
 
+---
+
+## For scripts: who may use an admin feature
+
+A script asks gg_lib rather than checking permissions itself:
+
+```lua
+local allowed, why = exports.gg_lib:ggHasAccess(source, {
+    resource = GetCurrentResourceName(), -- a role scoped to this script counts
+    list     = { "license:..." },        -- let in without being an admin here
+    strict   = false,                    -- true: only the list, admins included
+    ace      = "command.weather",        -- a permission that also lets someone in
+})
+```
+
+The console always gets in. `why` is `console`, `list`, `admin`, `ace`,
+`strict` (not on the list while it is strict) or `none`. `ggIsAdmin(source)` and
+`ggCanEdit(source, resource)` still answer the plain questions.
+
+### The no-access screen
+
+When the answer is no, show the player the same screen `/ggsettings` does,
+in the server's accent and language, rather than a screen of your own:
+
+```lua
+if not allowed then
+    exports.gg_lib:ggShowNoAccess(source, {
+        command = "weather",                           -- shown as /weather
+        label   = "Weather System",
+        icon    = "fa-cloud-sun",                      -- a Font Awesome icon
+        where   = "/ggsettings, under Weather System, Access", -- where an admin adds them
+        strict  = why == "strict",                     -- only the admin way, when only the list counts
+        store   = "https://ggstudio.store",            -- optional store button
+    })
+end
+```
+
+Every field is optional; with none it is the `/ggsettings` screen. It shows the
+player's license with a copy button, then each way in: an admin adding them
+(`where`, or Server > Admins without it), a `server.cfg` line, txAdmin and
+`server_config.lua`. `strict` keeps only the first. It returns `false` for the
+console or a player who has left.
+
+The screen goes to a player who has no access, so it names the file by its
+folder only (`gg_lib/server_config.lua`), never the server's disk path.

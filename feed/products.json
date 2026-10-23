@@ -1,6 +1,17 @@
 {
-    "publishedAt": 1792176486,
+    "publishedAt": 1792771129,
     "products": [
+        {
+            "id": "gg_weathersystem",
+            "resource": "gg_weathersystem",
+            "name": "Weather System",
+            "blurb": "One sky for every player, and a show in it: Starfall, Aurora and Meteors light up the night, a Hurricane crosses the city and earthquakes shake the streets, with ten sky looks, a forecast that runs itself and drop-in support for the weather scripts you already use.",
+            "price": "Free",
+            "icon": "fa-cloud-sun",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/835b92c78bcdff10ae6214436db2664553d0cef1.png",
+            "url": "https://www.ggstudio.store/scripts/weathersystem",
+            "hot": true
+        },
         {
             "id": "gg_speakersystem",
             "resource": "gg_speakersystem",

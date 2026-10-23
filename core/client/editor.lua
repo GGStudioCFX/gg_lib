@@ -47,11 +47,21 @@ RegisterNetEvent("gg_lib:settings:access", function(data)
     SetNuiFocus(true, true)
     GG_PAUSE_GUARD.acquire()
 
+    data = type(data) == "table" and data or {}
+
     SendNUIMessage({
         action = "settings_access",
         data = {
-            IDENTIFIER = data and data.identifier or "",
-            FILE       = data and data.file or "",
+            IDENTIFIER = data.identifier or "",
+            FILE       = data.file or "",
+            COMMAND    = data.command,
+            LABEL      = data.label,
+            ICON       = data.icon,
+            WHERE      = data.where,
+            STRICT     = data.strict == true,
+            STORE      = data.store,
+            WORDS      = data.words,
+            THEME      = data.theme,
         },
     })
 end)

@@ -508,15 +508,17 @@ define("debug.enabled", {
 define("reset.daily_time", {
     group   = "reset",
     label   = "Daily Reset Time",
-    help    = "Time of day daily progress rolls over, on a 24 hour clock.",
+    help    = "Time of day daily progress rolls over, on a 24 hour clock, in the Time Zone under General.",
     type    = "time",
     default = "00:00",
 })
 
+-- Under General: the daily reset reads it, and so does any script that follows
+-- real time (Weather System's Real Time), so it is the server's zone, not the reset's.
 define("reset.timezone", {
-    group   = "reset",
-    label   = "Reset Timezone",
-    help    = "Which zone the reset time is measured in.",
+    group   = "general",
+    label   = "Time Zone",
+    help    = "Your server's time zone, for the daily reset and any script that follows real time.",
     type    = "enum",
     default = "CST",
     options = timezone_options,

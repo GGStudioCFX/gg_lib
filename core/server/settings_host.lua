@@ -1,4 +1,6 @@
 
+local RESOURCE = GetCurrentResourceName()
+
 local peers = {}   -- cached list of resources carrying the settings module
 
 local function canEdit(source)
@@ -115,6 +117,53 @@ local function describePeers(source)
     return scripts
 end
 
+local function clip(value, limit)
+    return type(value) == "string" and value ~= "" and value:sub(1, limit) or nil
+end
+
+-- The page's own words for the screen, in the server's language: it can open
+-- before Script Studio ever has, so nothing else has sent them yet.
+local function accessWords()
+    local words = {}
+
+    for key, value in pairs(Locales.strings() or {}) do
+        if key:find("^access_") then words[key] = value end
+    end
+
+    return words
+end
+
+-- The one no-access screen. /ggsettings opens it for a player who may not get
+-- in, and any script can open it for its own command: `info` names the script,
+-- the command and where an admin adds a player. With none it is /ggsettings.
+local function showNoAccess(source, info)
+    source = tonumber(source)
+
+    if not source or source <= 0 or not GetPlayerName(source) then return false end
+
+    info = type(info) == "table" and info or {}
+
+    local where = clip(info.where, 160)
+    local icon  = clip(info.icon, 40)
+
+    TriggerClientEvent("gg_lib:settings:access", source, {
+        identifier = GetPlayerIdentifierByType(source, "license") or Admins.license2(source) or "",
+        -- The file by its resource folder only: this goes to a player with no
+        -- access, so never the server's own disk path.
+        file       = ("%s/server_config.lua"):format(RESOURCE),
+        command    = (clip(info.command, 32) or "ggsettings"):gsub("^/", ""),
+        label      = clip(info.label, 48),
+        icon       = icon and icon:match("^fa%-[%w%-]+$") and icon or nil,
+        where      = where,
+        strict     = where ~= nil and info.strict == true,
+        store      = clip(info.store, 200),
+        words      = accessWords(),
+        theme      = GenericSettings.get("theme.primary_color"),
+    })
+
+    return true
+end
+
 local function openFor(source, focus)
     if source == 0 then
         print("[gg_lib] /ggsettings has no console UI; run it in game")
@@ -122,11 +171,7 @@ local function openFor(source, focus)
     end
 
     if not canView(source) then
-        TriggerClientEvent("gg_lib:settings:access", source, {
-            identifier = Admins.license2(source) or "",
-            file       = ("%s/server_config.lua"):format(GetResourcePath(GetCurrentResourceName()) or "gg_lib"),
-        })
-
+        showNoAccess(source)
         return
     end
 
@@ -142,6 +187,13 @@ end, false)
 
 exports("ggOpenSettings", function(source, focus)
     openFor(source, focus)
+end)
+
+-- exports.gg_lib:ggShowNoAccess(source, { command = "weather", label = "Weather System",
+--     icon = "fa-cloud-sun", where = "/ggsettings, Weather System, Access", strict = false,
+--     store = "https://ggstudio.store" }) -- every field optional; none is /ggsettings.
+exports("ggShowNoAccess", function(source, info)
+    return showNoAccess(source, info)
 end)
 
 GGCallback.register("gg_lib:settings:fetch", function(source)
