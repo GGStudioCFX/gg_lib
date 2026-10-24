@@ -530,8 +530,22 @@ end
 local OBJECT_FLAGS = 17
 local OBJECT_LIFT  = 0.015
 
+-- Keys that could still be down from whatever opened the tool (a prompt, or chat's Enter).
+local OPENING_KEYS = { 38, 51, 176, 191, 201 }
+
+local function openingKeyDown()
+    for index = 1, #OPENING_KEYS do
+        local control = OPENING_KEYS[index]
+        if IsControlPressed(0, control) or IsDisabledControlPressed(0, control) then return true end
+    end
+
+    return false
+end
+
 local preview_object = nil
-local preview_parts  = {}
+local preview_parts    = {}
+local object_owner     = nil
+local object_cancelled = false
 
 local function destroyObject()
     if preview_object and DoesEntityExist(preview_object) then
@@ -575,6 +589,249 @@ local function spawnObject(model, coords, heading, tint)
 
     return object, finite(low and low.z, 0.0)
 end
+
+-- The resting spot within `reach` of the player's centre, the way a server measures it: the
+-- further the spot is above or below, the less room there is sideways.
+local function withinReach(point, reach, low)
+    local centre = safeCoords(GetEntityCoords(PlayerPedId()), nil)
+    if not centre then return nil end
+
+    local dz = point.z - centre.z
+    if math.abs(dz) >= reach then return nil end
+
+    local dx, dy = point.x - centre.x, point.y - centre.y
+    local flat, allowed = math.sqrt(dx * dx + dy * dy), math.sqrt(reach * reach - dz * dz)
+
+    if flat <= allowed then return point end
+
+    local scale = allowed / flat
+    local x, y = centre.x + dx * scale, centre.y + dy * scale
+
+    if low then
+        local found, z = GetGroundZFor_3dCoord(x, y, point.z + 1.0, false)
+        if found then
+            local grounded = vector3(x, y, z - low + OBJECT_LIFT)
+            if math.abs(grounded.z - centre.z) < reach then return grounded end
+        end
+    end
+
+    return vector3(x, y, point.z)
+end
+
+local function placeObject(options)
+    local ped   = PlayerPedId()
+    local here  = safeCoords(GetEntityCoords(ped), vector3(0.0, 0.0, 72.0))
+    local reach = math.max(0.5, math.min(25.0, finite(options.maxDistance, 3.0)))
+
+    local heading = finite(options.heading, GetEntityHeading(ped)) % 360
+
+    pending_ray = nil
+    last_ground = nil
+
+    local object, low = spawnObject(options.model, here, heading, options.tint)
+    if not object then return "that model could not be loaded" end
+
+    preview_object = object
+
+    -- Models that make up the same thing (a separate screens model), on the object's own origin.
+    for _, model in ipairs(type(options.with) == "table" and options.with or {}) do
+        local part = spawnObject(model, here, heading)
+        if part then preview_parts[#preview_parts + 1] = part end
+    end
+
+    -- Let go of the key that opened this before reading any, so it cannot also place or switch.
+    local released = GetGameTimer() + 1000
+    repeat Wait(0) until not openingKeyDown() or object_cancelled or GetGameTimer() > released
+
+    local state = {
+        coords  = nil,
+        heading = heading,
+        drag    = true,
+        fine    = false,
+        mode    = "simple",
+        cursor  = false,
+    }
+
+    active_state = state
+
+    local place = { key = "ENTER", control = 191, label = options.placeLabel or "Place", action = function(inner)
+        if not inner.coords then return end
+
+        inner.placed = { x = inner.coords.x, y = inner.coords.y, z = inner.coords.z, heading = inner.heading }
+        inner.done   = true
+    end }
+
+    local cancel = { key = "ESC", control = 200, label = "Cancel", cancel = true }
+    local back   = { control = 177, cancel = true }
+
+    local turnUp = { control = 15, action = function(inner)
+        inner.heading = (inner.heading + (inner.fine and FINE_TURN or COARSE_TURN)) % 360
+    end }
+
+    local turnDown = { key = "Scroll", control = 14, label = "Turn", action = function(inner)
+        inner.heading = (inner.heading - (inner.fine and FINE_TURN or COARSE_TURN)) % 360
+    end }
+
+    local simple, advanced
+
+    local function setCursor(inner, on)
+        inner.cursor = on
+
+        SetNuiFocus(on, on)
+        SetNuiFocusKeepInput(on)
+
+        if not on then
+            SendNUIMessage({ action = "gg_gizmo", data = { ACTIVE = false } })
+        end
+    end
+
+    local toAdvanced = { key = "E", control = 38, label = "Gizmo", action = function(inner)
+        if not inner.coords then return end
+
+        inner.mode = "advanced"
+        inner.drag = false
+
+        gg.tool.setKeys(advanced)
+        setCursor(inner, true)
+    end }
+
+    local toSimple = { key = "E", control = 38, label = "Aim", action = function(inner)
+        inner.mode = "simple"
+        inner.drag = true
+
+        setCursor(inner, false)
+        gg.tool.setKeys(simple)
+    end }
+
+    simple = { place, cancel, back, turnUp, turnDown, toAdvanced }
+
+    advanced = {
+        place, cancel, back,
+        { key = "R", control = 45, label = "Move / Turn", action = function(inner)
+            gizmo_mode = gizmo_mode == "translate" and "rotate" or "translate"
+
+            if inner.cursor then pushGizmo(inner) end
+        end },
+        { key = "L-ALT", control = 19, label = "Cursor", action = function(inner)
+            setCursor(inner, not inner.cursor)
+        end },
+        toSimple,
+    }
+
+    gizmo_mode = "translate"
+
+    gg.tool.run({
+        title = type(options.title) == "string" and options.title or "Place Object",
+        state = state,
+        keys  = simple,
+        tick  = function(inner)
+            local player = PlayerPedId()
+
+            if object_cancelled or IsEntityDead(player) or IsPedInAnyVehicle(player, false) then
+                inner.done = true
+                return
+            end
+
+            inner.fine = IsDisabledControlPressed(0, 21)
+
+            local target = inner.coords
+
+            if inner.drag then
+                local ground = groundUnderCursor(object, OBJECT_FLAGS)
+                if ground then target = vector3(ground.x, ground.y, ground.z - low + OBJECT_LIFT) end
+            end
+
+            target = target and withinReach(target, reach, inner.drag and low or nil)
+            if target then inner.coords = target end
+
+            if not inner.coords then return end
+
+            SetEntityCoordsNoOffset(object, inner.coords.x, inner.coords.y, inner.coords.z, false, false, false)
+            SetEntityHeading(object, inner.heading)
+
+            for _, part in ipairs(preview_parts) do
+                SetEntityCoordsNoOffset(part, inner.coords.x, inner.coords.y, inner.coords.z, false, false, false)
+                SetEntityHeading(part, inner.heading)
+            end
+
+            local centre = GetEntityCoords(player)
+
+            gg.tool.setInfo({
+                { label = "Distance", value = ("%.1f m"):format(#(vector3(inner.coords.x, inner.coords.y, inner.coords.z) - centre)) },
+                { label = "Heading",  value = ("%.0f"):format(finite(inner.heading, 0.0)) },
+            }, inner.mode)
+
+            if inner.cursor then pushGizmo(inner) end
+        end,
+        cleanup = function()
+            SetNuiFocus(false, false)
+            SetNuiFocusKeepInput(false)
+            SendNUIMessage({ action = "gg_gizmo", data = { ACTIVE = false } })
+
+            destroyObject()
+        end,
+    })
+
+    return state.placed
+end
+
+AddEventHandler("gg_lib:placement:place", function(resource, id, options)
+    if type(resource) ~= "string" or id == nil then return end
+
+    TriggerEvent("gg_lib:placement:placeAccepted", resource, id)
+
+    local refusal = (object_owner or gg.tool.isActive()) and "another placement is already open"
+        or (type(options) ~= "table" or options.model == nil) and "nothing to place" or nil
+
+    if refusal then
+        TriggerEvent("gg_lib:placement:placeResult", resource, id, refusal)
+        return
+    end
+
+    -- Owned from the moment it is asked for, so a cancel before the tool is up still counts.
+    object_owner, object_cancelled = resource, false
+
+    CreateThread(function()
+        local answer
+
+        if not object_cancelled then
+            GG_PAUSE_GUARD.acquire()
+
+            local ok, result = pcall(placeObject, options)
+
+            -- released first: a cleanup that throws must not keep the pause map shut
+            GG_PAUSE_GUARD.release()
+
+            active_state = nil
+
+            gg.tool.abort()
+            destroyObject()
+            SetNuiFocus(false, false)
+            SetNuiFocusKeepInput(false)
+
+            if not ok then
+                print(("^1[gg_lib] object placement failed: %s^0"):format(result))
+                answer = "the placement tool errored -- see the client console"
+            elseif not object_cancelled then
+                answer = result
+            end
+        end
+
+        object_owner = nil
+
+        TriggerEvent("gg_lib:placement:placeResult", resource, id, answer)
+    end)
+end)
+
+local function cancelFor(resource)
+    if resource == nil or resource ~= object_owner then return end
+
+    object_cancelled = true
+    gg.tool.abort()
+end
+
+AddEventHandler("gg_lib:placement:cancel", cancelFor)
+AddEventHandler("onClientResourceStop", cancelFor)
 
 RegisterNUICallback("gg_gizmo_move", function(data, cb)
     if active_state then

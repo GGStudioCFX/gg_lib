@@ -50,6 +50,7 @@ though individual scripts may, so follow each one's own notes.
 | [Waypoints](docs/waypoints.md) | The shared world markers every script draws |
 | [Daily reset](docs/daily-reset.md) | The clock every script's daily counters share |
 | [Screenshots](docs/screenshots.md) | Saving vehicle photos locally or with FiveManage |
+| [Placement](docs/placement.md) | Letting a player set a prop down with the placement tool |
 | [Home feed](docs/feed.md) | Publishing the home page, the shop and the update logs |
 | [Support bundle](docs/support.md) | One click to copy what a ticket needs: versions, the server console and what a script printed |
 

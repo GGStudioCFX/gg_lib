@@ -28,7 +28,11 @@ gg.vehicleManager.spawnVehicle = function(model, coords, options)
 
     coords = type(coords) == "table" and vec4(coords.x, coords.y, coords.z, coords.w or 0.0) or coords
 
-    local vehicle = gg.cleanup.track(CreateVehicle(hash, coords.x, coords.y, coords.z, coords.w, true, true))
+    -- options.type ("automobile", "bike", "boat", ...): made by the server itself rather than asked
+    -- of a game near the spot, for a car made where no player is yet (a garage still loading).
+    local kind = type(options) == "table" and type(options.type) == "string" and options.type or nil
+    local vehicle = gg.cleanup.track(kind and CreateVehicleServerSetter(hash, kind, coords.x, coords.y, coords.z, coords.w)
+        or CreateVehicle(hash, coords.x, coords.y, coords.z, coords.w, true, true))
 
     local waited = 0
 
