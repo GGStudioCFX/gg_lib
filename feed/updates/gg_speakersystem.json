@@ -1,9 +1,31 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.7",
+    "latest": "1.0.9",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.9",
+            "at": 1793136635,
+            "kind": "feature",
+            "important": false,
+            "title": "Job needed to play music",
+            "changes": [
+                "Job Needed to Play Music (General, off by default): only the Music Jobs, dj to start, play, change or add music.",
+                "Everyone else still hears it."
+            ]
+        },
+        {
+            "version": "1.0.8",
+            "at": 1792433510,
+            "kind": "feature",
+            "important": false,
+            "title": "17mov Phone support",
+            "changes": [
+                "Speaker Connect works on 17mov Phone. GG Lib adds the app automatically.",
+                "Needs gg_lib 1.0.20."
+            ]
+        },
         {
             "version": "1.0.7",
             "at": 1792021622,
