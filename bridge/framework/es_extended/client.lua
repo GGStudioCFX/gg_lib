@@ -50,5 +50,6 @@ end)
 
 RegisterNetEvent('esx:playerLoaded', function()
     PlayerData = ESX.GetPlayerData()
-    TriggerServerEvent(GetCurrentResourceName()..':server:OnPlayerLoaded')
+    -- the server's half fires :server:OnPlayerLoaded itself (esx:playerLoaded); sent from here it was never a net
+    -- event, so the server logged "was not safe for net" on every load
 end)

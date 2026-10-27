@@ -43,7 +43,8 @@ end
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
     TriggerEvent(GetCurrentResourceName()..':client:OnPlayerLoaded')
     TriggerEvent(GetCurrentResourceName()..':client:onResourceStart')
-    TriggerServerEvent(GetCurrentResourceName()..':server:OnPlayerLoaded')
+    -- the server's half fires :server:OnPlayerLoaded itself (QBCore:Server:OnPlayerLoaded); sent from here it was
+    -- never a net event, so the server logged "was not safe for net" on every load
 end)
 
 RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
