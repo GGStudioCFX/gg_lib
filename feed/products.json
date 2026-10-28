@@ -1,6 +1,17 @@
 {
-    "publishedAt": 1792771129,
+    "publishedAt": 1793183867,
     "products": [
+        {
+            "id": "gg_racing",
+            "resource": "gg_racing",
+            "name": "Racing System",
+            "blurb": "A full racing world for your city: street races on tracks your racers build, contracts across the map, fifteen arena circuits with loops and boost pads, a racing garage, crews and City Events, all on one tablet.",
+            "price": "$49.95",
+            "icon": "fa-flag-checkered",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/9801295ac254bfc5a76a9a4debbcd1154924bc20.jpg",
+            "url": "https://www.ggstudio.store/scripts/racing",
+            "hot": true
+        },
         {
             "id": "gg_weathersystem",
             "resource": "gg_weathersystem",

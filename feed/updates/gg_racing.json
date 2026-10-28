@@ -1,0 +1,33 @@
+{
+    "label": "gg_racing",
+    "resource": "gg_racing",
+    "latest": "1.0.1",
+    "url": "https://discord.gg/DqMXJzATph",
+    "updates": [
+        {
+            "version": "1.0.1",
+            "at": 1793183867,
+            "kind": "fix",
+            "important": false,
+            "title": "City Events, joining and phasing",
+            "changes": [
+                "City Event cards show the class, laps and Ranked before the grid opens, and say when you have no car for that class.",
+                "Join puts you in with the car you sit in when it fits the race. On foot or in the wrong car, the tablet says what to do.",
+                "Phasing is only between racers in the same race. Police and everyone else can still hit them.",
+                "Fixed: a new race flashing as gone, all-black track pictures, Global refusing tracks built with track-kit props, arena time trials from the garage and the garage computer's top bar.",
+                "City Event Counts For Rating now sits next to City Event Class. Update gg_lib to 1.0.24 for the Script Studio layout fixes."
+            ]
+        },
+        {
+            "version": "1.0.0",
+            "at": 1793140595,
+            "kind": "major",
+            "important": true,
+            "title": "Racing System early access",
+            "changes": [
+                "Street races, contracts and City Events across the map, a track builder with over 50 props, Global tracks every server shares, the Racing Garage with upgrades, arena races and arcade machines, all on one tablet.",
+                "Needs gg_lib 1.0.23 or newer."
+            ]
+        }
+    ]
+}
