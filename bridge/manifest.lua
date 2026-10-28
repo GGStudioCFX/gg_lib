@@ -72,6 +72,7 @@ return {
             "roadphone",
             "codem-phone",
             "17mov_Phone",
+            "apex_phone",
             "qs-smartphone-pro",
             "qs-smartphone",
             "yseries",

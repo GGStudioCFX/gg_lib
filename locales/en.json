@@ -571,6 +571,7 @@
     "schema.bridge.phone.options..label": "Auto detect",
     "schema.bridge.phone.options.codem-phone.label": "CodeM mPhone",
     "schema.bridge.phone.options.17mov_Phone.label": "17mov Phone",
+    "schema.bridge.phone.options.apex_phone.label": "Apex Phone",
     "schema.bridge.phone.options.lb-phone.label": "lb-phone",
     "schema.bridge.phone.options.qs-smartphone-pro.label": "Quasar Smartphone PRO",
     "schema.bridge.phone.options.qs-smartphone.label": "Quasar Smartphone",

@@ -246,8 +246,8 @@ after it is safe.
 
 ## Phone
 
-Thirteen resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
-`jpr-phonesystem`, `roadphone`, `codem-phone`, `17mov_Phone`, `qs-smartphone-pro`, `qs-smartphone`, `yseries`, `yphone`,
+Fourteen resource names, one API. Detection order is `sd-phone`, `sky_phone`, `gksphone`,
+`jpr-phonesystem`, `roadphone`, `codem-phone`, `17mov_Phone`, `apex_phone`, `qs-smartphone-pro`, `qs-smartphone`, `yseries`, `yphone`,
 `yflip-phone`, then `lb-phone` — sd-phone and
 sky_phone first because each stands in for several of the others (below),
 lb-phone last for the same reason ox and qb are: it is the one most likely to be
@@ -278,7 +278,7 @@ gg.phone.app.ready()            -- the phone is up and, on yseries, has loaded i
 gg.phone.app.add({
     key         = 'gg_taxi',
     name        = 'Taxi',
-    description = '...',         -- lb-phone only
+    description = '...',         -- lb-phone and apex_phone only
     developer   = 'GG Studio',   -- lb-phone only
     defaultApp  = true,
     size        = 21400,         -- lb-phone only
@@ -295,8 +295,8 @@ Mail on lb-phone and sd-phone goes to the phone's email account: a number or a
 source is looked up with `GetEmailAddress`, and a target containing `@` is used
 as the address itself.
 
-`drain` exists for the phones that cannot push into an app (JPR, RoadPhone, CodeM
-and both Quasar phones, below). A page that polls it through its own resource
+`drain` exists for the phones that cannot push into an app (JPR, RoadPhone, CodeM,
+Apex and both Quasar phones, below). A page that polls it through its own resource
 every second or so works on every phone; on the ones that push, it just always
 comes back empty.
 
@@ -420,6 +420,38 @@ exports without one. A mail address target answers false. References:
 [17mov-client]: https://docs.17movement.net/phone/exports/global-exports/client-exports
 [17mov-server]: https://docs.17movement.net/phone/exports/global-exports/server-exports
 [17mov-email]: https://docs.17movement.net/phone/exports/email/server-exports
+
+### apex_phone
+
+Apex Phone registers external apps at runtime through its client `RegisterApp`
+(`{ id, name, url, icon, category, description }`). The bridge sends the key as
+`id`, the ui URL framed as given with `?phone=apex_phone` appended, the icon URL,
+and `spec.category`, `spec.description` and an optional `job` as they come. Every
+registered app goes on the home screen, so `defaultApp` has nothing to choose, and
+the phone takes no developer or size. A refused add (`RegisterApp` answers false)
+is kept, and every added app is registered again when the phone starts. The phone
+takes an app off by itself when the resource that added it stops; `remove` is
+`UnregisterApp`.
+
+The phone has no export that posts into an app's frame, so `send()` queues the
+message (the last 50 per app) and the page drains it through its own resource,
+like JPR and RoadPhone. Pages learn the phone from `?phone=apex_phone` and their
+resource from the `cfx-nui-<resource>` host. `gg.phone.app.focus` has nothing to
+do here. Scripts that open their own app call `OpenApp(id)` and close it with
+`ClosePhone()`; the phone fires the local events `apex_phone:client:opened` and
+`apex_phone:client:closed`.
+
+The number is the client `GetPhoneNumber` and the server `GetNumber(citizenid)`,
+with the citizen id from `gg.framework.GetIdentifier`. Notifications are the
+client and server `SendNotification` in the table form `{ app, title, msg, icon,
+duration }`; one without `app` lands under the phone's Settings app. Mail to a
+source (by its citizen id), a number or a citizen id is the server `SendMail` with
+`{ sender, email, subject, body, attachments }`. Only plain http(s) photo links up
+to 512 characters go as attachments, at most 4, because one the phone refuses
+refuses the whole mail. A mail address target answers false. Reference:
+[Exports][apex-exports].
+
+[apex-exports]: https://docs.apexscripts.xyz/apex-phone/exports
 
 ### qs-smartphone and qs-smartphone-pro
 
