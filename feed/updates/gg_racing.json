@@ -1,9 +1,31 @@
 {
     "label": "gg_racing",
     "resource": "gg_racing",
-    "latest": "1.0.1",
+    "latest": "1.0.3",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.3",
+            "at": 1793277118,
+            "kind": "fix",
+            "important": false,
+            "title": "Car class rating optimized",
+            "changes": [
+                "Car classes and PI are now rated on the server instead of in each player's game.",
+                "Custom handling set after a car spawns is picked up once racers drive it."
+            ]
+        },
+        {
+            "version": "1.0.2",
+            "at": 1793200322,
+            "kind": "fix",
+            "important": false,
+            "title": "Simpler setup",
+            "changes": [
+                "Docs link and a shorter README in !SETUP",
+                "gg_racing_props starts in any order"
+            ]
+        },
         {
             "version": "1.0.1",
             "at": 1793183867,
