@@ -85,6 +85,17 @@ local function register(app)
     return true
 end
 
+-- Apex Phone loads an app icon from a nui:// address, as in its own example; the
+-- https://cfx-nui- address every other phone takes showed a blank picture there
+-- (ticket 0164). The page itself loads fine from https://cfx-nui-.
+local function iconAddress(address)
+    if type(address) ~= "string" then return address end
+
+    local resource, path = address:match("^https://cfx%-nui%-([^/]+)/(.+)$")
+
+    return resource and ("nui://%s/%s"):format(resource, path) or address
+end
+
 -- The client RegisterApp takes { id, name, url, icon, category, description }:
 -- the page is framed from its own URL and learns which phone holds it from the
 -- query string. Every registered app goes on the home screen, so `defaultApp` has
@@ -102,7 +113,7 @@ gg.phone.app.add = function(spec)
         id          = spec.key,
         name        = spec.name or spec.key,
         url         = spec.ui .. (spec.ui:find("?", 1, true) and "&" or "?") .. "phone=" .. NAME,
-        icon        = spec.icon,
+        icon        = iconAddress(spec.icon),
         category    = spec.category,
         description = spec.description,
         job         = spec.job,
