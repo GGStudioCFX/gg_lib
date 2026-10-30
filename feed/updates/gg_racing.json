@@ -1,9 +1,31 @@
 {
     "label": "gg_racing",
     "resource": "gg_racing",
-    "latest": "1.0.3",
+    "latest": "1.0.5",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.5",
+            "at": 1793354485,
+            "kind": "fix",
+            "important": true,
+            "title": "Account creation fix",
+            "changes": [
+                "Racers can make an account on servers that also run Boosting.",
+                "Servers without Boosting no longer say the account failed when it was made."
+            ]
+        },
+        {
+            "version": "1.0.4",
+            "at": 1793320078,
+            "kind": "fix",
+            "important": false,
+            "title": "Area checkpoints on the tablet",
+            "changes": [
+                "Tracks with Area checkpoints show under Mine and get the Tested mark after a test run.",
+                "The arcade rests an add-on car for a day if games keep dropping on it."
+            ]
+        },
         {
             "version": "1.0.3",
             "at": 1793277118,
