@@ -524,6 +524,7 @@
     "schema.bridge.inventory.options.qb-inventory.label": "qb-inventory",
     "schema.bridge.inventory.options.qs-inventory.label": "qs-inventory",
     "schema.bridge.inventory.options.tgiann-inventory.label": "tgiann-inventory",
+    "schema.bridge.inventory.options.wasabi_inventory.label": "wasabi_inventory",
     "schema.bridge.keys.label": "Llaves",
     "schema.bridge.keys.options..label": "Detección automática",
     "schema.bridge.keys.options.0r-vehiclekeys.label": "0r-vehiclekeys",

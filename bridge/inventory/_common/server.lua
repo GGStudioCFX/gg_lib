@@ -279,7 +279,7 @@ inventory.registerUsable = function(item, cb)
 end
 
 --- Watch items moving between slots and inventories. `cb(payload)` returning
---- false stops the move. Only ox_inventory has this; elsewhere it returns nil.
+--- false stops the move. Not every inventory has this; elsewhere it returns nil.
 inventory.onSwap = function(cb, options)
     if type(cb) ~= "function" or not native.onSwap then return nil end
 

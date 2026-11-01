@@ -19,6 +19,7 @@ return {
             "jpr-inventory",
             "tgiann-inventory",
             "one_inventory",
+            "wasabi_inventory",
             "ox_inventory",
             "qb-inventory",
         },

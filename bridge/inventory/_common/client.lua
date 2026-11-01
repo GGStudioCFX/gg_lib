@@ -136,9 +136,9 @@ for _, name in ipairs({ "getItemTable", "getImageUrl", "getImageDirectory" }) do
     if not inventory[name] then inventory[name] = function() return nil end end
 end
 
---- Use an item the player picked. ox_inventory plays its use animation and
---- takes the item first, then runs `cb(data)` once it went through; every
---- other inventory already did that before the script heard of it.
+--- Use an item the player picked. An inventory with its own useItem plays the
+--- use animation and takes the item first, then runs `cb(data)` once it went
+--- through; the others already did that before the script heard of it.
 inventory.useItem = function(data, cb)
     if type(cb) ~= "function" then return false end
 

@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 112,
+    "total": 113,
     "categories": [
         {
             "id": "framework",
@@ -18,7 +18,7 @@
             "id": "inventory",
             "label": "Inventories",
             "required": true,
-            "count": 14,
+            "count": 15,
             "resources": [
                 "ak47_inventory",
                 "ak47_qb_inventory",
@@ -33,7 +33,8 @@
                 "ps-inventory",
                 "qb-inventory",
                 "qs-inventory",
-                "tgiann-inventory"
+                "tgiann-inventory",
+                "wasabi_inventory"
             ]
         },
         {

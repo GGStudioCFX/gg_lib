@@ -121,7 +121,7 @@ gg.inventory.hasItem(source, { item = 'water', count = 1 })
 gg.inventory.canCarryitem(source, { item = 'water', count = 5 })
 ```
 
-The same item API works on all fourteen inventories, metadata included. Rows
+The same item API works on all fifteen inventories, metadata included. Rows
 always read `{ name, label, count, slot, metadata, weight }`: qb-style `amount`
 and `info` are read as `count` and `metadata`, and `metadata` is always a table.
 Metadata matches the way ox_inventory's `Search` does: every key you ask for has
@@ -142,10 +142,10 @@ gg.inventory.removeItem(source, { item = 'radio', metadata = { serial = s } }) -
 gg.inventory.removeItem(source, { item = 'radio', slot = 3 })
 
 -- cb(source, row): the inventory's own usable items where it has them
--- (qs-inventory, jaksam_inventory), the framework's otherwise.
+-- (qs-inventory, jaksam_inventory, wasabi_inventory), the framework's otherwise.
 gg.inventory.registerUsable('radio', function(source, row) end)
 
--- ox_inventory only: false from cb stops the move. nil on other inventories.
+-- ox_inventory and wasabi_inventory: false from cb stops the move. nil on the others.
 local hook = gg.inventory.onSwap(function(payload) end, { itemFilter = { radio = true } })
 gg.inventory.removeHook(hook)
 
@@ -155,8 +155,8 @@ gg.inventory.hasMetadata() -- false only on the fallback (no inventory running)
 gg.inventory.getItems()
 gg.inventory.getCount('radio', { serial = s })
 gg.inventory.hasItem('radio', 1, { serial = s })
--- ox_inventory plays the use animation and takes the item, then calls back;
--- other inventories call back straight away.
+-- ox_inventory and wasabi_inventory play the use animation and take the item,
+-- then call back; other inventories call back straight away.
 gg.inventory.useItem(data, function(data) end)
 gg.inventory.getImageDirectory()
 ```
@@ -177,6 +177,33 @@ gg.items.image('water')    -- honours the icon path override in the Items tool
 gg.items.exists('plastic') -- validate a config value
 gg.items.list()            -- sorted, for pickers
 ```
+
+---
+
+### wasabi_inventory
+
+Wasabi's manifest provides `ox_inventory` and answers the exports it supports, but
+`provides` does not make `GetResourceState('ox_inventory')` report started, and
+the ox bridge would point every picture at a folder that is not there. So it has
+its own entry above ox_inventory, and every call goes to `exports.wasabi_inventory`.
+
+Pictures load from `wasabi_inventory/ui/images/` with no setup: `client.image` on
+the item picks the file, `<item>.png` otherwise, and a full `https://` or `nui://`
+`ImagePath` in `config/client/config.lua` replaces the folder. Icon Path in the
+Items tool still wins over all of it.
+
+`registerUsable` is the inventory's own `registerUsableItem`, and the row comes
+from `context.slot`. `onSwap` and `useItem` work as they do on ox_inventory.
+`RemoveItem` documents no `strict` option, so a metadata removal goes by the slot
+`_common` found. Item definitions follow ox_inventory's schema in `data/items.lua`,
+but `consume` defaults to zero, even with a `client.usetime` or `server.export`.
+
+Written from the [exports][wasabi-exports], [items][wasabi-items] and
+[configuration][wasabi-config] pages, and not yet run on the real inventory.
+
+[wasabi-exports]: https://docs.wasabiscripts.com/core-ui-series/wasabi-inventory/exports
+[wasabi-items]: https://docs.wasabiscripts.com/core-ui-series/wasabi-inventory/items-and-weapons
+[wasabi-config]: https://docs.wasabiscripts.com/core-ui-series/wasabi-inventory/configuration
 
 ---
 
