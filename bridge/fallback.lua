@@ -122,8 +122,9 @@ return {
         gg.keys.RemoveKeys = no
     end,
 
-    -- Hiding still works without a HUD resource: the holders are kept and the
-    -- game's own HUD is hidden when asked. Only the client has a HUD.
+    -- Hiding still works without a HUD resource: the holders are kept, the game's
+    -- own HUD is hidden when asked and the Custom HUD Event is sent (modules/hud).
+    -- Only the client has a HUD.
     hud = function()
         if gg.context ~= "client" then return end
 

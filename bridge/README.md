@@ -623,8 +623,14 @@ showing, that is asked before the first hide, and the last `show` leaves it
 hidden if it already was. The rest cannot say, so `show` brings them back.
 
 `native` is per script and off by default: a race HUD that replaces the server's
-HUD usually still wants the minimap. With no HUD resource at all, `hide` still
-works and `native` is the only thing it can do.
+HUD usually still wants the minimap.
+
+**A HUD with no bridge gets an event.** With no HUD below running, `hide` and
+`show` send the client event in Generic Settings > General > Custom HUD Event
+(`general.hud_event`, default `hud:client:ToggleHud`) with `false` to hide and
+`true` to show, so a server's own HUD only needs a handler for it. Empty sends
+nothing, and with nothing listening the event does nothing. It cannot say whether
+the HUD is showing, so `show` always brings it back. `native` still works.
 
 Every call into the HUD resource is guarded like the target ones, and a stopped
 HUD is not called at all.
@@ -680,7 +686,8 @@ Worth knowing about particular ones:
 Not listed, because they have no documented way to be hidden from another
 resource: qb-hud, ps-hud, mri_Qhud, Renewed-Hud, gfx-hud, fd_hud, CodeM Venice
 HUD and BLVCK HUD v1. With one of those running, only `native = true` hides
-anything. cd_carhud only toggles, with no state. uz_PureHud documents an export
+anything, unless the server gives it a handler for the Custom HUD Event.
+cd_carhud only toggles, with no state. uz_PureHud documents an export
 its source does not have. izzy-hudv7 and tgiann's Modern HUD have no confirmed
 folder name. Several more appear in other libraries' bridges with no
 documentation behind them, and wait for some.

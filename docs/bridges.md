@@ -151,6 +151,20 @@ added a way to: qb-hud, ps-hud and Renewed-Hud among them. With one of those,
 our scripts hide the game's minimap but your HUD stays on screen. qbx_hud can
 only hide its speedometer, and only while standing still.
 
+If you run a HUD of your own, none of the above applies: with no supported HUD
+running, our scripts send the client event `hud:client:ToggleHud` with `false` to
+hide and `true` to show. Give your HUD a handler for it:
+
+```lua
+AddEventHandler('hud:client:ToggleHud', function(show)
+    SendNUIMessage({ action = 'setVisible', visible = show })
+end)
+```
+
+If your HUD already has an event that takes the same true or false, put its name
+in **Custom HUD Event**, in Generic Settings under General. Leave it empty to send
+nothing.
+
 If you hid your HUD yourself, most HUDs will show it again when our script is
 done — they give us no way to ask whether it was showing.
 

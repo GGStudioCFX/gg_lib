@@ -349,6 +349,16 @@ define("general.number_format", {
     },
 })
 
+-- For a HUD with no bridge: modules/hud sends it when no bridged HUD is running.
+define("general.hud_event", {
+    group      = "general",
+    label      = "Custom HUD Event",
+    help       = "Only for a HUD gg_lib does not support: GG scripts send this client event with false to hide it and true to show it again. Leave empty to send nothing.",
+    type       = "string",
+    max_length = 128,
+    default    = "hud:client:ToggleHud",
+})
+
 local bridgeManifest do
     local raw = LoadResourceFile(GetCurrentResourceName(), "bridge/manifest.lua")
     local chunk = raw and load(raw, "@bridge/manifest.lua", "t")

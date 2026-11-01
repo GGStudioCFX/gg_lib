@@ -22,13 +22,27 @@ local function store(set)
     LocalPlayer.state:set(KEY, set, false)
 end
 
+-- MARK: Custom HUD
+-- With no bridged HUD running, the server's own HUD is told through the event
+-- in Generic Settings. With nothing listening it does nothing.
+local SHOWN = { hide = false, show = true }
+
+local function callEvent(name)
+    local event = settings and settings.generic and settings.generic.get("general.hud_event")
+
+    if SHOWN[name] == nil or type(event) ~= "string" or event == "" then return nil end
+
+    TriggerEvent(event, SHOWN[name])
+end
+
 -- MARK: HUD resource
 local seen = {}
 
 local function call(name)
     local resource, backend = gg.hud.resource, gg.hud.backend
 
-    if not resource or type(backend) ~= "table" or type(backend[name]) ~= "function" then return nil end
+    if not resource then return callEvent(name) end
+    if type(backend) ~= "table" or type(backend[name]) ~= "function" then return nil end
     if GetResourceState(resource) ~= "started" then return nil end
 
     local ok, result = pcall(backend[name])
