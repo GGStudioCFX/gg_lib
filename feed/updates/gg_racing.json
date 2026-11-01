@@ -1,9 +1,30 @@
 {
     "label": "gg_racing",
     "resource": "gg_racing",
-    "latest": "1.0.5",
+    "latest": "1.0.7",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.7",
+            "at": 1793535081,
+            "kind": "feature",
+            "important": false,
+            "title": "Garage invites",
+            "changes": [
+                "Invite racers into your garage from the exit door. Guests can look round.",
+                "Clean test runs on circuit tracks now count, so they can go up to Global."
+            ]
+        },
+        {
+            "version": "1.0.6",
+            "at": 1793375396,
+            "kind": "fix",
+            "important": false,
+            "title": "Track test runs fix",
+            "changes": [
+                "A test run driven to the finish no longer fails as off route when the builder's line missed part of the roads."
+            ]
+        },
         {
             "version": "1.0.5",
             "at": 1793354485,
