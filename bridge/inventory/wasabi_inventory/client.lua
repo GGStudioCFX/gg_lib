@@ -77,8 +77,18 @@ gg.inventory.getCount = function(item, metadata)
     return exports.wasabi_inventory:GetItemCount(item)
 end
 
--- The item's client export runs first; useItem plays the animation, takes the
--- item and calls back once it went through.
+-- A use has already gone through by the time a script hears of it. An item with
+-- a client export and a registered use lands here twice for one press.
+local lastUse = {}
+
 gg.inventory.useItem = function(data, cb)
-    exports.wasabi_inventory:useItem(data, cb)
+    local key = type(data) == "table" and data.name and ("%s:%s"):format(data.name, data.slot)
+    local now = GetGameTimer()
+    local seen = key and lastUse[key]
+
+    if seen and now - seen < 1000 then return end
+
+    if key then lastUse[key] = now end
+
+    cb(data)
 end

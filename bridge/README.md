@@ -155,8 +155,8 @@ gg.inventory.hasMetadata() -- false only on the fallback (no inventory running)
 gg.inventory.getItems()
 gg.inventory.getCount('radio', { serial = s })
 gg.inventory.hasItem('radio', 1, { serial = s })
--- ox_inventory and wasabi_inventory play the use animation and take the item,
--- then call back; other inventories call back straight away.
+-- ox_inventory plays the use animation and takes the item, then calls back;
+-- other inventories call back straight away.
 gg.inventory.useItem(data, function(data) end)
 gg.inventory.getImageDirectory()
 ```
@@ -182,9 +182,9 @@ gg.items.list()            -- sorted, for pickers
 
 ### wasabi_inventory
 
-Wasabi's manifest provides `ox_inventory` and answers the exports it supports, but
-`provides` does not make `GetResourceState('ox_inventory')` report started, and
-the ox bridge would point every picture at a folder that is not there. So it has
+Wasabi's manifest provides `ox_inventory` and answers the exports it supports, so
+`GetResourceState('ox_inventory')` can report started on a Wasabi server, and the
+ox bridge would then point every picture at a folder that is not there. So it has
 its own entry above ox_inventory, and every call goes to `exports.wasabi_inventory`.
 
 Pictures load from `wasabi_inventory/ui/images/` with no setup: `client.image` on
@@ -193,7 +193,10 @@ the item picks the file, `<item>.png` otherwise, and a full `https://` or `nui:/
 Items tool still wins over all of it.
 
 `registerUsable` is the inventory's own `registerUsableItem`, and the row comes
-from `context.slot`. `onSwap` and `useItem` work as they do on ox_inventory.
+from `context.slot`. `onSwap` works as it does on ox_inventory. A use has already
+gone through when a script hears of it, so `useItem` calls back straight away, and
+it drops the second arrival of one press (an item with a `client.export` as well
+as a registered use).
 `RemoveItem` documents no `strict` option, so a metadata removal goes by the slot
 `_common` found. Item definitions follow ox_inventory's schema in `data/items.lua`,
 but `consume` defaults to zero, even with a `client.usetime` or `server.export`.
@@ -731,9 +734,10 @@ documentation behind them, and wait for some.
    them; `_common` builds the rest of the API from those.
 3. Add the name to `manifest.lua`, above `ox_*` and `qb-*`.
 
-A resource that declares `provides { 'ox_target' }` still needs its own entry:
-`provides` does not make `GetResourceState('ox_target')` report started, so
-nothing would match it. `sleepless_interact` and `lation_interact` are the
+A resource that declares `provides { 'ox_target' }` still needs its own entry,
+above the name it provides: whether `GetResourceState('ox_target')` then reports
+started depends on the FiveM build, so either nothing matches it or the wrong
+bridge does. `sleepless_interact` and `lation_interact` are the
 examples — their bridges run the ox_target one rather than keeping a copy.
 `lation_interact` hands it `GG_TARGET_EXPORT`, so every call goes to
 `exports.lation_interact` rather than to the `ox_target` alias, which a server

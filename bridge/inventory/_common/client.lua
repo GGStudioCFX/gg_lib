@@ -136,8 +136,8 @@ for _, name in ipairs({ "getItemTable", "getImageUrl", "getImageDirectory" }) do
     if not inventory[name] then inventory[name] = function() return nil end end
 end
 
---- Use an item the player picked. An inventory with its own useItem plays the
---- use animation and takes the item first, then runs `cb(data)` once it went
+--- Use an item the player picked. An inventory that has to confirm the use plays
+--- the animation and takes the item first, then runs `cb(data)` once it went
 --- through; the others already did that before the script heard of it.
 inventory.useItem = function(data, cb)
     if type(cb) ~= "function" then return false end
