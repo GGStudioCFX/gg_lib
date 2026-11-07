@@ -1,9 +1,32 @@
 {
     "label": "gg_racing",
     "resource": "gg_racing",
-    "latest": "1.0.7",
+    "latest": "1.0.9",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.9",
+            "at": 1794058555,
+            "kind": "feature",
+            "important": false,
+            "title": "Grids up to 256 racers",
+            "changes": [
+                "Racers past a grid's places start stacked from pole, phased, in races and the arena.",
+                "Tablet: ToggleUI and IsUIOpen exports, plus open, close and toggle events."
+            ]
+        },
+        {
+            "version": "1.0.8",
+            "at": 1793623619,
+            "kind": "feature",
+            "important": false,
+            "title": "Event cash prizes",
+            "changes": [
+                "Event Cash Prize: cash for City and Arena Event finishers, by place.",
+                "Money settings say XNT or Credits, not $.",
+                "Track pictures can be taken from up to 1 km."
+            ]
+        },
         {
             "version": "1.0.7",
             "at": 1793535081,

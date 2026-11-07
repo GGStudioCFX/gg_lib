@@ -1,9 +1,85 @@
 {
     "label": "gg_speakersystem",
     "resource": "gg_speakersystem",
-    "latest": "1.0.9",
+    "latest": "1.0.16",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.16",
+            "at": 1794058278,
+            "kind": "fix",
+            "important": false,
+            "title": "Shop stations work on qb-target",
+            "changes": [
+                "Each station is one target with every bench's options, so Fit the LEDs shows on qb-target.",
+                "Opening the phone with a big speaker in hand puts the speaker away."
+            ]
+        },
+        {
+            "version": "1.0.15",
+            "at": 1794010503,
+            "kind": "feature",
+            "important": false,
+            "title": "Music for jobs and VIPs",
+            "changes": [
+                "General: Music VIPs and VIP Check let a VIP script's players play music.",
+                "Other scripts can allow players with setMusicAccess or an ACE."
+            ]
+        },
+        {
+            "version": "1.0.14",
+            "at": 1793642823,
+            "kind": "fix",
+            "important": false,
+            "title": "Cleaner phone queue, no item errors",
+            "changes": [
+                "17mov Phone: the queue no longer shows its swipe buttons behind every song.",
+                "Wasabi: no more unknown item errors for the old Light and Green speakers."
+            ]
+        },
+        {
+            "version": "1.0.13",
+            "at": 1793369976,
+            "kind": "fix",
+            "important": false,
+            "title": "Songs play for every player",
+            "changes": [
+                "Songs YouTube blocks in a player's country no longer go silent for them.",
+                "A PC clock set wrong no longer sends songs to YouTube's player."
+            ]
+        },
+        {
+            "version": "1.0.12",
+            "at": 1793294118,
+            "kind": "fix",
+            "important": false,
+            "title": "Shop props stay visible inside",
+            "changes": [
+                "Speakers, kiosks and screens in the shop no longer vanish once you walk in."
+            ]
+        },
+        {
+            "version": "1.0.11",
+            "at": 1793225625,
+            "kind": "feature",
+            "important": false,
+            "title": "Apex Phone support",
+            "changes": [
+                "Speaker Connect works on Apex Phone. GG Lib adds the app automatically.",
+                "Needs gg_lib 1.0.25."
+            ]
+        },
+        {
+            "version": "1.0.10",
+            "at": 1793145361,
+            "kind": "fix",
+            "important": false,
+            "title": "Phone app follows the Music Jobs",
+            "changes": [
+                "With Job Needed to Play Music on, players without a Music Job cannot open Speaker Connect.",
+                "Music Jobs now starts as simmetsound."
+            ]
+        },
         {
             "version": "1.0.9",
             "at": 1793136635,
