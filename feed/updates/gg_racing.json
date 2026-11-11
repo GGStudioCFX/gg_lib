@@ -12,8 +12,7 @@
             "title": "Car Classes: set any car's class",
             "changes": [
                 "Keys work with plate-keyed key scripts like cd_garage.",
-                "Translated text fits the tablet screens.",
-                "Garage cars keep the colour you first saw."
+                "Translated text fits the tablet, and garage cars keep their colour."
             ]
         },
         {
