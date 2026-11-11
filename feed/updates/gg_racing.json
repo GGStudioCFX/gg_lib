@@ -1,9 +1,21 @@
 {
     "label": "gg_racing",
     "resource": "gg_racing",
-    "latest": "1.0.9",
+    "latest": "1.0.10",
     "url": "https://discord.gg/DqMXJzATph",
     "updates": [
+        {
+            "version": "1.0.10",
+            "at": 1794418494,
+            "kind": "feature",
+            "important": false,
+            "title": "Car Classes: set any car's class",
+            "changes": [
+                "Keys work with plate-keyed key scripts like cd_garage.",
+                "Translated text fits the tablet screens.",
+                "Garage cars keep the colour you first saw."
+            ]
+        },
         {
             "version": "1.0.9",
             "at": 1794058555,
