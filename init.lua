@@ -126,6 +126,15 @@ local function loadDefaults()
         if ok then debugWanted = stored == true end
     end
 
+    -- A resource of this very name, not one that only `provide`s it.
+    local function isReal(name)
+        for index = 0, GetNumResources() - 1 do
+            if GetResourceByFindIndex(index) == name then return true end
+        end
+
+        return false
+    end
+
     local function detectBridge(category)
         local override = storedOverrides[category]
 
@@ -148,6 +157,10 @@ local function loadDefaults()
             local candidateState = GetResourceState(candidate)
 
             if candidateState == "started" or candidateState == "starting" then
+                local real = ((manifest.beside or {})[category] or {})[candidate]
+
+                if real and isReal(real) and GetResourceState(real) == "started" then candidate = real end
+
                 return candidate, { source = "detected", state = candidateState, running = true }
             end
         end

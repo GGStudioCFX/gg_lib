@@ -24,6 +24,49 @@ local function noPhone()
     }
 end
 
+-- No door lock: nothing is found, nothing is made, and every call says so without an error.
+local function noDoorlock()
+    gg.doorlock = gg.doorlock or {}
+
+    local function none() return false, "no door lock resource is running" end
+
+    gg.doorlock.resource      = nil
+    gg.doorlock.ready         = no
+    gg.doorlock.getDoor       = nothing
+    gg.doorlock.getDoorByName = nothing
+    gg.doorlock.isLocked      = nothing
+    gg.doorlock.setLocked     = no
+    gg.doorlock.setState      = no
+
+    if gg.context == "client" then
+        gg.doorlock.closest     = nothing
+        gg.doorlock.useClosest  = no
+        gg.doorlock.pickClosest = no
+        gg.doorlock.idOf        = nothing
+
+        return
+    end
+
+    gg.doorlock.getDoors   = function() return {} end
+    gg.doorlock.saved      = function(door) if door == nil then return {} end return nil end
+    gg.doorlock.features   = function() return { create = nil, edit = false, reload = false } end
+    gg.doorlock.shapeOf    = function() return nil, "no door lock resource is running" end
+    gg.doorlock.createDoor = none
+    gg.doorlock.editDoor   = none
+    gg.doorlock.loadSaved  = none
+
+    -- Kept, so a listener added now hears changes once a door lock starts.
+    GG_DOORLOCK_LISTENERS = GG_DOORLOCK_LISTENERS or {}
+
+    gg.doorlock.onChange = function(cb)
+        if type(cb) ~= "function" then return false end
+
+        GG_DOORLOCK_LISTENERS[#GG_DOORLOCK_LISTENERS + 1] = cb
+
+        return true
+    end
+end
+
 return {
     framework = function()
         gg.framework = gg.framework or {}
@@ -35,6 +78,8 @@ return {
         gg.framework.GetVehicle      = function(vehicle) return vehicle end
         gg.framework.GetVehicleTable = function() return {} end
         gg.framework.getItemLabel    = function(item) return item end
+        gg.framework.GetJob          = nothing
+        gg.framework.CreateJob       = function() return false, "no framework is running" end
     end,
 
     inventory = function()
@@ -114,6 +159,8 @@ return {
     end,
 
     phone = noPhone,
+
+    doorlock = noDoorlock,
 
     keys = function()
         gg.keys = gg.keys or {}

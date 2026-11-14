@@ -225,6 +225,34 @@ gg.vehicles.fromHash(hash)    -- spawn name from a model hash, O(1)
 gg.vehicles.categories()
 ```
 
+### Jobs
+
+Server only. A script that runs on a job of its own can make it when the server
+does not have it, the framework's own way, and never changes one it has.
+
+```lua
+gg.framework.GetJob('belladonna')     -- the framework's own job table, or nil
+gg.framework.CreateJob('belladonna', {
+    label = 'Belladonna', type = 'casino', defaultDuty = true,
+    grades = {
+        [0] = { name = 'Dealer', payment = 60 },
+        [1] = { name = 'Owner', payment = 150, isboss = true },
+    },
+})                                    -- true once the framework shows it, or false, why ('exists')
+```
+
+| Framework | How | Kept |
+|---|---|---|
+| qbx_core | `exports.qbx_core:CreateJob` (grades keyed 0, 1, ...) | this run only: shared/jobs.lua is not written |
+| qb-core | `exports['qb-core']:AddJob` (grades keyed '0', '1', ...) | this run only: shared/jobs.lua is not written |
+| es_extended | `ESX.CreateJob`; an older ESX: its `jobs` and `job_grades` tables, then `ESX.RefreshJobs` | in its database |
+
+A job kept for the run only is made again by the script at each start, before
+players join (a qbx or qb player whose job the framework does not know is put
+back to unemployed when they load). On es_extended a grade's `name` is its id:
+the boss grade is `boss`, the rest come from their labels, and the label is the
+name given.
+
 ---
 
 ## Dispatch
@@ -585,7 +613,9 @@ resource name swapped and the export name left alone. Its manifest also declares
 `provide` for `lb-phone`, `gksphone` and `yseries`, among others; on FiveM builds
 where that makes `GetResourceState` report those names started, an sd-phone
 server would otherwise be detected as GKS Phone, so `sd-phone` is checked first.
-A server running the real phone has no sd-phone, and nothing changes there.
+A server can run the real lb-phone beside it and keep sd-phone only for sd-tablet
+(sd-phone's lb-phone layer stands down while the real one runs). Then lb-phone is
+the phone (`beside` in the manifest), and the tablet still goes through sd-phone.
 
 ### sky_phone
 
@@ -616,6 +646,263 @@ Three differences from lb-phone:
 yseries under other resource names, same exports. Their folders run the
 `yseries` file with `GG_PHONE_EXPORT` set, the way `lation_interact` runs the
 `ox_target` one.
+
+---
+
+## Tablet
+
+Two resource names, one app API shaped like `gg.phone.app`. Detection order is
+`sd-tablet`, then `lb-tablet`. Apps are added and messaged from the client; the
+server gets the same table with every call answering `false`, and with no tablet
+the client does too (`add` with a reason), so nothing is ever nil.
+
+```lua
+gg.tablet.resource              -- 'sd-tablet', 'lb-tablet', or nil with no tablet
+gg.tablet.shared                -- the phone whose app list the tablet shows: 'sd-phone' on sd-tablet, else nil
+
+gg.tablet.app.ready()           -- the resource that holds the app list is started
+gg.tablet.app.add({
+    identifier  = 'gg_casino',  -- `key` works too, as on gg.phone
+    name        = 'Casino',
+    description = '...',
+    developer   = 'GG Studio',  -- lb-tablet only
+    defaultApp  = true,
+    size        = 2400,
+    ui          = 'https://cfx-nui-gg_casino/web/phone/index.html',
+    icon        = 'https://cfx-nui-gg_casino/web/phone/icon.png',
+    devices     = { 'tablet' }, -- sd-tablet only: 'phone', 'tablet' or both; tablet when left out
+})
+gg.tablet.app.send('gg_casino', 'balance', { total = 500 })
+gg.tablet.app.remove('gg_casino')
+gg.tablet.app.installed('gg_casino')  -- added by this resource
+gg.tablet.app.drain('gg_casino')      -- always {}: both tablets push into the app
+```
+
+Both bridges add every app again when the resource holding the list restarts
+(lb-tablet, or sd-phone under sd-tablet). There is no `gg.tablet.app.focus`:
+neither tablet documents an input-focus export (see each below).
+
+Nothing here has been run in game. What each part rests on:
+
+### lb-tablet
+
+**Checked against LB's docs** ([client exports][lbt-client],
+[custom apps][lbt-apps]) **and its own [app templates][lbt-templates]:**
+
+- `AddCustomApp(app)` answers `success, reason`, the reason
+  `"APP_ALREADY_EXISTS"`. The bridge passes `identifier`, `resource` (the importing
+  resource), `name`, `description`, `developer`, `defaultApp`, `removable`,
+  `size`, `price`, `images`, `ui`, `icon` and the `onInstall`, `onUninstall`,
+  `onOpen` and `onClose` hooks. An app that already exists is removed and added
+  again.
+- `RemoveCustomApp(identifier)` answers `success, reason` (`"INVALID_APP"`,
+  `"WRONG_RESOURCE"`).
+- `SendCustomAppMessage(identifier, event, data)` takes the event on its own,
+  where lb-phone takes one message table. `send(id, action, data)` passes the
+  action as the event.
+- The page gets its globals once the tablet posts `componentsLoaded`:
+  `resourceName`, `appName`, `settings`, `fetchNui(event, data, scriptName)`,
+  `onNuiEvent(event, cb)` (the templates call it `useNuiEvent`),
+  `onSettingsChange`, `setPopUp`, `setContextMenu`, `setGallery`,
+  `setIndicatorVisible` and the rest. A page subscribes to each event by name.
+- The templates add their app again on lb-tablet's `onResourceStart`, as the
+  bridge does.
+- The screen is landscape. LB gives no pixel size; the templates' browser frame
+  is 4:3 (`aspect-ratio: 4/3`, scaled from a 1920-wide screen).
+
+**Assumed:**
+
+- A full `https://cfx-nui-<resource>/...` ui and icon are used as given, so the
+  `?tablet=lb-tablet` the bridge appends reaches the page. The templates pass full
+  http urls for both while developing, and `"ui/index.html"` (resource-relative,
+  without the resource name lb-phone wants) once built.
+- How a message gets into the frame is not documented: a posted `{ action, data }`
+  as lb-phone does, or a direct call of the `onNuiEvent` callback. A page should
+  take either without acting twice; gg_casino's `web/phone/host.js` does.
+- No input-focus export is documented, as on lb-phone, which handles its own.
+
+[lbt-client]: https://docs.lbscripts.com/tablet/script-integration/client-exports/
+[lbt-apps]: https://docs.lbscripts.com/tablet/script-integration/custom-apps/
+[lbt-templates]: https://github.com/lbphone/lb-tablet-app-templates
+
+### sd-tablet
+
+**Checked against the source** ([sd-tablet][sdt], [sd-phone][sdp]) **and
+[sd-phone's custom app docs][sdp-apps]:**
+
+- sd-tablet has no apps of its own. It runs sd-phone's interface on a tablet
+  screen (sd-phone is a hard dependency) and shows sd-phone's custom apps, each
+  filtered by its `devices` list: `'phone'`, `'tablet'` or both, case-insensitive,
+  every device when left out (`customAppsStore.ts`, `forThisDevice`).
+- So the bridge adds the app to sd-phone with sd-phone's own client exports,
+  `addCustomApp(app)` and `removeCustomApp(id)` (`ok, err`) and
+  `sendCustomAppMessage(id, message)`. Not through its lb-phone layer, which
+  `sd_phone_lbcompat false` or a leftover lb-phone folder switches off.
+  Adding the same identifier again from the same resource replaces it.
+- A message goes to sd-phone's page as `customApps:message`. sd-phone mirrors
+  every push to sd-tablet while the tablet is open (`client/companion.lua`,
+  sd-tablet `client/mirror.lua`), and the app frame posts the message table into
+  the iframe as it is (`CustomAppFrame.tsx`), held until the SDK it injects has
+  loaded and `componentsLoaded` was posted. `send()` sends `{ action, data }`, the
+  shape the lb-phone bridge sends.
+- A `ui` is `"<resource>/path"` or a full http(s) url, used as given
+  (`customUrl.ts`).
+- Text fields are wired by that SDK (`sd-phone:typing`, which the tablet answers
+  itself), so there is nothing for a focus call to do.
+- The screen is 1366 x 1024, landscape (sd-tablet `web/device.ts`), and the app
+  frame fills it. sd-phone's own phone is 440 x 956.
+- sd-phone keeps its app list in its client, so a restart of sd-phone forgets
+  every app.
+- sd-phone declares `provide 'lb-tablet'`, but its lb-tablet layer answers only
+  dispatch and MDT exports, no apps, and `provide` does not make
+  `GetResourceState` say lb-tablet is started (sd-phone's docs). sd-tablet is
+  checked first all the same.
+
+**One app list for two screens.** When `gg.tablet.shared == gg.phone.resource`
+(sd-tablet beside sd-phone), adding the app to the phone through `gg.phone` gives
+it no `devices`, so it shows on the tablet as well, and adding it through both
+leaves whichever came last. A script that lets the owner choose registers once,
+through `gg.tablet`, with `devices` naming the screens it wants, and skips
+`gg.phone.app.add` for that app. `send` then reaches whichever screen has it open.
+
+**Assumed:** the iframe's parent is `https://cfx-nui-sd-tablet` (sd-tablet's own
+`ui_page`). The same url serves both screens, so `?tablet=sd-tablet` is only added
+when the tablet is the app's one screen; a page on both reads
+`location.ancestorOrigins` (or `document.referrer`) to tell them apart.
+
+[sdt]: https://github.com/Samuels-Development/sd-tablet
+[sdp]: https://github.com/Samuels-Development/sd-phone
+[sdp-apps]: https://docs.samueldev.shop/resources/phone/custom-apps
+
+### What the app page sees
+
+| | lb-tablet | sd-tablet |
+|---|---|---|
+| Knows it is there by | `?tablet=lb-tablet` | `?tablet=sd-tablet` on a tablet-only app, else a `cfx-nui-sd-tablet` parent |
+| Gets a message as | `onNuiEvent(action, cb)` after `componentsLoaded` | a window `message` of `{ action, data }`, as on lb-phone |
+| Answers to | its own `https://<resource>/<callback>` | the same |
+| Screen | landscape, 4:3 | 1366 x 1024, landscape |
+
+---
+
+## Door locks
+
+Optional, like phone. ox_doorlock is the only one so far. With none running every
+call answers `nil` or `false` (the make and change calls `false, why`) and nothing
+is printed; `gg.doorlock.resource` is `nil`, which is how a script tells.
+
+A door is its id or its name, on either side. A name that matches no door and
+reads as a number is tried as an id; `getDoorByName` never does that.
+
+```lua
+-- Either side
+gg.doorlock.resource                -- the resolved resource, nil with no door lock
+gg.doorlock.ready()                 -- started, and on the server its doors are loaded
+gg.doorlock.getDoor('shop back')    -- { id, name, locked, coords, maxDistance, ... } or nil
+gg.doorlock.getDoorByName('shop back')
+gg.doorlock.isLocked(12)            -- true / false, nil for no such door
+gg.doorlock.setState('shop back', true)    -- setLocked with true / 1 / 'locked'
+
+-- Server
+gg.doorlock.setLocked('shop back', true)   -- unconditional; true if the door exists
+gg.doorlock.getDoors()                     -- every door, same shape as getDoor
+gg.doorlock.onChange(function(doorId, locked, source, usedItem) end)
+
+gg.doorlock.createDoor({                   -- id, 'live' | 'saved', or false, why[, id already there]
+    name = 'myshop:back',                  -- unique, up to 50 characters
+    model = 'v_ilev_gtdoor', coords = vec3(1.0, 2.0, 3.0), heading = 90.0,
+    -- or a double door: doors = { { model, coords, heading }, { model, coords, heading } }
+    locked = true,                         -- default true
+    groups = { police = 0 },               -- { job = least grade }; nil: only admins
+    maxDistance = 2.0, autolock = 10,      -- and items, characters, lockpick, hideUi, auto, doorRate,
+})                                         -- passcode, lockSound, unlockSound
+gg.doorlock.editDoor('myshop:back', { groups = { police = 2 }, locked = false })  -- true, 'live' | 'saved'
+gg.doorlock.saved('myshop:back')           -- the door as saved: createDoor's keys + id, live; nil
+gg.doorlock.saved()                        -- every saved door
+gg.doorlock.shapeOf(def)                   -- createDoor's def as saved() would hand it back; nothing written
+gg.doorlock.features()                     -- { create = 'live' | 'saved' | nil, edit, reload }
+gg.doorlock.loadSaved()                    -- true, why / false, why (below)
+
+-- Client
+gg.doorlock.setLocked('shop back', false)  -- the player's own request (below)
+gg.doorlock.closest()                      -- { id, name, locked, coords, entity, distance, maxDistance, reachable }
+gg.doorlock.useClosest()                   -- toggles it, as its E key would
+gg.doorlock.pickClosest()                  -- ox_doorlock's own lockpick skill check
+gg.doorlock.idOf(entity)                   -- the door id an entity belongs to
+```
+
+**From the server, `setLocked` is not checked.** It is the script's own decision.
+From the client it is the player asking: it sends ox_doorlock's own
+`ox_doorlock:setState`, so their groups, items and passcode are checked there
+and ox_doorlock tells them if they are refused. `true` on the client means it
+was asked, not that it was allowed; watch `onChange` on the server for the
+outcome.
+
+**Doors are read from the database after ox_doorlock starts.** Until then every
+lookup is empty and `setLocked` answers `false`. A script that locks a door at
+start waits on `ready()`. ox_doorlock fires `ox_doorlock:loaded` once; a script
+that starts after that is ready as soon as one door exists.
+
+**Making a door.** ox_doorlock 1.21 (the CommunityOx line Qbox ships) has no
+export that makes or removes one: its `/doorlock` menu writes a row to its
+`ox_doorlock` table and adds it to the doors it holds, and only an admin's menu
+may. So `createDoor` writes the same row the menu writes (its `encodeData`
+shape: models as signed hashes, coords `{ x, y, z }`, a double door's middle as
+its coords) and answers `'saved'`: ox_doorlock holds it from its next start.
+`loadSaved()` makes that now by stopping and starting ox_doorlock, and only while
+nobody is on the server and no started resource names ox_doorlock as a
+dependency (stopping it would stop those); otherwise, or when the server will
+not let a script stop it, it answers `false, why` and the doors come at the
+next server restart. A script makes its doors at boot and
+calls `loadSaved()` once after. On an ox_doorlock with a `createDoor` export (the
+Overextended line, 1.22.1) that is used instead and the answer is `'live'`.
+Writing needs MySQL in the resource that asks: `@oxmysql/lib/MySQL.lua` in its
+`server_scripts`. A name already saved is never made twice (`false, 'exists', id`).
+
+**Changing a door.** `editDoor` takes any key `createDoor` takes; `false` clears
+one (`groups = false`: no job opens it). A door ox_doorlock holds takes it at
+once through its `editDoor` export, which also saves it. Its model or place, or a
+door saved but not held yet, is changed in its row and taken at the next start
+(`'saved'`, and `loadSaved()` as above).
+
+**The server's `getDoor` carries the access lists** (`groups`, `items`,
+`characters`). The client's comes from this resource's own server over
+`gg.callback`, because ox_doorlock has no client lookup by id or name, and
+carries only `id`, `name`, `locked`, `coords` and `maxDistance`. `saved` reads the
+row itself, so it has everything `createDoor` took, and `live` says whether
+ox_doorlock holds it now.
+
+`onChange` listeners added while no door lock runs are kept, and hear changes
+once one starts. `source` is `nil` for a change made by the server or by
+autolock; `usedItem` is the item that opened it, when one did. Server only:
+ox_doorlock raises the event only there.
+
+`closest()` is whatever ox_doorlock holds as the closest door. It keeps one until
+no door is within 20 m, so it can be a door past its interact distance;
+`reachable` says whether it is usable from here. `useClosest` and `pickClosest`
+act only on a reachable door, which ox_doorlock's own exports do not check.
+`pickClosest` waits for the skill check and returns `true` once the attempt was
+made; a double door has no single entity and cannot be picked.
+
+### ox_doorlock
+
+Every call is from ox_doorlock's [documentation][ox-door-docs] or its
+[source][ox-door-src]: server `getDoor`, `getDoorFromName`, `getAllDoors`,
+`setDoorState`, `editDoor` and the `ox_doorlock:stateChanged` and
+`ox_doorlock:loaded` events; client `getClosestDoor`, `useClosestDoor`,
+`pickClosestDoor` and `getDoorIdFromEntity`; its `ox_doorlock` table (`id`,
+`name` varchar(50), `data` JSON). States are `0` unlocked and `1` locked. Calls
+are guarded like the target ones, and a stopped ox_doorlock is not called at
+all. Checked against 1.21.0, the version the Qbox recipe ships. Who a door's
+`groups` let in is ox_doorlock's own framework file: qbx_core, es_extended,
+ox_core and nd_core. It has none for qb-core, so there groups open nothing and
+only a door's ace (`doorlock.<name>`) does.
+
+`createDoor` is used when the export is there (Overextended 1.22.1); its
+`removeDoor` and the `registerHook` authorization hooks (1.22+) are not mapped.
+
+[ox-door-docs]: https://overextended.dev/docs/ox_doorlock
+[ox-door-src]: https://github.com/communityox/ox_doorlock
 
 ---
 

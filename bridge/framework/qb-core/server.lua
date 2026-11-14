@@ -264,3 +264,101 @@ end)
 AddEventHandler("playerDropped", function()
     loadedPlayers[tonumber(source) or 0] = nil
 end)
+
+--------------------------------------------------
+-- MARK: Jobs
+--------------------------------------------------
+
+-- gg.framework.CreateJob(name, def) makes a job the server does not have yet, the framework's own way, and never
+-- changes one it has. def: label, type, defaultDuty, offDutyPay and grades = { [0] = { name, payment, isboss,
+-- bankAuth }, ... } (keys are the grade numbers). Returns true once the framework shows the job, or false, why
+-- ("exists" when the server already has it). gg.framework.GetJob(name) is the framework's own job table, or nil.
+
+local function jobNameOk(name)
+    return type(name) == "string" and #name <= 50 and name:match("^[%w_%-]+$") ~= nil
+end
+
+-- The grades sorted: { grade, name, payment, isboss, bankAuth }, or nil and why.
+local function jobGrades(def)
+    if type(def) ~= "table" or type(def.grades) ~= "table" then return nil, "a job needs grades" end
+
+    local list, seen = {}, {}
+
+    for key, grade in pairs(def.grades) do
+        local level = type(grade) == "table" and tonumber(grade.grade or key) or nil
+
+        if not level or level < 0 or level % 1 ~= 0 then
+            return nil, ("grade %s is not a whole number of 0 or more"):format(tostring(key))
+        end
+
+        level = math.floor(level)
+
+        if seen[level] then return nil, ("grade %d is given twice"):format(level) end
+
+        seen[level] = true
+
+        list[#list + 1] = {
+            grade    = level,
+            name     = type(grade.name) == "string" and grade.name ~= "" and grade.name or ("Grade %d"):format(level),
+            payment  = math.max(0, math.floor(tonumber(grade.payment or grade.salary) or 0)),
+            isboss   = grade.isboss == true,
+            bankAuth = grade.bankAuth == true,
+        }
+    end
+
+    if #list == 0 then return nil, "a job needs at least one grade" end
+
+    table.sort(list, function(a, b) return a.grade < b.grade end)
+
+    return list
+end
+
+local function jobLabel(def, name)
+    return type(def.label) == "string" and def.label ~= "" and def.label or name
+end
+
+-- Read fresh each time: the core object this file holds is a copy taken when it loaded.
+gg.framework.GetJob = function(name)
+    if type(name) ~= "string" or name == "" then return nil end
+
+    local ok, job = pcall(function()
+        local core = exports['qb-core']:GetCoreObject()
+
+        return core and core.Shared and core.Shared.Jobs and core.Shared.Jobs[name]
+    end)
+
+    return ok and type(job) == "table" and job or nil
+end
+
+-- qb-core's AddJob keeps it in memory for this run (shared/jobs.lua is not written), so the caller makes it again
+-- at each start, before players join. Its grades are keyed '0', '1', ...
+gg.framework.CreateJob = function(name, def)
+    if not jobNameOk(name) then return false, "a job name is letters, digits, _ and - (up to 50)" end
+    if gg.framework.GetJob(name) then return false, "exists" end
+
+    local list, why = jobGrades(def)
+
+    if not list then return false, why end
+
+    local grades = {}
+
+    for _, g in ipairs(list) do
+        grades[tostring(g.grade)] = { name = g.name, payment = g.payment, isboss = g.isboss or nil, bankAuth = g.bankAuth or nil }
+    end
+
+    local job = {
+        label       = jobLabel(def, name),
+        type        = type(def.type) == "string" and def.type or nil,
+        defaultDuty = def.defaultDuty ~= false,
+        offDutyPay  = def.offDutyPay == true,
+        grades      = grades,
+    }
+
+    local ok, made, message = pcall(function() return exports['qb-core']:AddJob(name, job) end)
+
+    if not ok then return false, tostring(made) end
+    if made == false then return false, tostring(message or "qb-core refused it") end
+    if not gg.framework.GetJob(name) then return false, "qb-core does not show it" end
+
+    return true
+end

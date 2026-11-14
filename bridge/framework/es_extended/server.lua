@@ -330,3 +330,128 @@ end
 AddEventHandler("esx:playerLoaded", function(source, xPlayer)
     playerLoaded(source or (xPlayer and xPlayer.source))
 end)
+
+--------------------------------------------------
+-- MARK: Jobs
+--------------------------------------------------
+
+-- gg.framework.CreateJob(name, def) makes a job the server does not have yet, the framework's own way, and never
+-- changes one it has. def: label, type, defaultDuty, offDutyPay and grades = { [0] = { name, payment, isboss,
+-- bankAuth }, ... } (keys are the grade numbers). Returns true once the framework shows the job, or false, why
+-- ("exists" when the server already has it). gg.framework.GetJob(name) is the framework's own job table, or nil.
+
+local function jobNameOk(name)
+    return type(name) == "string" and #name <= 50 and name:match("^[%w_%-]+$") ~= nil
+end
+
+-- The grades sorted: { grade, name, payment, isboss, bankAuth }, or nil and why.
+local function jobGrades(def)
+    if type(def) ~= "table" or type(def.grades) ~= "table" then return nil, "a job needs grades" end
+
+    local list, seen = {}, {}
+
+    for key, grade in pairs(def.grades) do
+        local level = type(grade) == "table" and tonumber(grade.grade or key) or nil
+
+        if not level or level < 0 or level % 1 ~= 0 then
+            return nil, ("grade %s is not a whole number of 0 or more"):format(tostring(key))
+        end
+
+        level = math.floor(level)
+
+        if seen[level] then return nil, ("grade %d is given twice"):format(level) end
+
+        seen[level] = true
+
+        list[#list + 1] = {
+            grade    = level,
+            name     = type(grade.name) == "string" and grade.name ~= "" and grade.name or ("Grade %d"):format(level),
+            payment  = math.max(0, math.floor(tonumber(grade.payment or grade.salary) or 0)),
+            isboss   = grade.isboss == true,
+            bankAuth = grade.bankAuth == true,
+        }
+    end
+
+    if #list == 0 then return nil, "a job needs at least one grade" end
+
+    table.sort(list, function(a, b) return a.grade < b.grade end)
+
+    return list
+end
+
+local function jobLabel(def, name)
+    return type(def.label) == "string" and def.label ~= "" and def.label or name
+end
+
+gg.framework.GetJob = function(name)
+    if type(name) ~= "string" or name == "" then return nil end
+
+    local ok, job = pcall(function()
+        local jobs = ESX.GetJobs and ESX.GetJobs() or ESX.Jobs
+
+        return jobs and jobs[name]
+    end)
+
+    return ok and type(job) == "table" and job or nil
+end
+
+local function gradeId(label)
+    return (label:lower():gsub("[^%w]+", "_"):gsub("^_+", ""):gsub("_+$", ""))
+end
+
+-- es_extended keeps jobs in its database (jobs, job_grades), so a made job stays. ESX.CreateJob where this ESX has
+-- it; else the two tables written here and ESX.RefreshJobs, so it shows in this run. A grade's name is its id in
+-- ESX: the boss grade is 'boss' (what ESX's own society scripts look for), the rest from their labels.
+gg.framework.CreateJob = function(name, def)
+    if not jobNameOk(name) then return false, "a job name is letters, digits, _ and - (up to 50)" end
+    if gg.framework.GetJob(name) then return false, "exists" end
+
+    local list, why = jobGrades(def)
+
+    if not list then return false, why end
+
+    local label = jobLabel(def, name)
+    local grades, used = {}, {}
+
+    for _, g in ipairs(list) do
+        local id = g.isboss and not used.boss and "boss" or gradeId(g.name)
+
+        if id == "" or used[id] then id = ("grade_%d"):format(g.grade) end
+
+        used[id] = true
+        grades[#grades + 1] = { grade = g.grade, name = id, label = g.name, salary = g.payment }
+    end
+
+    if ESX.CreateJob then
+        local ok, made = pcall(ESX.CreateJob, name, label, grades)
+
+        if not ok then return false, tostring(made) end
+        if not made then return false, "es_extended refused it (see its console line)" end
+        if not gg.framework.GetJob(name) then return false, "es_extended does not show it" end
+
+        return true
+    end
+
+    if type(MySQL) ~= "table" then return false, "no database to write the job to" end
+    if not ESX.RefreshJobs then return false, "this es_extended cannot load a new job without a restart" end
+
+    local queries = { { query = "INSERT INTO jobs (name, label) VALUES (?, ?)", values = { name, label } } }
+
+    for _, g in ipairs(grades) do
+        queries[#queries + 1] = {
+            query  = "INSERT INTO job_grades (job_name, grade, name, label, salary, skin_male, skin_female) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            values = { name, g.grade, g.name, g.label, g.salary, "{}", "{}" },
+        }
+    end
+
+    local ok, made = pcall(MySQL.transaction.await, queries)
+
+    if not ok then return false, tostring(made) end
+    if not made then return false, "the database refused it" end
+
+    pcall(ESX.RefreshJobs)
+
+    if not gg.framework.GetJob(name) then return false, "saved, but es_extended does not show it yet" end
+
+    return true
+end

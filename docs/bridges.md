@@ -139,6 +139,40 @@ from one script to the next, so they stay separate files.
 
 ---
 
+## Door locks
+
+Optional. `ox_doorlock` is detected and shown on the **Bridges** page; with no
+door lock running, our scripts simply leave doors alone.
+
+A script that locks or unlocks a door names it by its ox_doorlock id or name, as
+you set it in `/doorlock`. A player using a door through one of our scripts
+still has to pass that door's groups, items or passcode.
+
+Some of our scripts set up the doors of the buildings they come with (the
+casinos' MLOs, for one). On ox_doorlock 1.21, the version Qbox ships, nothing
+can add a door while it runs except an admin's own `/doorlock` menu, so a new
+door is saved to ox_doorlock's table and ox_doorlock is started again once to
+read it, only while nobody is on the server and nothing depends on it. When
+players are on, the console says so and the doors come at the next restart.
+A door you edit in `/doorlock` afterwards is yours: our scripts never change it
+back.
+
+ox_doorlock decides who a door's jobs let in from qbx_core, es_extended, ox_core
+or nd_core. It has nothing for qb-core: there a door's jobs open nothing, and
+only its ace does (`add_ace group.admin "doorlock.<door name>" allow`).
+
+## Jobs
+
+A script that runs on a job of its own (each casino's, for one) makes it when
+your server does not have it, and never touches one you already have: your own
+grades and boss grade are used. On qbx_core and qb-core the job lives for the
+run (your `shared/jobs.lua` is never rewritten) and is made again at every
+start; add it to `shared/jobs.lua` yourself to keep your own grades and pay. On
+es_extended it is saved to your `jobs` and `job_grades` tables like any other.
+
+
+---
+
 ## HUDs
 
 Our scripts can hide your HUD while they need the screen — a tablet, a

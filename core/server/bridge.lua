@@ -21,6 +21,15 @@ local function running(name)
     return state == "started" or state == "starting"
 end
 
+-- A resource of this very name, not one that only `provide`s it.
+local function isReal(name)
+    for index = 0, GetNumResources() - 1 do
+        if GetResourceByFindIndex(index) == name then return true end
+    end
+
+    return false
+end
+
 local STUBS = { default = true, custom = true }
 
 local function resourceInfo(name)
@@ -72,6 +81,10 @@ local function detect(category)
 
     for _, candidate in ipairs((manifest.categories or {})[category] or {}) do
         if running(candidate) then
+            local real = ((manifest.beside or {})[category] or {})[candidate]
+
+            if real and isReal(real) and running(real) then candidate = real end
+
             return {
                 category = category,
                 resource = candidate,

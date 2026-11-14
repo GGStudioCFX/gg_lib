@@ -81,6 +81,14 @@ return {
             "yflip-phone",
             "lb-phone",
         },
+        tablet = {
+            "sd-tablet",
+            "lb-tablet",
+        },
+        -- Door locks (bridge/doorlock): one door lock resource, never required.
+        doorlock = {
+            "ox_doorlock",
+        },
         keys = {
             "p_vehiclekeys",
             "qbx_vehiclekeys",
@@ -132,7 +140,13 @@ return {
         },
     },
 
-    category_order = { "framework", "inventory", "target", "dispatch", "fuel", "keys", "phone", "hud" },
+    -- sd-phone also answers to lb-phone's name (and lb-tablet's) while the real one is missing. A server
+    -- that runs the real lb-phone beside it keeps sd-phone for sd-tablet, so lb-phone is the phone.
+    beside = {
+        phone = { ["sd-phone"] = "lb-phone" },
+    },
+
+    category_order = { "framework", "inventory", "target", "dispatch", "fuel", "keys", "phone", "tablet", "doorlock", "hud" },
 
     required = {
         framework = true,

@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 113,
+    "total": 116,
     "categories": [
         {
             "id": "framework",
@@ -143,6 +143,25 @@
                 "yflip-phone",
                 "yphone",
                 "yseries"
+            ]
+        },
+        {
+            "id": "tablet",
+            "label": "Tablets",
+            "required": false,
+            "count": 2,
+            "resources": [
+                "lb-tablet",
+                "sd-tablet"
+            ]
+        },
+        {
+            "id": "doorlock",
+            "label": "Door locks",
+            "required": false,
+            "count": 1,
+            "resources": [
+                "ox_doorlock"
             ]
         },
         {
