@@ -1,6 +1,17 @@
 {
-    "publishedAt": 1793183867,
+    "publishedAt": 1794707163,
     "products": [
+        {
+            "id": "gg_casino",
+            "resource": "gg_casino",
+            "name": "Casino Creator",
+            "blurb": "Build a working casino anywhere, with three casino buildings included: 35 slot machines with growing jackpots, blackjack, roulette, baccarat and 8-seat Hold'em, prize wheels you design, and casinos your players can own.",
+            "price": "$39.95",
+            "status": "SOON",
+            "icon": "fa-dice",
+            "image": "https://dunb17ur4ymx4.cloudfront.net/packages/images/68aa1634bb61ce57c23a496d848f7f667b905eae.jpg",
+            "url": "https://www.ggstudio.store/scripts/casino"
+        },
         {
             "id": "gg_racing",
             "resource": "gg_racing",
