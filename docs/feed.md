@@ -20,7 +20,7 @@ Four kinds of file, because they change for different reasons:
 
 | File | What it holds | Who edits it |
 | --- | --- | --- |
-| `feed/home.json` | the ticker, the promos, the links | you, when something is on |
+| `feed/home.json` | the news lines, the promos, the links | you, when something is on |
 | `feed/products.json` | the catalogue behind the shop | generated from the store |
 | `feed/updates/<resource>.json` | one release log per script | per release |
 | `feed/bridges.json` | every resource gg_lib bridges to, by category | generated, never by hand |
@@ -46,11 +46,13 @@ at the top of the page is the newest one still running, or the one named in
 its own, rather than the day somebody remembers to edit the file. With nothing
 on, there is no headline at all, which is most days.
 
-A `release` is a script version going out. It names the script in `resource`
-and the version in `version`: on a server already running that script the
-button opens the script's own page in the studio, and on one that is not it
-goes to `url` -- the store page, usually. Releases and announcements that are
-not the headline sit in the news rail.
+A `release` is a script going out. It names the script in `resource`: on a
+server already running that script the button opens the script's own page in
+the studio, and on one that is not it goes to `url` -- the store page, usually. Releases and announcements that are
+not the headline sit in the news rail. The banner shows no version: title a
+release by the product ("Taxi Job V2") and leave `version` out, since older
+gg_lib still draws it as a chip. Sales and giveaways that are running go on the
+banner even without an `image`.
 
 An `image` is a picture beside the copy; a `video` -- an mp4 address or a
 YouTube link -- plays there instead. `url` is where the button goes and `cta`
@@ -63,16 +65,15 @@ pages is drawn as a distance from now.
 {
     "publishedAt": 1787767200,
     "version": "1.0.2",
-    "ticker": ["gg_taxijob 2.0 is out", "25% off everything until Sunday -- SUMMER25"],
+    "ticker": ["Taxi Job V2 is out", "25% off everything until Sunday -- SUMMER25"],
     "links": { "discord": "https://discord.gg/...", "store": "https://..." },
     "featured": "taxi-2-0",
     "promos": [
         {
             "id": "taxi-2-0",
             "kind": "release",
-            "title": "gg_taxijob 2.0 is out",
+            "title": "Taxi Job V2",
             "body": "The whole job rebuilt on Script Studio.",
-            "version": "2.0.0",
             "resource": "gg_taxijob",
             "at": 1787866200,
             "image": "https://.../taxi.png",
@@ -113,7 +114,9 @@ The countdown runs to the second in the last hour, and the page flips by itself
 when the time comes -- no push at release time. A scheduled item is dated from
 its `releaseAt`, so it reads "just now" when it goes out, not when it was pushed.
 
-A ticker line takes either form; the object one holds:
+`ticker` lines read at the top of the news rail (older gg_lib runs them in a
+strip across the top of the page). A line takes either form; the
+object one holds:
 
 ```json
 "ticker": [

@@ -121,7 +121,7 @@ gg.inventory.hasItem(source, { item = 'water', count = 1 })
 gg.inventory.canCarryitem(source, { item = 'water', count = 5 })
 ```
 
-The same item API works on all fifteen inventories, metadata included. Rows
+The same item API works on all sixteen inventories, metadata included (hex_4_inventory has none). Rows
 always read `{ name, label, count, slot, metadata, weight }`: qb-style `amount`
 and `info` are read as `count` and `metadata`, and `metadata` is always a table.
 Metadata matches the way ox_inventory's `Search` does: every key you ask for has
@@ -177,6 +177,34 @@ gg.items.image('water')    -- honours the icon path override in the Items tool
 gg.items.exists('plastic') -- validate a config value
 gg.items.list()            -- sorted, for pickers
 ```
+
+### wasabi_inventory
+
+Wasabi's manifest provides `ox_inventory` and answers the exports it supports, so
+`GetResourceState('ox_inventory')` can report started on a Wasabi server, and the
+ox bridge would then point every picture at a folder that is not there. So it has
+its own entry above ox_inventory, and every call goes to `exports.wasabi_inventory`.
+
+Pictures load from `wasabi_inventory/ui/images/` with no setup: `client.image` on
+the item picks the file, `<item>.png` otherwise, and a full `https://` or `nui://`
+`ImagePath` in `config/client/config.lua` replaces the folder. Icon Path in the
+Items tool still wins over all of it.
+
+`registerUsable` is the inventory's own `registerUsableItem`, and the row comes
+from `context.slot`. `onSwap` works as it does on ox_inventory. A use has already
+gone through when a script hears of it, so `useItem` calls back straight away, and
+it drops the second arrival of one press (an item with a `client.export` as well
+as a registered use).
+`RemoveItem` documents no `strict` option, so a metadata removal goes by the slot
+`_common` found. Item definitions follow ox_inventory's schema in `data/items.lua`,
+but `consume` defaults to zero, even with a `client.usetime` or `server.export`.
+
+Written from the [exports][wasabi-exports], [items][wasabi-items] and
+[configuration][wasabi-config] pages, and not yet run on the real inventory.
+
+[wasabi-exports]: https://docs.wasabiscripts.com/core-ui-series/wasabi-inventory/exports
+[wasabi-items]: https://docs.wasabiscripts.com/core-ui-series/wasabi-inventory/items-and-weapons
+[wasabi-config]: https://docs.wasabiscripts.com/core-ui-series/wasabi-inventory/configuration
 
 ---
 
@@ -943,7 +971,7 @@ hidden if it already was. The rest cannot say, so `show` brings them back.
 HUD usually still wants the minimap.
 
 **A HUD with no bridge gets an event.** With no HUD below running, `hide` and
-`show` send the client event in Generic Settings > General > Custom HUD Event
+`show` send the client event in Shared Settings > General > Custom HUD Event
 (`general.hud_event`, default `hud:client:ToggleHud`) with `false` to hide and
 `true` to show, so a server's own HUD only needs a handler for it. Empty sends
 nothing, and with nothing listening the event does nothing. It cannot say whether

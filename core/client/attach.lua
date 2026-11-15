@@ -836,7 +836,7 @@ local function enter()
     liveView = nil
     if liveVehicle then
         local why
-        liveView, why = GG_ATTACH_CABIN.create(liveVehicle)
+        liveView, why = GG_ATTACH_CABIN.create(liveVehicle, job.liveArea)
         if not liveView then
             job.failed = why
             exit()
@@ -1174,6 +1174,8 @@ local function runJob(options, owner)
         vehicle = options.vehicle,
         liveVehicle = liveVehicle,
         liveSeat = options.liveSeat,
+        -- Where in the live car it goes: the front cabin (a dash tablet), or 'boot' (attach_cabin.lua).
+        liveArea = liveVehicle and options.liveArea == "boot" and "boot" or nil,
         pivot = liveVehicle and type(options.pivot) == "table" and vec3of(options.pivot) or nil,
         initialPos = vec3of(options.pos),
         initialRot = vec3of(options.rot),

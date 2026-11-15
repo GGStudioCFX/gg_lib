@@ -8,8 +8,38 @@
 -- server and walk off with it.
 local GRANT = GetCurrentResourceName() .. ":gg_keys"
 
-local function answer(source, action, netid)
-    if GetResourceState("qbx_vehiclekeys") ~= "started" then return false end
+-- One row per key script the client may ask for (bridge/keys/client.lua viaServer).
+local grants = {
+    -- JG's entity exports return true when something changed and nil when the
+    -- key was already held, the car is excluded or it failed.
+    ["jg-vehiclekeys"] = {
+        give = function(source, veh)
+            if exports["jg-vehiclekeys"]:giveKeysToEntity(source, veh, true) then return true end
+
+            return exports["jg-vehiclekeys"]:hasKeysForEntity(source, veh) == true
+        end,
+        remove = function(source, veh)
+            exports["jg-vehiclekeys"]:removeKeysFromEntity(source, veh, true)
+        end,
+    },
+
+    ["qbx_vehiclekeys"] = {
+        give = function(source, veh)
+            if exports.qbx_vehiclekeys:GiveKeys(source, veh, true) then return true end
+
+            -- Nothing given because the key was already held.
+            return exports.qbx_vehiclekeys:HasKeys(source, veh) == true
+        end,
+        remove = function(source, veh)
+            exports.qbx_vehiclekeys:RemoveKeys(source, veh, true)
+        end,
+    },
+}
+
+local function answer(source, action, netid, keys)
+    local grant = grants[keys]
+
+    if not grant or GetResourceState(keys) ~= "started" then return false end
     if type(netid) ~= "number" then return false end
 
     local veh = NetworkGetEntityFromNetworkId(netid)
@@ -18,17 +48,16 @@ local function answer(source, action, netid)
 
     -- Giving up your own key needs no proof.
     if action == "remove" then
-        exports.qbx_vehiclekeys:RemoveKeys(source, veh, true)
+        local ok = pcall(grant.remove, source, veh)
 
-        return true
+        return ok
     end
 
     if action ~= "add" or not gg.vehicleManager.spawnedHere(veh) then return false end
 
-    if exports.qbx_vehiclekeys:GiveKeys(source, veh, true) then return true end
+    local ok, given = pcall(grant.give, source, veh)
 
-    -- Nothing given because the key was already held.
-    return exports.qbx_vehiclekeys:HasKeys(source, veh) == true
+    return ok and given == true
 end
 
 -- Detection can run again when a key script starts late; the answer is

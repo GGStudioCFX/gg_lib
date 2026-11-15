@@ -16,13 +16,17 @@ what you configured.
 
 **2.** Drop `gg_lib` into your resources folder.
 
-**3.** Start it before any GG Studio script:
+**3.** Add it to `server.cfg`, anywhere:
 
 ```cfg
 ensure oxmysql
-ensure gg_lib          # before the scripts below
+ensure gg_lib
 ensure gg_taxijob
 ```
+
+The order does not matter. Every GG Studio script that runs on gg_lib lists it as a dependency,
+so the server starts gg_lib first and holds the script back until it is up,
+even when its `ensure` line comes later.
 
 **4.** Open `server_config.lua`, put your license in `admins`, and restart.
 
@@ -48,9 +52,12 @@ though individual scripts may, so follow each one's own notes.
 | [Hooks](docs/hooks.md) | Running your own code when a GG script reports something |
 | [Bridges](docs/bridges.md) | Forcing a framework, inventory, target or dispatch |
 | [Waypoints](docs/waypoints.md) | The shared world markers every script draws |
+| [Zones](docs/zones.md) | Areas that run your code when the player walks in or out |
+| [Placement](docs/placement.md) | Letting a player set a prop down with the placement tool |
 | [Daily reset](docs/daily-reset.md) | The clock every script's daily counters share |
 | [Screenshots](docs/screenshots.md) | Saving vehicle photos locally or with FiveManage |
 | [Placement](docs/placement.md) | Letting a player set a prop down with the placement tool |
+| [Images](docs/images.md) | Keeping pictures in the database instead of image files |
 | [Home feed](docs/feed.md) | Publishing the home page, the shop and the update logs |
 | [Support bundle](docs/support.md) | One click to copy what a ticket needs: versions, the server console and what a script printed |
 

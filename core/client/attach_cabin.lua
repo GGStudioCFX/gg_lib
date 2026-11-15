@@ -31,7 +31,33 @@ function Cabin.preset(view, name)
     return true
 end
 
-function Cabin.create(vehicle)
+-- The boot (area 'boot'): from the back of the body to just behind the front seats, so a prop goes in
+-- the boot or behind the rear seats (a car subwoofer). The camera may go round the outside of the
+-- back end too: it starts behind the car looking in (a script opens the boot for it), and 1 / 2 / 3
+-- look back from over the rear seats.
+local function bootArea(view, low, high, driver, passenger, center)
+    local bounds = {
+        min = { x = low.x + 0.18, y = low.y + 0.15, z = low.z + 0.25 },
+        max = { x = high.x - 0.18, y = math.min(high.y - 0.45, center.y - 0.30), z = math.min(high.z - 0.12, center.z + 0.72) },
+    }
+    for _, axis in ipairs({ 'x', 'y', 'z' }) do
+        if bounds.max[axis] - bounds.min[axis] < 0.25 then return nil, 'vehicle boot is too small for placement' end
+    end
+    view.bounds, view.wrapYaw = bounds, true
+    view.cameraBounds = {
+        min = { x = low.x - 0.8, y = low.y - 1.8, z = low.z + 0.30 },
+        max = { x = high.x + 0.8, y = bounds.max.y - 0.06, z = high.z + 0.90 },
+    }
+    local middle = (low.x + high.x) * 0.5
+    view.target = { x = middle, y = low.y + 0.65, z = low.z + (high.z - low.z) * 0.45 }
+    local function over(x) return { x = x, y = clamp(center.y - 0.55, bounds.min.y, bounds.max.y - 0.06), z = center.z + 0.50 } end
+    view.views = { center = { x = middle, y = low.y - 0.95, z = high.z + 0.30 },
+        driver = over(driver.x * 0.65 + middle * 0.35), passenger = over(passenger.x * 0.65 + middle * 0.35) }
+    Cabin.preset(view, 'center')
+    return view
+end
+
+function Cabin.create(vehicle, area)
     local low, high = GetModelDimensions(GetEntityModel(vehicle))
     local origin = GetEntityCoords(vehicle)
     local view = {
@@ -55,6 +81,7 @@ function Cabin.create(vehicle)
     if math.abs(driver.x - passenger.x) < 0.25 then driver, passenger = seat(nil, -1), seat(nil, 1) end
     local center = { x = (driver.x + passenger.x) * 0.5,
         y = (driver.y + passenger.y) * 0.5, z = (driver.z + passenger.z) * 0.5 }
+    if area == 'boot' then return bootArea(view, low, high, driver, passenger, center) end
     -- A conservative front-cabin envelope, inset from the model's exterior.
     local bounds = {
         min = { x = math.max(low.x + 0.18, math.min(driver.x, passenger.x) - 0.24),
@@ -87,7 +114,8 @@ end
 function Cabin.look(view, dx, dy, nativeInput)
     -- Cursor drags are fractions of viewport height; native mouse axes use a separate gain.
     local yawGain, pitchGain = nativeInput and 8.0 or 60.0, nativeInput and 6.0 or 45.0
-    view.yaw = clamp(view.yaw + dx * yawGain, -170.0, 170.0)
+    -- The boot's camera turns all the way round (it looks back from the rear seats); the cabin's stops short of the seats.
+    view.yaw = view.wrapYaw and (view.yaw + dx * yawGain + 180.0) % 360.0 - 180.0 or clamp(view.yaw + dx * yawGain, -170.0, 170.0)
     view.pitch = clamp(view.pitch - dy * pitchGain, -65.0, 65.0)
 end
 

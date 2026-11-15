@@ -650,6 +650,14 @@ define("screenshot.upload_key", {
     default     = "",
 })
 
+define("screenshot.greenscreen", {
+    group   = "screenshot",
+    label   = "Green Screen Cutout",
+    help    = "On, the vehicle is cut out onto a see-through background, glass and green paint included. Off, the picture keeps what the camera sees around the Capture Spot.",
+    type    = "boolean",
+    default = true,
+})
+
 define("screenshot.location", {
     group   = "screenshot",
     label   = "Capture Spot",
@@ -662,7 +670,15 @@ local function encode(value)
     return json.encode({ v = value })
 end
 
+-- Rows and revision stay in memory once read. Every write below updates
+-- them too, so reads never go back to the database.
+local stored = { overrides = nil, revision = nil, generation = 0 }
+
 local function loadOverrides()
+    if stored.overrides then return stored.overrides end
+
+    local generation = stored.generation
+
     local rows = MySQL.query.await(
         "SELECT path, value FROM gg_studio_settings WHERE resource = ?",
         { PSEUDO }
@@ -677,32 +693,72 @@ local function loadOverrides()
         end
     end
 
+    -- A write that landed while this read was in flight wins.
+    if rows and generation == stored.generation then stored.overrides = loaded end
+
     return loaded
 end
 
 local function loadRevision()
+    if stored.revision then return stored.revision end
+
+    local generation = stored.generation
+
     local rows = MySQL.query.await(
         "SELECT revision FROM gg_studio_settings_meta WHERE resource = ?",
         { PSEUDO }
     )
 
+    local revision = 0
+
     if rows and rows[1] then
-        return tonumber(rows[1].revision) or 0
+        revision = tonumber(rows[1].revision) or 0
+    elseif rows then
+        MySQL.insert.await(
+            "INSERT IGNORE INTO gg_studio_settings_meta (resource, revision) VALUES (?, 0)",
+            { PSEUDO }
+        )
     end
 
-    MySQL.insert.await(
-        "INSERT IGNORE INTO gg_studio_settings_meta (resource, revision) VALUES (?, 0)",
-        { PSEUDO }
-    )
+    if rows and generation == stored.generation then stored.revision = revision end
 
-    return 0
+    return revision
 end
 
 local function bumpRevision()
+    stored.generation = stored.generation + 1
+
+    if stored.revision then stored.revision = stored.revision + 1 end
+
     MySQL.query.await(
         "UPDATE gg_studio_settings_meta SET revision = revision + 1 WHERE resource = ?",
         { PSEUDO }
     )
+end
+
+local function storeWritten(set, removed)
+    stored.generation = stored.generation + 1
+
+    local overrides = stored.overrides
+    if not overrides then return end
+
+    for path, value in pairs(set or {}) do overrides[path] = settings.deepCopy(value) end
+    for _, path in ipairs(removed or {}) do overrides[path] = nil end
+end
+
+--- Drops what is held, for rows written somewhere else.
+function GenericSettings.invalidate()
+    stored.overrides = nil
+    stored.revision = nil
+    stored.generation = stored.generation + 1
+end
+
+function GenericSettings.revision()
+    return loadRevision()
+end
+
+local function copyOf(value)
+    return type(value) == "table" and settings.deepCopy(value) or value
 end
 
 function GenericSettings.get(path)
@@ -714,7 +770,7 @@ function GenericSettings.get(path)
 
     if value ~= nil then
         local ok, result = settings.validate(def, value)
-        if ok then return result end
+        if ok then return copyOf(result) end
     end
 
     return settings.deepCopy(def.default)
@@ -789,7 +845,7 @@ function GenericSettings.describe()
 
     return {
         resource = PSEUDO,
-        label    = "Generic Settings",
+        label    = "Shared Settings",
         setup    = GenericSettings.needsSetup(),
         icon     = "fa-layer-group",
         order    = 1000,
@@ -885,8 +941,23 @@ exports("ggGenericFetch", function()
     return GenericSettings.snapshot()
 end)
 
+-- Every joining player asks for this; it is built once per write.
+local clientCopy = { generation = -1, payload = nil }
+
 GGCallback.register("gg_lib:generic:snapshot", function()
-    return true, forClients(GenericSettings.snapshot())
+    if clientCopy.payload and clientCopy.generation == stored.generation then
+        return true, clientCopy.payload
+    end
+
+    local generation = stored.generation
+    local payload = forClients(GenericSettings.snapshot())
+
+    -- Only kept when both parts came from memory, not a failed read.
+    if stored.overrides and stored.revision and generation == stored.generation then
+        clientCopy = { generation = generation, payload = payload }
+    end
+
+    return true, payload
 end)
 
 AddEventHandler("onResourceStop", function(resource)
@@ -936,7 +1007,10 @@ function GenericSettings.apply(changes, actor, expectedRevision)
 
     if next(errors) then return false, errors end
 
-    local previous = loadOverrides()
+    local held = loadOverrides()
+    local previous = {}
+
+    for path in pairs(accepted) do previous[path] = held[path] end
 
     local queries = {}
 
@@ -962,6 +1036,8 @@ function GenericSettings.apply(changes, actor, expectedRevision)
         print(("^1[gg_lib] failed to persist generic settings: %s^0"):format(err))
         return false, { _ = "database write failed" }
     end
+
+    storeWritten(accepted)
 
     local history = {}
     for path, value in pairs(accepted) do
@@ -991,7 +1067,10 @@ function GenericSettings.reset(paths, actor)
 
     if #targets == 0 then return true, {} end
 
-    local previous = loadOverrides()
+    local held = loadOverrides()
+    local previous = {}
+
+    for index = 1, #targets do previous[targets[index]] = held[targets[index]] end
 
     local placeholders = string.rep("?", #targets, ",")
     local values = { PSEUDO }
@@ -1011,6 +1090,8 @@ function GenericSettings.reset(paths, actor)
         print(("^1[gg_lib] failed to reset generic settings: %s^0"):format(err))
         return false, { _ = "database write failed" }
     end
+
+    storeWritten(nil, targets)
 
     local history = {}
     for index = 1, #targets do
@@ -1051,7 +1132,10 @@ local function reconcileStoredRows()
                         { path, PSEUDO, old })
 
                     if ok then
-                        loaded[path] = loaded[old]
+                        local moved = loaded[old]
+
+                        storeWritten({ [path] = moved }, { old })
+                        loaded[path] = moved
                         loaded[old] = nil
                         if loaded["debug.enabled"] == true then
                             print(("[gg_lib] [DEBUG] generic settings: migrated stored override '%s' -> '%s'"):format(old, path))
@@ -1106,6 +1190,7 @@ function GenericSettings.prune(actor)
         return false, { _ = "database write failed" }
     end
 
+    storeWritten(nil, targets)
     orphanedGeneric = {}
     print(("[gg_lib] %s pruned %d orphaned generic override(s)"):format(actor or "console", #targets))
 
@@ -1113,6 +1198,8 @@ function GenericSettings.prune(actor)
 end
 
 AddEventHandler("gg_lib:database:ready", function()
+    -- Migrations may have changed rows read before the tables were ready.
+    GenericSettings.invalidate()
     loadRevision()
     reconcileStoredRows()
 

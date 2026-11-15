@@ -52,6 +52,18 @@ function gg.minigames.codecrack(opts)
     return gg.minigames.play("codecrack", opts)
 end
 
+function gg.minigames.pathfind(opts)
+    return gg.minigames.play("pathfind", opts)
+end
+
+function gg.minigames.untangle(opts)
+    return gg.minigames.play("untangle", opts)
+end
+
+function gg.minigames.wires(opts)
+    return gg.minigames.play("wires", opts)
+end
+
 function gg.minigames.cancel()
     return exports.gg_lib:ggMinigameCancel()
 end

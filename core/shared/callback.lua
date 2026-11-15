@@ -16,9 +16,24 @@ local LATENT_ABOVE = 48 * 1024
 local LATENT_BPS   = 512 * 1024
 
 local function heavy(...)
-    local ok, size = pcall(function(...) return #json.encode({ ... }) end, ...)
+    local size, nested = 0, false
 
-    return ok and size > LATENT_ABOVE
+    for index = 1, select("#", ...) do
+        local value = select(index, ...)
+
+        if type(value) == "table" then
+            nested = true
+        elseif type(value) == "string" then
+            size = size + #value
+        end
+    end
+
+    -- Only a table needs encoding to be measured.
+    if not nested then return size > LATENT_ABOVE end
+
+    local ok, encoded = pcall(function(...) return #json.encode({ ... }) end, ...)
+
+    return ok and encoded > LATENT_ABOVE
 end
 
 local function toServer(name, ...)

@@ -30,6 +30,7 @@ for _, resource in ipairs({
     'okokGasStation',
     'ps-fuel',
     'qb-fuel',
+    'qb-sna-fuel',
     'qs-fuelstations',
     'x-fuel',
 }) do

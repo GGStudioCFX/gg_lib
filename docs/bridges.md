@@ -51,6 +51,18 @@ and [export documentation](https://docs.menanak47.com/qbcore/ak47_qb_inventory/e
 
 ---
 
+## HEX Inventory
+
+`hex_4_inventory` (HEX Inventory v4) is an ESX inventory screen over ESX's own
+player items, so its bridge gives, takes and counts items through ESX's
+`xPlayer` calls, as PiotreeQ's p_bridge and Oxide's o-link do. ESX items carry
+no metadata, so scripts that need metadata fall back to plain counts. Icons
+come from `dist/img/icons/` in the HEX resource; a custom HEX image folder goes
+in **Shared Settings → Items → Item Image Path**. Its own exports only cover stashes,
+trunks and hooks ([HEX docs](https://docs.hexscripts.com/docs/hexscripts/versionfour/inventory/exports)).
+
+---
+
 ## Importing only declared modules
 
 A resource that only needs Script Studio can skip automatic bridges and gameplay
@@ -90,6 +102,21 @@ selection on the **Bridges** page or select `p_vehiclekeys`, then restart the
 consuming jobs. Vehicle creation must finish networking the entity before keys
 are requested. The provider sends key requests asynchronously; the bridge does
 not report whether the inventory accepted the key.
+
+---
+
+## jg-vehiclekeys
+
+JG Vehicle Keys also answers to the names `qbx_vehiclekeys` and
+`qb-vehiclekeys`, so it is detected before both and gets its own calls. A car
+the job spawned gets its key from the job's own server, so a key handed over at
+a desk works from any distance, and returning the vehicle takes the key back.
+Any other car asks JG from the player's side, which JG only allows beside the
+car.
+
+Nothing needs configuring. Start `jg-vehiclekeys` before `gg_lib` and the jobs,
+keep `qb-vehiclekeys` and `qbx_vehiclekeys` stopped, and keep its folder named
+`jg-vehiclekeys`.
 
 ---
 
@@ -196,7 +223,7 @@ end)
 ```
 
 If your HUD already has an event that takes the same true or false, put its name
-in **Custom HUD Event**, in Generic Settings under General. Leave it empty to send
+in **Custom HUD Event**, in Shared Settings under General. Leave it empty to send
 nothing.
 
 If you hid your HUD yourself, most HUDs will show it again when our script is
@@ -217,6 +244,12 @@ name to `hud` in `bridge/manifest.lua`:
 
 ## Start order and restarts
 
+gg_lib can go anywhere in server.cfg. A script that lists `gg_lib` in its
+fxmanifest `dependencies` -- every GG Studio script does -- is held back by the
+server until gg_lib is up, and the server starts gg_lib first even when its
+own `ensure` line comes later. A script without it that starts before gg_lib
+is stopped by `@gg_lib/init.lua`, with an error saying to add it.
+
 A script does not have to start after its target script, and it does not
 have to notice when that one restarts. Every zone, ped and model it registers
 through `gg.target` is journaled in its own VM -- a removal cancels its add --
@@ -227,7 +260,10 @@ handle is its name, before and after: `addBoxZone` answers with it, and it is
 what `removeZone` takes.
 
 The framework and inventory bridges answer questions rather than take
-registrations, so those still want their script started first.
+registrations. Each script loads them again the moment a framework or
+inventory starts after it, but a usable item it registers as it starts needs
+that one up already, so keep your framework and inventory above the GG
+scripts, as for any script that uses them.
 
 `restart gg_lib` stops every resource that declares `dependency 'gg_lib'`,
 and FXServer does not start them again -- its own source calls that a TODO.

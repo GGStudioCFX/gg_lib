@@ -5,6 +5,7 @@ local FALLBACK = "en"
 
 local loaded = {}
 local missing = {}
+local merged = {}
 
 local function read(code, resource)
     resource = resource or GetCurrentResourceName()
@@ -36,8 +37,13 @@ function Locales.code()
     return type(chosen) == "string" and chosen ~= "" and chosen or FALLBACK
 end
 
+-- Held per resource and language; the result is shared, so never written to.
 function Locales.strings(resource)
     local code = Locales.code()
+    local cacheKey = (resource or GetCurrentResourceName()) .. "/" .. code
+
+    if merged[cacheKey] ~= nil then return merged[cacheKey] or nil end
+
     local out = {}
 
     local function overlay(rows)
@@ -49,19 +55,23 @@ function Locales.strings(resource)
     overlay(read(FALLBACK, resource))
     if code ~= FALLBACK then overlay(read(code, resource)) end
 
-    return next(out) and out or nil
+    merged[cacheKey] = next(out) and out or false
+
+    return merged[cacheKey] or nil
 end
 
 function Locales.schema(payload)
-    local strings = Locales.strings(payload.generic and GetCurrentResourceName() or payload.resource) or {}
+    local own = Locales.strings(payload.generic and GetCurrentResourceName() or payload.resource) or {}
     -- These controls are added to every peer by the shared settings module.
     local shared = Locales.strings() or {}
+    local added = {}
     for _, prefix in ipairs({ "schema.settings.debug", "schema.groups.developer", "schema.groups.__updates__" }) do
         for _, key in ipairs({ "label", "help" }) do
             local id = prefix .. "." .. key
-            strings[id] = strings[id] or shared[id]
+            added[id] = shared[id]
         end
     end
+    local strings = setmetatable({}, { __index = function(_, id) return own[id] or added[id] end })
 
     local function metadata(node, prefix)
         local out = {}
@@ -105,14 +115,13 @@ end
 function Locales.forget(resource)
     if resource then
         local prefix = resource .. "/"
-        for key in pairs(loaded) do
-            if key:sub(1, #prefix) == prefix then loaded[key] = nil end
-        end
-        for key in pairs(missing) do
-            if key:sub(1, #prefix) == prefix then missing[key] = nil end
+        for _, held in ipairs({ loaded, missing, merged }) do
+            for key in pairs(held) do
+                if key:sub(1, #prefix) == prefix then held[key] = nil end
+            end
         end
     else
-        loaded, missing = {}, {}
+        loaded, missing, merged = {}, {}, {}
     end
 
     if (not resource or resource == GetCurrentResourceName()) and LocaleNames and LocaleNames.forget then

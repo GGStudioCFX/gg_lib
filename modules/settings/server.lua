@@ -195,6 +195,9 @@ local function loggable(path, value)
     return value
 end
 
+-- Above this a plain event can drop the players it is sent to.
+local LATENT_ABOVE = 48 * 1024
+
 local function broadcast(changed)
     local payload = {}
 
@@ -206,11 +209,20 @@ local function broadcast(changed)
         end
     end
 
-    TriggerClientEvent(("gg_settings:%s:sync"):format(RESOURCE), -1, {
+    local event = ("gg_settings:%s:sync"):format(RESOURCE)
+    local message = {
         resource = RESOURCE,
         revision = revision,
         values   = payload,
-    })
+    }
+
+    local measured, size = pcall(function() return #json.encode(message) end)
+
+    if measured and size > LATENT_ABOVE then
+        TriggerLatentClientEvent(event, -1, 512 * 1024, message)
+    else
+        TriggerClientEvent(event, -1, message)
+    end
 end
 
 function settings.store.snapshot()
@@ -537,6 +549,17 @@ exports("ggSettingsPing", function()
     return true
 end)
 
+-- gg_lib keeps this script's page while the stamp holds; false while loading.
+exports("ggSettingsStamp", function()
+    if not settings.store.isReady() then return false end
+
+    return settings.store.revision()
+end)
+
+CreateThread(function()
+    TriggerEvent("gg_lib:settings:peer", RESOURCE)
+end)
+
 exports("ggSettingsDescribe", function()
     if not settings.store.isReady() then return nil end
 
@@ -544,6 +567,14 @@ exports("ggSettingsDescribe", function()
     payload.revision = settings.store.revision()
 
     return payload
+end)
+
+-- 1.0.31. What each row of a list says on its line (settings.rowStatus), asked for when the
+-- Studio shows the list, never kept with the page.
+exports("ggSettingsRowStatus", function(path, rows)
+    if not settings.store.isReady() or type(path) ~= "string" then return nil end
+
+    return settings.rowStatus(path, rows)
 end)
 
 exports("ggSettingsApply", function(changes, actor, expectedRevision)

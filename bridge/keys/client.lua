@@ -4,8 +4,9 @@
 local GRANT   = GetCurrentResourceName() .. ":gg_keys"
 local WAIT_MS = { add = 5000, remove = 2000 }
 
-local function viaServer(action, veh, fallback)
-    if GetResourceState("qbx_vehiclekeys") ~= "started" or not NetworkGetEntityIsNetworked(veh) then
+-- `keys` names the key script the server gives the key from (bridge/keys/server.lua).
+local function viaServer(keys, action, veh, fallback)
+    if GetResourceState(keys) ~= "started" or not NetworkGetEntityIsNetworked(veh) then
         return fallback()
     end
 
@@ -20,7 +21,7 @@ local function viaServer(action, veh, fallback)
         answered:resolve(granted == true or fallback())
     end
 
-    gg.callback.request(GRANT, settle, action, VehToNet(veh))
+    gg.callback.request(GRANT, settle, action, VehToNet(veh), keys)
 
     SetTimeout(WAIT_MS[action], settle)
 
@@ -33,7 +34,30 @@ local function viaServer(action, veh, fallback)
     return true
 end
 
+-- JG Vehicle Keys' own client exports answer { success, code, data }. They only
+-- work beside the car, so they are kept for a car the server will not vouch for.
+local function jgKeys(give, veh, plate)
+    local ok, result = pcall(function()
+        if give then return exports['jg-vehiclekeys']:giveKeys(plate, GetEntityModel(veh)) end
+
+        return exports['jg-vehiclekeys']:removeKeys(plate, GetEntityModel(veh))
+    end)
+
+    return ok and type(result) == "table" and result.success == true
+end
+
 local providers = {
+    -- JG also answers to the names qbx_vehiclekeys and qb-vehiclekeys, so it is
+    -- detected before them (bridge/manifest.lua) and given its own calls here.
+    ['jg-vehiclekeys'] = {
+        add = function(veh, plate)
+            return viaServer("jg-vehiclekeys", "add", veh, function() return jgKeys(true, veh, plate) end)
+        end,
+        remove = function(veh, plate)
+            return viaServer("jg-vehiclekeys", "remove", veh, function() return jgKeys(false, veh, plate) end)
+        end,
+    },
+
     ['0r-vehiclekeys'] = {
         add    = function(veh, plate) return exports['0r-vehiclekeys']:GiveKeys(plate) end,
         remove = function(veh, plate) return exports['0r-vehiclekeys']:RemoveKeys(plate) end,
@@ -103,7 +127,7 @@ local providers = {
 
     ['qb-vehiclekeys'] = {
         add = function(veh, plate)
-            return viaServer("add", veh, function()
+            return viaServer("qbx_vehiclekeys", "add", veh, function()
                 TriggerServerEvent('qb-vehiclekeys:server:AcquireVehicleKeys', plate)
 
                 return true
@@ -111,7 +135,7 @@ local providers = {
         end,
         -- The plate request to take a key back matches far more than one car.
         remove = function(veh, plate)
-            return viaServer("remove", veh, function() return false end)
+            return viaServer("qbx_vehiclekeys", "remove", veh, function() return false end)
         end,
     },
 

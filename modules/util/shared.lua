@@ -109,7 +109,7 @@ function gg.util.units()
 end
 
 -- Where a payout lands: the script's own pick when it made one ("cash" or
--- "bank"), else Generic Settings' Money Goes To.
+-- "bank"), else Shared Settings' Money Goes To.
 local MONEY_ACCOUNTS = { cash = true, bank = true }
 
 function gg.util.moneyAccount(own)

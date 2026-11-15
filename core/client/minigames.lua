@@ -14,6 +14,9 @@ local GAMES = {
     breach     = { cursor = true,  defaults = { size = 5, length = 4, time = 30 } },
     lockpick   = { cursor = false, defaults = { rounds = 3, zone = 34, speed = 150, time = 25 } },
     codecrack  = { cursor = false, defaults = { length = 4, rounds = 5, time = 45 } },
+    pathfind   = { cursor = true,  defaults = { nodes = 5, time = 15 } },
+    untangle   = { cursor = true,  defaults = { nodes = 6, time = 20 } },
+    wires      = { cursor = true,  defaults = { pairs = 4, time = 20 } },
 }
 
 local WATCHDOG_MS = 120000

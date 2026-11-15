@@ -23,6 +23,14 @@ local function keysOf(player)
     return out
 end
 
+function GG_PRESENCE.watchers()
+    local out = {}
+
+    for player in pairs(watching) do out[#out + 1] = player end
+
+    return out
+end
+
 function GG_PRESENCE.state(identifier)
     if not identifier then return nil end
 
@@ -107,6 +115,9 @@ RegisterNetEvent("gg_lib:presence:enter", function()
     local player = source
 
     if not GetPlayerName(player) then return end
+
+    -- Only somebody the studio opens for is shown in it or written down.
+    if not (Admins and Admins.canView(player)) then return end
 
     keys[player] = keysOf(player)
 

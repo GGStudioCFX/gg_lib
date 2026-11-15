@@ -1,7 +1,8 @@
 
 local RESOURCE = GetCurrentResourceName()
 
-local peers = {}   -- cached list of resources carrying the settings module
+local peers   = {}   -- sorted list of resources carrying the settings module
+local peerSet = {}
 
 local function canEdit(source)
     return Admins.canEdit(source)
@@ -15,35 +16,63 @@ local function actorFor(source)
     return Admins.actor(source)
 end
 
-local function scanPeers()
-    local found = {}
+-- Only a resource whose manifest loads gg_lib can carry the module, so the
+-- rest are never asked: a missing export costs an event broadcast per call.
+local function importsLib(resource)
+    for _, key in ipairs({ "shared_script", "server_script" }) do
+        for index = 0, GetNumResourceMetadata(resource, key) - 1 do
+            local entry = GetResourceMetadata(resource, key, index)
 
-    for index = 0, GetNumResources() - 1 do
-        local resource = GetResourceByFindIndex(index)
-
-        if resource and resource ~= "gg_lib" and GetResourceState(resource) == "started" then
-            local ok, alive = pcall(function()
-                return exports[resource]:ggSettingsPing()
-            end)
-
-            if ok and alive == true then
-                found[#found + 1] = resource
-            end
+            if entry and entry:find("@gg_lib/", 1, true) then return true end
         end
     end
 
-    table.sort(found)
-    peers = found
+    return false
+end
 
+local function carriesSettings(resource)
+    if resource == RESOURCE then return false end
+
+    local state = GetResourceState(resource)
+    if state ~= "started" and state ~= "starting" then return false end
+
+    if not importsLib(resource) then return false end
+
+    local ok, alive = pcall(function()
+        return exports[resource]:ggSettingsPing()
+    end)
+
+    return ok and alive == true
+end
+
+local function setPeer(resource, on)
+    if (peerSet[resource] == true) == (on == true) then return end
+
+    peerSet[resource] = on == true or nil
+
+    local list = {}
+    for name in pairs(peerSet) do list[#list + 1] = name end
+    table.sort(list)
+
+    peers = list
+end
+
+local function scanPeers()
+    for index = 0, GetNumResources() - 1 do
+        local resource = GetResourceByFindIndex(index)
+
+        if resource then setPeer(resource, carriesSettings(resource)) end
+    end
+end
+
+SettingsPeers = {}
+
+function SettingsPeers.list()
     return peers
 end
 
-local function checkNeeds(payload)
-    local requires = payload.requires
-
-    payload.requires = nil
-
-    if type(requires) ~= "table" then return end
+local function warningsFor(requires)
+    if type(requires) ~= "table" then return nil end
 
     local warnings = {}
 
@@ -74,47 +103,255 @@ local function checkNeeds(payload)
         end
     end
 
-    if #warnings > 0 then payload.warnings = warnings end
+    return #warnings > 0 and warnings or nil
 end
 
-local function describePeers(source)
-    local scripts = {}
+-- Each script is described once and held as two parts with a stamp each:
+-- the page itself (labels, options, groups), which only changes with a
+-- restart or the language, and its values, which change with every save.
+-- The client says which stamps it holds and is sent only what moved.
+local BOOT = ("%x%04x"):format(os.time(), math.random(0, 0xffff))
+local RECHECK = 600   -- seconds before a held description is rebuilt anyway
 
-    local function admit(payload)
-        if type(payload) ~= "table" then return end
-        if source and not Admins.canView(source, payload.resource) then return end
+local described = {}
+local starts    = {}
+local legacy    = {}  -- running an older settings module without a stamp
+local serial    = 0
 
-        payload.can_edit = source == nil or Admins.canEdit(source, payload.resource)
+local function deepEqual(a, b)
+    if a == b then return true end
+    if type(a) ~= "table" or type(b) ~= "table" then return false end
 
-        checkNeeds(payload)
-
-        if Locales then payload = Locales.schema(payload) end
-        scripts[#scripts + 1] = payload
+    for key, value in pairs(a) do
+        if not deepEqual(value, b[key]) then return false end
     end
 
-    for index = 1, #peers do
-        local resource = peers[index]
+    for key in pairs(b) do
+        if a[key] == nil then return false end
+    end
 
-        local ok, payload = pcall(function()
-            return exports[resource]:ggSettingsDescribe()
+    return true
+end
+
+local function languageCode()
+    return Locales and Locales.code() or "en"
+end
+
+local function keyFor(resource)
+    local own
+
+    if resource == GenericSettings.resource then
+        own = "g"
+    elseif not legacy[resource] then
+        local ok, value = pcall(function()
+            return exports[resource]:ggSettingsStamp()
         end)
 
-        if ok then admit(payload) end
+        if not ok then
+            legacy[resource] = true
+        elseif value ~= nil and value ~= false then
+            own = tostring(value)
+        end
     end
 
-    local ok, generic = pcall(GenericSettings.describe)
-    if ok then admit(generic) end
+    if not own then return nil end
 
-    table.sort(scripts, function(left, right)
-        local orderLeft  = left.order or 100
-        local orderRight = right.order or 100
+    return ("%d|%s|%d|%s"):format(starts[resource] or 0, own, GenericSettings.revision(), languageCode())
+end
+
+local VALUE_KEYS = { revision = true, setup = true, requires = true, can_edit = true, warnings = true, entries = true }
+
+local function split(payload)
+    local page, values, stored = {}, {}, {}
+
+    for key, value in pairs(payload) do
+        if not VALUE_KEYS[key] then page[key] = value end
+    end
+
+    local entries = payload.entries or {}
+
+    for index = 1, #entries do
+        local entry = entries[index]
+
+        if entry.server_only then
+            if entry.stored == true then stored[entry.path] = true end
+        elseif entry.value ~= nil and not deepEqual(entry.value, entry.default) then
+            values[entry.path] = entry.value
+        end
+
+        entry.value, entry.stored = nil, nil
+    end
+
+    page.entries = entries
+
+    return page, {
+        revision = payload.revision,
+        setup    = payload.setup,
+        values   = values,
+        stored   = stored,
+    }, payload.requires
+end
+
+local function stamped(held, encoded)
+    if held and held.encoded == encoded then return held.stamp end
+
+    serial = serial + 1
+
+    return ("%s.%d"):format(BOOT, serial)
+end
+
+local function describe(resource)
+    local ok, payload
+
+    if resource == GenericSettings.resource then
+        ok, payload = pcall(GenericSettings.describe)
+    else
+        ok, payload = pcall(function()
+            return exports[resource]:ggSettingsDescribe()
+        end)
+    end
+
+    if not ok or type(payload) ~= "table" then return nil end
+
+    if Locales then payload = Locales.schema(payload) end
+
+    return payload
+end
+
+local function entryFor(resource, force)
+    local key  = keyFor(resource)
+    local held = described[resource]
+
+    if held and key and held.key == key and not force and os.time() - held.at < RECHECK then
+        return held
+    end
+
+    local payload = describe(resource)
+    if not payload then return nil end
+
+    local page, state, requires = split(payload)
+
+    local pageText  = json.encode(page)
+    local stateText = json.encode(state)
+
+    local entry = {
+        key      = key,
+        at       = os.time(),
+        name     = page.resource or resource,
+        page     = page,
+        state    = state,
+        requires = requires,
+        page_mark  = { stamp = stamped(held and held.page_mark, pageText), encoded = pageText },
+        state_mark = { stamp = stamped(held and held.state_mark, stateText), encoded = stateText },
+    }
+
+    entry.summary = {
+        resource = entry.name,
+        label    = page.label,
+        short    = page.short,
+        category = page.category,
+        icon     = page.icon,
+        order    = page.order,
+        version  = page.version,
+        generic  = page.generic,
+        updates  = page.updates,
+        revision = state.revision,
+        setup    = state.setup,
+        modified = next(state.values) ~= nil or next(state.stored) ~= nil,
+        partial  = true,
+        groups   = {},
+        entries  = {},
+    }
+
+    described[resource] = entry
+
+    return entry
+end
+
+local function shallow(source)
+    local out = {}
+    for key, value in pairs(source) do out[key] = value end
+    return out
+end
+
+-- What one script costs on the wire: nothing when the client holds both
+-- parts, the values alone when it holds the page, the page when it is the
+-- one being opened, and a line for the rail otherwise.
+local function answerFor(source, entry, wanted, holds, force)
+    local page, values = entry.page_mark.stamp, entry.state_mark.stamp
+    local hasPage = not force and type(holds) == "table" and holds.page == page
+
+    local out
+
+    if hasPage and holds.values == values then
+        out = { resource = entry.name, same = true }
+    elseif hasPage then
+        out = { resource = entry.name, state = entry.state }
+    elseif wanted then
+        out = shallow(entry.page)
+        out.state = entry.state
+    else
+        out = shallow(entry.summary)
+    end
+
+    if not out.partial then
+        out.page_stamp   = page
+        out.values_stamp = values
+    end
+
+    out.can_edit = Admins.canEdit(source, entry.name)
+    out.warnings = warningsFor(entry.requires)
+
+    return out
+end
+
+local function sortScripts(rows)
+    table.sort(rows, function(left, right)
+        local orderLeft  = left.entry.summary.order or 100
+        local orderRight = right.entry.summary.order or 100
 
         if orderLeft ~= orderRight then return orderLeft < orderRight end
 
-        return (left.label or "") < (right.label or "")
+        return (left.entry.summary.label or "") < (right.entry.summary.label or "")
     end)
 
-    return scripts
+    local out = {}
+    for index = 1, #rows do out[index] = rows[index].answer end
+    return out
+end
+
+local function scriptsFor(source, request)
+    local holds = type(request.holds) == "table" and request.holds or {}
+    local every = request.want == "*"
+    local want  = {}
+
+    for _, name in ipairs(type(request.want) == "table" and request.want or {}) do
+        if type(name) == "string" then want[name] = true end
+    end
+
+    local names = { GenericSettings.resource }
+    for index = 1, #peers do names[#names + 1] = peers[index] end
+
+    local rows = {}
+
+    for _, resource in ipairs(names) do
+        local asked = every or want[resource] == true
+
+        if (not request.only or asked) and Admins.canView(source, resource) then
+            local wanted = asked or resource == GenericSettings.resource
+            local whole  = request.force == true and asked
+
+            -- `fresh` reads the script again but still answers by stamp;
+            -- `force` also sends it whole, for a page that lost its copy.
+            local entry  = entryFor(resource, (whole or request.fresh == true) and asked)
+
+            if entry then
+                rows[#rows + 1] = { entry = entry, answer = answerFor(source, entry, wanted, holds[entry.name], whole) }
+            end
+        end
+    end
+
+    return sortScripts(rows)
 end
 
 local function clip(value, limit)
@@ -196,11 +433,17 @@ exports("ggShowNoAccess", function(source, info)
     return showNoAccess(source, info)
 end)
 
-GGCallback.register("gg_lib:settings:fetch", function(source)
+GGCallback.register("gg_lib:settings:fetch", function(source, request)
     if not canView(source) then
         print(("^3[gg_lib] blocked settings fetch from %s -- not an admin^0"):format(actorFor(source)))
         return false
     end
+
+    request = type(request) == "table" and request or {}
+
+    local scripts = scriptsFor(source, request)
+
+    if request.only then return true, { scripts = scripts } end
 
     local role = Admins.roleOf(source)
     local tools = {}
@@ -209,8 +452,8 @@ GGCallback.register("gg_lib:settings:fetch", function(source)
         if Roles.can(role, tool.id) then tools[#tools + 1] = tool.id end
     end
 
-    return true, {
-        scripts    = describePeers(source),
+    local answer = {
+        scripts    = scripts,
         can_edit   = canEdit(source),
         can_manage = Admins.canManage(source),
         role       = role,
@@ -219,9 +462,28 @@ GGCallback.register("gg_lib:settings:fetch", function(source)
         theme    = GenericSettings.get("theme.primary_color"),
         fade     = GenericSettings.get("theme.fade_on_hover_out"),
         fade_to  = GenericSettings.get("theme.fade_opacity"),
-        home     = HomeFeed and HomeFeed.current() or nil,
-        ui_lang  = Locales and Locales.strings() or nil,
     }
+
+    -- The page's own words and the home feed only travel when they moved.
+    if Locales then
+        local lang = ("%s|%s"):format(BOOT, languageCode())
+
+        if request.lang ~= lang then
+            answer.ui_lang = Locales.strings()
+            answer.lang    = lang
+        end
+    end
+
+    if HomeFeed then
+        local home = HomeFeed.stamp()
+
+        if request.home ~= home then
+            answer.home       = HomeFeed.current()
+            answer.home_stamp = home
+        end
+    end
+
+    return true, answer
 end)
 
 GGCallback.register("gg_lib:settings:save", function(source, data)
@@ -259,13 +521,7 @@ GGCallback.register("gg_lib:settings:save", function(source, data)
         return true, changed
     end
 
-    local known = false
-
-    for index = 1, #peers do
-        if peers[index] == target then known = true break end
-    end
-
-    if not known then return false, { _ = "that script is not accepting settings" } end
+    if not peerSet[target] then return false, { _ = "that script is not accepting settings" } end
 
     local ok, response = pcall(function()
         return exports[target]:ggSettingsApply(changes, actor, data.revision)
@@ -326,14 +582,61 @@ GGCallback.register("gg_lib:settings:reset", function(source, data)
     return response.ok, response.result
 end)
 
-AddEventHandler("onResourceStart", function(resource)
+local function forget(resource)
     if Locales then Locales.forget(resource) end
-    SetTimeout(2000, scanPeers)
+
+    -- Read again on the next ask, but an unchanged page keeps its stamp.
+    if described[resource] then described[resource].key = nil end
+
+    legacy[resource] = nil
+    starts[resource] = (starts[resource] or 0) + 1
+end
+
+AddEventHandler("onResourceStart", function(resource)
+    forget(resource)
+
+    if resource == RESOURCE then return end
+
+    SetTimeout(2000, function()
+        setPeer(resource, carriesSettings(resource))
+    end)
 end)
 
 AddEventHandler("onResourceStop", function(resource)
-    if resource == "gg_lib" then return end
+    if resource == RESOURCE then return end
 
-    if Locales then Locales.forget(resource) end
-    SetTimeout(100, scanPeers)
+    forget(resource)
+    setPeer(resource, false)
+end)
+
+-- A script whose settings module loads after it started says so itself.
+AddEventHandler("gg_lib:settings:peer", function(resource)
+    if type(resource) ~= "string" then return end
+
+    setPeer(resource, carriesSettings(resource))
+end)
+
+CreateThread(function()
+    Wait(2000)
+    scanPeers()
+end)
+
+-- 1.0.31. What each row of a list says on its line: a dot and a short count (the script's
+-- row_status, through its ggSettingsRowStatus export). Asked for when the Studio shows the
+-- list, so a count that moves ("32 machines") is never held in the cached page. A script
+-- that predates it answers nothing and its rows say nothing more than before.
+GGCallback.register("gg_lib:settings:row_status", function(source, data)
+    if type(data) ~= "table" or type(data.resource) ~= "string" or type(data.path) ~= "string" then return false end
+    if not Admins.canView(source, data.resource) then return false end
+    if GetResourceState(data.resource) ~= "started" or not importsLib(data.resource) then return false end
+
+    local rows = type(data.rows) == "table" and data.rows or nil
+
+    local ok, status = pcall(function()
+        return exports[data.resource]:ggSettingsRowStatus(data.path, rows)
+    end)
+
+    if not ok or type(status) ~= "table" then return false end
+
+    return true, status
 end)

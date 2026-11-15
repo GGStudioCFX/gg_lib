@@ -7,6 +7,8 @@ local FIRST_MS     = 5000
 
 local current      = { source = "none" }
 local fingerprints = {}
+local stamp        = 0
+local BOOT         = ("%x%04x"):format(os.time(), math.random(0, 0xffff))
 
 local function base()
     local override = GetConvar("gg_home_feed", "")
@@ -61,16 +63,8 @@ end
 local function installed()
     local found = { gg_lib = true }
 
-    for index = 0, GetNumResources() - 1 do
-        local resource = GetResourceByFindIndex(index)
-
-        if resource and resource ~= "gg_lib" and GetResourceState(resource) == "started" then
-            local ok, alive = pcall(function()
-                return exports[resource]:ggSettingsPing()
-            end)
-
-            if ok and alive == true then found[resource] = true end
-        end
+    for _, resource in ipairs(SettingsPeers and SettingsPeers.list() or {}) do
+        found[resource] = true
     end
 
     return found
@@ -185,12 +179,24 @@ local function fetchReleases(done)
     end, "GET", "", RELEASE_HEADERS)
 end
 
+-- Only the studio pages open now get it pushed; anybody else is sent it
+-- the next time they open one, when the stamp they hold is behind.
 local function publish()
-    TriggerClientEvent("gg_lib:home:feed", -1, current)
+    stamp = stamp + 1
+
+    local mark = HomeFeed.stamp()
+
+    for _, player in ipairs(GG_PRESENCE and GG_PRESENCE.watchers and GG_PRESENCE.watchers() or {}) do
+        TriggerClientEvent("gg_lib:home:feed", player, current, mark)
+    end
 end
 
 function HomeFeed.current()
     return current
+end
+
+function HomeFeed.stamp()
+    return ("%s.%d"):format(BOOT, stamp)
 end
 
 function HomeFeed.refresh(done)

@@ -18,6 +18,52 @@ local function pullSnapshot()
     return true
 end
 
+local function same(a, b)
+    if a == b then return true end
+    if type(a) ~= "table" or type(b) ~= "table" then return false end
+
+    for key, value in pairs(a) do
+        if not same(value, b[key]) then return false end
+    end
+
+    for key in pairs(b) do
+        if a[key] == nil then return false end
+    end
+
+    return true
+end
+
+-- After a missed change the whole set is read again, and only what differs
+-- from what is running is applied, defaults included for cleared ones.
+local resyncing = false
+
+local function resync()
+    if resyncing then return end
+    resyncing = true
+
+    local called, ok, payload = pcall(GGCallback.await, channel("snapshot"))
+
+    resyncing = false
+
+    if not called or not ok or type(payload) ~= "table" then return end
+    if (payload.revision or 0) <= revision then return end
+
+    local stored = payload.values or {}
+    local moved = {}
+
+    for path, def in pairs(settings.schema) do
+        if not settings.isSecret(path) then
+            local value = stored[path]
+            if value == nil then value = settings.deepCopy(def.default) end
+
+            if not same(value, settings.read(path)) then moved[path] = value end
+        end
+    end
+
+    revision = payload.revision
+    settings.applyLive(moved)
+end
+
 AddEventHandler("gg_lib:settings:rowAction", function(resource, id, row, token)
     if resource ~= RESOURCE then return end
 
@@ -89,6 +135,12 @@ RegisterNetEvent(channel("sync"), function(payload)
 
     if payload.revision and payload.revision <= revision then return end
 
+    -- A large change travels paced and can land after a later one.
+    if payload.revision and revision >= 0 and payload.revision > revision + 1 then
+        CreateThread(resync)
+        return
+    end
+
     revision = payload.revision or revision
     settings.applyLive(payload.values or {})
 end)
@@ -108,17 +160,46 @@ RegisterNetEvent("gg_lib:generic:sync", function(payload)
     settings.generic.apply(payload)
 end)
 
+-- gg_lib holds one copy for every script on this client; an older gg_lib
+-- without it is asked directly, as before.
+AddEventHandler("gg_lib:generic:ready", function(payload)
+    if type(payload) == "table" then settings.generic.apply(payload) end
+end)
+
+local function sharedGeneric()
+    local ok, payload = pcall(function()
+        return exports.gg_lib:ggGenericSnapshot()
+    end)
+
+    if not ok then return nil, true end
+
+    return type(payload) == "table" and payload or nil, false
+end
+
 CreateThread(function()
     for _ = 1, 20 do
-        local called, ok, payload = pcall(GGCallback.await, "gg_lib:generic:snapshot")
+        local payload, missing = sharedGeneric()
 
-        if called and ok and type(payload) == "table" then
+        if payload then
             settings.generic.apply(payload)
+            return
+        end
+
+        if missing then
+            local called, ok, answer = pcall(GGCallback.await, "gg_lib:generic:snapshot")
+
+            if called and ok and type(answer) == "table" then
+                settings.generic.apply(answer)
+                return
+            end
+        elseif settings.generic.isResolved() then
             return
         end
 
         Wait(1000)
     end
+
+    if settings.generic.isResolved() then return end
 
     gg.print.warn("Could not pull generic settings from gg_lib; cfg.generic is empty")
 end)

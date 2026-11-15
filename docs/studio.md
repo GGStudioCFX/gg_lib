@@ -10,16 +10,42 @@ Using the menu.
 
 Type **`/ggsettings`** in game. It is the only command gg_lib registers.
 
-| Page         | What it holds                                                    |
-| ------------ | ---------------------------------------------------------------- |
-| Your scripts | Every setting, grouped, with search                              |
-| Generic      | Settings shared by all GG scripts — color, currency, daily reset |
-| Bridges      | What gg_lib connected to, and whether it worked                  |
-| Admins       | Who has access                                                   |
-| Logs         | Who changed what, and when                                       |
+| Page            | Where on the rail        | What it holds                                                    |
+| --------------- | ------------------------ | ---------------------------------------------------------------- |
+| Your scripts    | Jobs, Illegal, Utility   | Every setting, grouped, with search                              |
+| Shared Settings | Server                   | Settings shared by all GG scripts — color, currency, daily reset |
+| Admins          | Server                   | Who has access                                                   |
+| Logs            | Server                   | Who changed what, and when                                       |
+| Bridges         | Developer                | What gg_lib connected to, and whether it worked                  |
 
 Changes are staged until you press **Save**, so you can adjust several things
 and apply them together. Anything needing a restart is labelled.
+
+### Where a script sits on the rail
+
+The rail sorts scripts into the store's sections (Jobs, Illegal, Utility) and
+calls each by its store name without "Advanced" or a version; the page header
+keeps the full label. A script names both in `settings.script`:
+
+```lua
+settings.script({
+    label    = 'Advanced Taxi Job',
+    short    = 'Taxi Job', -- up to 32 characters
+    category = 'jobs',     -- jobs | illegal | utility, or a word of your own
+    icon     = 'fa-taxi',
+})
+```
+
+Without a `short`, the label is used with a leading "Advanced" and a trailing
+version taken off. Inside a section scripts read A to Z. A name too long for
+the rail fades at its edge and slides to its end while the pointer is on it.
+
+A word of your own becomes its own section, named after it (`'housing'` shows
+as Housing). GG scripts released before these fields are placed by gg_lib
+(`web/src/data/railSections.ts`); any other script without them goes under
+Other Scripts. Sections fold shut from their heading, and the rail remembers
+it. A shut section still shows the script you have open. Six scripts or more
+add a Find box over the rail.
 
 ### Visual editors
 
@@ -180,6 +206,54 @@ card with no picture draws them as a small wheel.
 Off the game, the development browser (`?scriptPreview=`) posts the build to
 `<previewBase>__gg/row_preview` as `{ action, row }` and expects `{ ok, value }`
 back, so a local preview server can run the script's own Lua. Needs gg_lib 1.0.22.
+
+### A list's line, its editor's top, and folded blocks
+
+Needs gg_lib 1.0.31. Older versions leave these keys out and draw the same
+fields the plain way (sections as titled blocks, an object as a group box), so
+a schema can use them now.
+
+```lua
+settings.define('settings.casinos.list', settings.shape.rows({
+    row_fields  = { 'name', 'world' },
+    -- What each row's line says: a dot and a few words. Run on the server for
+    -- the rows as the editor holds them, again a moment after each change.
+    row_status  = function(row, index)
+        return { on = row.world ~= false, text = ('%d machines'):format(countOf(row)) }
+    end,
+    row_actions = {
+        -- primary: the big button beside the row's name at the top of its editor.
+        { id = 'casino_build', label = 'Open Builder', icon = 'fa-pen-ruler', button = true, primary = true },
+        { id = 'casino_goto',  label = 'Go There', icon = 'fa-location-arrow' },
+    },
+    sections = {
+        { id = 'advanced', label = 'Advanced', icon = 'fa-sliders', collapsed = true },
+        { id = 'bounds',   label = 'Bounds', within = 'advanced' },
+    },
+    item = {
+        { key = 'blip', label = 'Map Blip', type = 'object', page = true, page_label = 'Edit Blip', fields = BLIP },
+        { key = 'opens', label = 'Opens At', type = 'enum', time = true, options = TIMES },
+        { key = 'door', label = 'Front Door', type = 'coords', heading = false },
+    },
+}))
+```
+
+| Key | What it does |
+| --- | --- |
+| `row_status = function(row, index)` | The row's line: `{ on = true/false, text = '32 machines', tip = '...' }` (or `tone = 'on' \| 'off' \| 'warn' \| 'bad'`, or just a string). A green or red dot before the name, the words on the right. Server only; an error leaves that row's line plain. `settings.rowStatus(path, rows)` and the `ggSettingsRowStatus` export answer it. |
+| `row_status = '<column>'` | The dot from a column of the row: a switch (on/off) or an enum whose options carry `tone`. |
+| `row_actions[].primary` | The action's big button beside the row's name at the top of its editor. With `button = true` it is also on the list line. |
+| section `collapsed = true` | The block is a bar, shut until opened, naming what is in it. It stays as it was left for every row of the list. |
+| section `within = '<id>'` | The block is drawn inside that block (Bounds inside Advanced). |
+| object `page = true`, `page_label` | The object is one line (its icon, colour and words) with a button (`page_label`, else Edit) that opens its fields on a page of their own, with Back. In a row editor or a laid-out object. |
+| enum `time = true` | Times ("HH:MM" values) as a grid in order, any other options ("Always Open") wide on top. |
+| coords `heading = false` | A point with no facing: no heading shown or kept by Use My Position. |
+
+A position field shows X, Y, Z and its facing (degrees and N/E/S/W) in one line;
+clicking it types or pastes a new one. **Use My Position** takes where the admin
+stands (their car's spot when driving), **Edit Position** moves it with the
+picker, **Teleport Here** goes there. A drawn area (`edit_mode = 'polygon'`)
+lists its corners under the outline and refills when it is drawn again.
 
 ### Import & Export
 

@@ -1,36 +1,42 @@
 
 local RESOURCE = GetCurrentResourceName()
 
-local MAX_CHUNKS = 512
-local MAX_BODY   = 4 * 1024 * 1024
+local MAX_BODY = 4 * 1024 * 1024
 
-local incoming = {}
+local DECODE = {}
+do
+    local alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    for index = 1, #alphabet do DECODE[alphabet:byte(index)] = index - 1 end
+end
 
-local ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-
+-- Four characters to three bytes at a time. Padding and anything outside the
+-- alphabet is dropped first.
 local function decodeBase64(text)
-    text = text:gsub("[^A-Za-z0-9+/=]", "")
+    text = text:gsub("[^%w%+/]", "")
 
-    return (text:gsub(".", function(char)
-        local index = ALPHABET:find(char)
-        if not index then return "" end
+    local out, count = {}, 0
+    local length = #text
+    local char = string.char
 
-        local value, bits = index - 1, ""
-        for position = 6, 1, -1 do
-            bits = bits .. (value % 2 ^ position - value % 2 ^ (position - 1) > 0 and "1" or "0")
-        end
+    for index = 1, length - 3, 4 do
+        local a, b, c, d = text:byte(index, index + 3)
+        local value = DECODE[a] << 18 | DECODE[b] << 12 | DECODE[c] << 6 | DECODE[d]
 
-        return bits
-    end):gsub("%d%d%d?%d?%d?%d?%d?%d?", function(bits)
-        if #bits ~= 8 then return "" end
+        count = count + 1
+        out[count] = char(value >> 16, (value >> 8) & 255, value & 255)
+    end
 
-        local byte = 0
-        for position = 1, 8 do
-            byte = byte + (bits:sub(position, position) == "1" and 2 ^ (8 - position) or 0)
-        end
+    local rest = length % 4
 
-        return string.char(byte)
-    end))
+    if rest > 1 then
+        local a, b, c = text:byte(length - rest + 1, length)
+        local value = DECODE[a] << 18 | DECODE[b] << 12 | (c and DECODE[c] or 0) << 6
+
+        count = count + 1
+        out[count] = rest == 2 and char(value >> 16) or char(value >> 16, (value >> 8) & 255)
+    end
+
+    return table.concat(out)
 end
 
 local function safeName(name)
@@ -122,71 +128,54 @@ local function uploadOrSave(storage, key, target, folder, name, base64, source, 
     })
 end
 
-RegisterNetEvent("gg_lib:screenshot:chunk", function(payload)
+local function refuse(source, name, request, reason)
+    TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, reason)
+end
+
+-- The whole picture in one latent event (the client paces it).
+RegisterNetEvent("gg_lib:screenshot:upload", function(payload)
     local source = source
 
     if type(payload) ~= "table" then return end
 
-    local name  = safeName(payload.id)
+    local name = safeName(payload.id)
+    if not name then return end
+
     local request = safeName(payload.request) or name
-    local index = tonumber(payload.index)
-    local total = tonumber(payload.total)
-
-    if not name or not index or not total then return end
-    if total < 1 or total > MAX_CHUNKS or index < 1 or index > total then return end
-    if type(payload.body) ~= "string" then return end
-
     local target = safeName(payload.target) or RESOURCE
 
     if not Admins.canEdit(source, target) then
         print(("^3[gg_lib] screenshot: blocked upload from %s^0"):format(Admins.actor(source)))
+        refuse(source, name, request, "not allowed to save images for " .. target)
         return
     end
 
-    local key = ("%s:%s"):format(source, request)
-    local job = incoming[key]
+    local body = payload.body
+    if type(body) ~= "string" then return refuse(source, name, request, "image was empty") end
 
-    if index == 1 then
-        job = { parts = {}, size = 0, total = total }
-        incoming[key] = job
-    end
-
-    if not job or job.blocked or job.total ~= total then return end
-
-    job.size = job.size + #payload.body
-
-    if job.size > MAX_BODY then
-        incoming[key] = { blocked = true }
+    if #body > MAX_BODY then
         print(("^3[gg_lib] screenshot: '%s' exceeded the size limit^0"):format(name))
-        TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image exceeded the size limit")
-        return
-    end
-    job.parts[index] = payload.body
-
-    if index ~= total then return end
-
-    incoming[key] = nil
-
-    for part = 1, total do
-        if type(job.parts[part]) ~= "string" then
-            TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image transfer was incomplete")
-            return
-        end
+        return refuse(source, name, request, "image exceeded the size limit")
     end
 
-    local joined = table.concat(job.parts)
-    local comma  = joined:find(",", 1, true)
-    local body   = comma and joined:sub(comma + 1) or joined
+    local comma = body:find(",", 1, true)
+    if comma then body = body:sub(comma + 1) end
+    if body == "" then return refuse(source, name, request, "image was empty") end
 
-    if body == "" then
-        TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image was empty")
+    -- Kept as text in the image store under the target, named by the entry id.
+    if payload.storage == "database" then
+        local id = tostring(payload.id)
+        local version, reason = Images.save(target, id, body, "image/webp")
+
+        if not version then return refuse(source, name, request, reason or "the image store refused the image") end
+
+        TriggerClientEvent("gg_lib:screenshot:stored", source, name, "db:" .. id, request)
         return
     end
 
     local folder = payload.folder == nil and "vehicle_images" or safeFolder(payload.folder)
     if not folder then
-        TriggerClientEvent("gg_lib:screenshot:stored", source, name, nil, request, "image folder must be under the resource web root")
-        return
+        return refuse(source, name, request, "image folder must be under the resource web root")
     end
 
     local storage = payload.storage
@@ -198,14 +187,13 @@ RegisterNetEvent("gg_lib:screenshot:chunk", function(payload)
     uploadOrSave(storage, GenericSettings.get("screenshot.upload_key"), target, folder, name, body, source, request)
 end)
 
-GGCallback.register("gg_lib:screenshot:spot", function()
-    return GenericSettings.get("screenshot.location")
+GGCallback.register("gg_lib:screenshot:setup", function()
+    return {
+        spot        = GenericSettings.get("screenshot.location"),
+        greenscreen = GenericSettings.get("screenshot.greenscreen") ~= false,
+    }
 end)
 
-AddEventHandler("playerDropped", function()
-    local dropped = tostring(source)
-
-    for key in pairs(incoming) do
-        if key:sub(1, #dropped + 1) == dropped .. ":" then incoming[key] = nil end
-    end
+GGCallback.register("gg_lib:screenshot:spot", function()
+    return GenericSettings.get("screenshot.location")
 end)

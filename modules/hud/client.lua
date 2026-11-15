@@ -24,7 +24,7 @@ end
 
 -- MARK: Custom HUD
 -- With no bridged HUD running, the server's own HUD is told through the event
--- in Generic Settings. With nothing listening it does nothing.
+-- in Shared Settings. With nothing listening it does nothing.
 local SHOWN = { hide = false, show = true }
 
 local function callEvent(name)

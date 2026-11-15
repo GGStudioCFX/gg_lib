@@ -1,7 +1,7 @@
 {
     "library": "gg_lib",
     "source": "bridge/manifest.lua",
-    "total": 116,
+    "total": 119,
     "categories": [
         {
             "id": "framework",
@@ -18,12 +18,13 @@
             "id": "inventory",
             "label": "Inventories",
             "required": true,
-            "count": 15,
+            "count": 16,
             "resources": [
                 "ak47_inventory",
                 "ak47_qb_inventory",
                 "codem-inventory",
                 "core_inventory",
+                "hex_4_inventory",
                 "jaksam_inventory",
                 "jpr-inventory",
                 "lj-inventory",
@@ -78,7 +79,7 @@
             "id": "fuel",
             "label": "Fuel",
             "required": false,
-            "count": 15,
+            "count": 16,
             "resources": [
                 "bigDaddy-Fuel",
                 "cdn-fuel",
@@ -90,6 +91,7 @@
                 "ox_fuel",
                 "ps-fuel",
                 "qb-fuel",
+                "qb-sna-fuel",
                 "qs-fuelstations",
                 "rcore_fuel",
                 "Renewed-Fuel",
@@ -101,13 +103,14 @@
             "id": "keys",
             "label": "Vehicle keys",
             "required": false,
-            "count": 18,
+            "count": 19,
             "resources": [
                 "0r-vehiclekeys",
                 "bhd_garage",
                 "brutal_keys",
                 "cd_garage",
                 "F_RealCarKeysSystem",
+                "jg-vehiclekeys",
                 "mk_vehiclekeys",
                 "mono_carkeys",
                 "MrNewbVehicleKeys",

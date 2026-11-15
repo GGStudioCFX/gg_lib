@@ -19,6 +19,7 @@ return {
             "jpr-inventory",
             "tgiann-inventory",
             "one_inventory",
+            "hex_4_inventory",
             "wasabi_inventory",
             "ox_inventory",
             "qb-inventory",
@@ -56,6 +57,7 @@ return {
             "lc_fuel",
             "ps-fuel",
             "qb-fuel",
+            "qb-sna-fuel",
             "qs-fuelstations",
             "rcore_fuel",
             "okokGasStation",
@@ -91,6 +93,8 @@ return {
         },
         keys = {
             "p_vehiclekeys",
+            -- Before qbx/qb: JG also answers to both names (provide).
+            "jg-vehiclekeys",
             "qbx_vehiclekeys",
             "qb-vehiclekeys",
             "qs-vehiclekeys",

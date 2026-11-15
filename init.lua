@@ -10,9 +10,14 @@ if gg and gg.__lib == GG_LIB then
     error(("gg_lib loaded twice. Remove the duplicate '@gg_lib/init.lua' from %s/fxmanifest.lua"):format(RESOURCE))
 end
 
+-- A script with gg_lib in its fxmanifest `dependencies` never fails here: FXServer starts gg_lib
+-- first, wherever server.cfg ensures it, and holds the script back until it is up. This catches a
+-- missing gg_lib folder, or a script that loads gg_lib without listing it.
 local state = GetResourceState(GG_LIB)
-if state ~= "started" and state ~= "starting" then
-    error(("gg_lib is not started. Ensure it starts before %s in your server.cfg"):format(RESOURCE))
+if state == "missing" then
+    error(("gg_lib is not installed. Put the gg_lib folder in your resources folder for %s: https://github.com/GGStudioCFX/gg_lib/releases/latest"):format(RESOURCE))
+elseif state ~= "started" and state ~= "starting" then
+    error(("gg_lib is not started. Add 'gg_lib' to dependencies in %s/fxmanifest.lua and the server starts it first, wherever server.cfg ensures it"):format(RESOURCE))
 end
 
 local context = IsDuplicityVersion() and "server" or "client"

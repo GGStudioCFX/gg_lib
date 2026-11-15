@@ -150,6 +150,24 @@ local TABLES = {
     ENGINE=InnoDB
     ROW_FORMAT=DYNAMIC;
     ]=],
+
+    -- Owner and name compare exactly, as the caches in images.lua do.
+    [=[
+    CREATE TABLE IF NOT EXISTS `gg_lib_images` (
+        `owner` VARCHAR(64) NOT NULL COLLATE 'utf8mb4_bin',
+        `name` VARCHAR(128) NOT NULL COLLATE 'utf8mb4_bin',
+        `mime` VARCHAR(32) NOT NULL DEFAULT 'image/webp' COLLATE 'utf8mb4_general_ci',
+        `data` MEDIUMTEXT NOT NULL,
+        `bytes` INT NOT NULL DEFAULT 0,
+        `version` INT NOT NULL DEFAULT 1,
+        `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        PRIMARY KEY (`owner`, `name`) USING BTREE
+    )
+    CHARACTER SET utf8mb4
+    COLLATE='utf8mb4_general_ci'
+    ENGINE=InnoDB
+    ROW_FORMAT=DYNAMIC;
+    ]=],
 }
 
 local function migrate(key, statement)

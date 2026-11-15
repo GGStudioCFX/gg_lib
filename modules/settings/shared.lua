@@ -1408,6 +1408,47 @@ local function isHidden(def)
     return hidden == true
 end
 
+-- 1.0.31. What each row of a list says on its line in the Studio: a dot and a short line
+-- ("32 machines"), from the list's own row_status = function(row, index), run on the server,
+-- where the script's data is. It returns { on = true|false, text = "...", tone = "on"|"off"|
+-- "warn"|"bad", tip = "..." } (every part optional; on picks the dot when tone is left out),
+-- a string (the line alone), or nil. `rows` are the rows as the editor holds them, unsaved
+-- changes and all; left out, the saved ones. One per row, false where it says nothing.
+-- (row_status = "<key>", a boolean or option column, is drawn by the Studio on its own.)
+local STATUS_TONES = { on = true, off = true, warn = true, bad = true }
+
+function settings.rowStatus(path, rows)
+    local def = settings.schema[path]
+    if type(def) ~= "table" or type(def.row_status) ~= "function" then return nil end
+
+    if type(rows) ~= "table" then rows = settings.read(path) end
+    if type(rows) ~= "table" then return {} end
+
+    local out = {}
+
+    for index = 1, #rows do
+        local ok, status = pcall(def.row_status, rows[index], index)
+
+        if ok and type(status) == "string" and status ~= "" then
+            out[index] = { text = status }
+        elseif ok and type(status) == "table" then
+            local tone = STATUS_TONES[status.tone] and status.tone
+                or (status.on == true and "on") or (status.on == false and "off") or nil
+
+            out[index] = {
+                tone = tone,
+                text = type(status.text) == "string" and status.text ~= "" and status.text or nil,
+                tip  = type(status.tip) == "string" and status.tip or nil,
+            }
+        else
+            if not ok then print(("^3[%s] row_status of %s failed: %s^0"):format(settings.info.id or "settings", path, tostring(status))) end
+            out[index] = false
+        end
+    end
+
+    return out
+end
+
 function settings.describe()
     local entries = {}
 
@@ -1441,6 +1482,8 @@ function settings.describe()
             templates   = def.templates,
             auto_key    = def.auto_key,
             add_place   = def.add_place,
+            add_here    = def.add_here,
+            here_label  = def.here_label,
             add_label   = def.add_label,
             duplicate   = def.duplicate,
             merge_key   = def.merge_key,
@@ -1462,8 +1505,14 @@ function settings.describe()
             min_gap     = def.min_gap,
             edit_mode   = def.edit_mode,
             view        = def.view,
+            map_layers  = type(def.map_layers) == "table" and def.map_layers or nil,
             live        = def.live,
             advanced    = def.advanced,
+            -- 1.0.31: a row's dot, from a boolean or option column ("<key>"), or true when
+            -- the script says it live (settings.rowStatus; the function stays here); and a
+            -- coords setting of plain points.
+            row_status  = (type(def.row_status) == "string" and def.row_status) or (type(def.row_status) == "function" or nil),
+            heading     = def.heading == false and false or nil,
         }
 
         if def.type == "action" then
@@ -1502,6 +1551,8 @@ function settings.describe()
     return {
         resource = settings.info.id,
         label    = settings.info.label,
+        short    = settings.info.short,
+        category = settings.info.category,
         icon     = settings.info.icon,
         order    = settings.info.order,
         version  = GetResourceMetadata(settings.info.id, "version", 0),

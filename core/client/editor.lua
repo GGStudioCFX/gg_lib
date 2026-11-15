@@ -66,14 +66,59 @@ RegisterNetEvent("gg_lib:settings:access", function(data)
     })
 end)
 
+-- The stamps of what the page already holds, so the server only sends what
+-- moved: per script the page and its values, plus the words and home feed.
+local held = { scripts = {}, lang = nil, home = nil }
+
+local LAST_KEY = "gg_settings_last_script"
+
+local function lastScript()
+    local value = GetResourceKvpString(LAST_KEY)
+
+    return value ~= nil and value ~= "" and value or nil
+end
+
+local function rememberLast(resource)
+    if type(resource) == "string" and resource ~= "" and resource ~= lastScript() then
+        SetResourceKvp(LAST_KEY, resource)
+    end
+end
+
+local function fetchSettings(extra)
+    local request = { holds = held.scripts, lang = held.lang, home = held.home }
+
+    for key, value in pairs(extra or {}) do request[key] = value end
+
+    local ok, payload = GGCallback.await("gg_lib:settings:fetch", request)
+
+    if not ok or type(payload) ~= "table" then return false end
+
+    for _, script in ipairs(payload.scripts or {}) do
+        if type(script) == "table" and script.page_stamp and script.values_stamp then
+            held.scripts[script.resource] = { page = script.page_stamp, values = script.values_stamp }
+        end
+    end
+
+    if payload.lang then held.lang = payload.lang end
+    if payload.home_stamp then held.home = payload.home_stamp end
+
+    return true, payload
+end
+
+-- The first open after gg_lib starts lands on the home page, so no script page is fetched for it.
+local homeFirst = true
+
 RegisterNetEvent("gg_lib:settings:open", function(data)
-    local ok, payload = GGCallback.await("gg_lib:settings:fetch")
+    local focus = data and data.focus or nil
+    local home = homeFirst and focus == nil
+    local ok, payload = fetchSettings({ want = { focus or (not home and lastScript() or nil) } })
 
     if not ok or type(payload) ~= "table" then
         GGPopup.flash("Settings are not available right now.")
         return
     end
 
+    homeFirst = false
     open = true
     SetNuiFocus(true, true)
     GG_PAUSE_GUARD.acquire()
@@ -90,6 +135,7 @@ RegisterNetEvent("gg_lib:settings:open", function(data)
             ROLE_LABEL = payload.role_label,
             TOOLS    = payload.tools,
             FOCUS    = data and data.focus or nil,
+            HOME     = home,
             UI_THEME = payload.theme,
             UI_FADE  = payload.fade,
             UI_FADE_TO = payload.fade_to,
@@ -103,8 +149,10 @@ RegisterNetEvent("gg_lib:settings:open", function(data)
     end
 end)
 
-RegisterNetEvent("gg_lib:home:feed", function(feed)
+RegisterNetEvent("gg_lib:home:feed", function(feed, stamp)
     if type(feed) ~= "table" then return end
+
+    if type(stamp) == "string" then held.home = stamp end
 
     SendNUIMessage({ action = "home_feed", data = feed })
 end)
@@ -344,8 +392,23 @@ RegisterNUICallback("settings_action", function(data, cb)
     cb(result)
 end)
 
-RegisterNUICallback("settings_refresh", function(_, cb)
-    local ok, payload = GGCallback.await("gg_lib:settings:fetch")
+-- Fills in scripts the rail only named: the one being opened, or all of
+-- them for a page that reads every script.
+RegisterNUICallback("settings_script", function(data, cb)
+    data = type(data) == "table" and data or {}
+
+    local want = data.all == true and "*" or (type(data.resources) == "table" and data.resources or { data.resource })
+
+    local ok, payload = fetchSettings({ want = want, only = true, force = data.force == true })
+
+    cb({ ok = ok, SCRIPTS = ok and payload.scripts or nil })
+end)
+
+RegisterNUICallback("settings_refresh", function(data, cb)
+    data = type(data) == "table" and data or {}
+
+    local resource = type(data.resource) == "string" and data.resource or nil
+    local ok, payload = fetchSettings({ want = { resource }, fresh = data.fresh == true })
 
     if not ok or type(payload) ~= "table" then
         cb({ ok = false })
@@ -623,7 +686,9 @@ RegisterNUICallback("support_bundle", function(_, cb)
     })
 end)
 
-RegisterNUICallback("settings_close", function(_, cb)
+RegisterNUICallback("settings_close", function(data, cb)
+    if type(data) == "table" then rememberLast(data.active) end
+
     if gg and gg.tool and gg.tool.isActive() then
         cb({})
         return

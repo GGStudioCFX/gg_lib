@@ -60,6 +60,10 @@ function gg.attach.placeVehicleProps(options)
     return request(options)
 end
 
+-- The parts of a live car (liveVehicle) a prop can be placed in: liveArea nil is the front cabin,
+-- 'boot' the boot. A script checks this before asking for one an older GG Lib does not have.
+gg.attach.liveAreas = { cabin = true, boot = true }
+
 --------------------------------------------------
 -- MARK: Rotation orders
 --------------------------------------------------
