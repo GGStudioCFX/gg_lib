@@ -156,6 +156,17 @@ local ACE_ROLES = {
 -- (monitor) tells us; anything else sending the event is ignored.
 local txAdmins = {}
 
+-- Each player's role, kept for ROLE_FOR ms. Scripts ask on every door, zone and menu check, and a fresh answer reads
+-- every identifier, a dozen ACEs and the framework (ticket 216, 2026-11-21: a casino asked for every player and
+-- suite every 15 s, which hitched Qbox servers 300-1000 ms). A grant, role change, revoke, txAdmin login or framework
+-- restart forgets them all, and a player leaving forgets theirs, as server ids are reused.
+local ROLE_FOR = 5000
+local remembered = {} -- [server id] = { role = role or false, till = GetGameTimer() ms }
+
+local function forgetRoles()
+    remembered = {}
+end
+
 AddEventHandler("txAdmin:events:adminAuth", function(data)
     if GetInvokingResource() ~= "monitor" or type(data) ~= "table" then return end
 
@@ -166,6 +177,8 @@ AddEventHandler("txAdmin:events:adminAuth", function(data)
     elseif player then
         txAdmins[player] = data.isAdmin == true or nil
     end
+
+    forgetRoles()
 end)
 
 local FRAMEWORK_GROUPS = {
@@ -182,21 +195,50 @@ local function running(name)
     return state == "started" or state == "starting"
 end
 
+-- The framework's shared object, fetched once per framework start. Fetching it copies the whole core across
+-- resources (every player, the shared items, vehicles, jobs and gangs): 30-77 ms a call on a Qbox server (ticket 216).
+-- Its functions stay callable, so the copy is kept; a failed call or a framework start or stop fetches it again.
+local FRAMEWORKS = { es_extended = true, ["qb-core"] = true, qbx_core = true }
+local cores = {}
+
+local function coreOf(name, fetch)
+    if cores[name] == nil then
+        local ok, core = pcall(fetch)
+
+        if not (ok and type(core) == "table") then return nil end
+
+        cores[name] = core
+    end
+
+    return cores[name]
+end
+
+local function frameworkChanged(name)
+    if not FRAMEWORKS[name] then return end
+
+    cores = {}
+    forgetRoles()
+end
+
+AddEventHandler("onResourceStart", frameworkChanged)
+AddEventHandler("onResourceStop", frameworkChanged)
+
 local function frameworkGroup(source)
     if running("es_extended") then
+        local core = coreOf("es_extended", function() return exports.es_extended:getSharedObject() end)
         local ok, group = pcall(function()
-            local core = exports.es_extended:getSharedObject()
-            local player = core and core.GetPlayerFromId(source)
+            local player = core and core.GetPlayerFromId and core.GetPlayerFromId(source)
 
             return player and player.getGroup and player.getGroup()
         end)
 
+        if not ok then cores.es_extended = nil end
         if ok and type(group) == "string" then return group:lower() end
     end
 
     if running("qb-core") then
+        local core = coreOf("qb-core", function() return exports["qb-core"]:GetCoreObject() end)
         local ok, group = pcall(function()
-            local core = exports["qb-core"]:GetCoreObject()
             if not (core and core.Functions and core.Functions.GetPermission) then return nil end
 
             local held = core.Functions.GetPermission(source)
@@ -212,6 +254,7 @@ local function frameworkGroup(source)
             return nil
         end)
 
+        if not ok then cores["qb-core"] = nil end
         if ok and type(group) == "string" then return group:lower() end
     end
 
@@ -237,6 +280,7 @@ AddEventHandler("playerDropped", function()
     if key then announced[key] = nil end
 
     txAdmins[tonumber(source) or -1] = nil
+    remembered[tonumber(source) or -1] = nil
 end)
 
 function Admins.serverRole(source)
@@ -265,9 +309,7 @@ function Admins.serverRole(source)
     return best, why
 end
 
-function Admins.roleOf(source)
-    if Admins.isConsole(source) then return Roles.OWNER end
-
+local function freshRole(source)
     local player = tonumber(source)
 
     if player then
@@ -303,6 +345,22 @@ function Admins.roleOf(source)
     end
 
     return nil
+end
+
+function Admins.roleOf(source)
+    if Admins.isConsole(source) then return Roles.OWNER end
+
+    local player = tonumber(source)
+    local now = GetGameTimer()
+    local kept = player and remembered[player]
+
+    if kept and kept.till > now then return kept.role or nil end
+
+    local role = freshRole(source)
+
+    if player then remembered[player] = { role = role or false, till = now + ROLE_FOR } end
+
+    return role
 end
 
 function Admins.can(source, action, resource)
@@ -371,8 +429,14 @@ function Admins.hasAccess(source, rules)
     if rules.strict == true then return false, "strict" end
     if Admins.canEdit(player, rules.resource) then return true, "admin" end
 
-    for _, ace in ipairs(type(rules.ace) == "table" and rules.ace or { rules.ace }) do
-        if type(ace) == "string" and ace ~= "" and IsPlayerAceAllowed(player, ace) then return true, "ace" end
+    -- A permission every player holds lets no one in. The server gives everyone command.<name> for
+    -- each open command (RegisterCommand(..., false)), so a script asking for its own command's ACE
+    -- let every player in (Weather System up to 1.0.3, Hesuus 2026-11-16).
+    for _, ace in pairs(type(rules.ace) == "table" and rules.ace or { rules.ace }) do
+        if type(ace) == "string" and ace ~= "" and not IsPrincipalAceAllowed("builtin.everyone", ace)
+            and IsPlayerAceAllowed(player, ace) then
+            return true, "ace"
+        end
     end
 
     return false, "none"
@@ -423,6 +487,7 @@ local function loadDatabase()
     end
 
     fromDatabase = loaded
+    forgetRoles()
 end
 
 AddEventHandler("gg_lib:database:ready", loadDatabase)
@@ -441,6 +506,7 @@ function Admins.grant(identifier, name, grantedBy, role)
     if not ok then return false end
 
     fromDatabase[identifier] = { name = name or identifier, role = role }
+    forgetRoles()
 
     return true
 end
@@ -457,6 +523,7 @@ function Admins.setRole(identifier, role)
     if not ok then return false, "the database refused the change" end
 
     current.role = role
+    forgetRoles()
 
     return true
 end
@@ -468,6 +535,7 @@ function Admins.revoke(identifier)
     if not ok then return false end
 
     fromDatabase[identifier] = nil
+    forgetRoles()
 
     return true
 end

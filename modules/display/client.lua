@@ -10,10 +10,69 @@ local function provider(path, fallback)
     return (type(chosen) == "string" and chosen ~= "" and chosen) or fallback
 end
 
+-- ox_lib's global `lib` exists only in a script that loads @ox_lib/init.lua. A gg_lib script
+-- doesn't have to load it (gg_mlo_belladonna doesn't), and there `lib.notify` errored (gg_lib#9).
+-- ox_lib exports every one of these calls, so go through its exports, whoever the caller is.
+-- Returns false when ox_lib isn't running, so the caller can fall back.
+local function ox(name, ...)
+    if GetResourceState("ox_lib") ~= "started" then return false end
+
+    return true, exports.ox_lib[name](nil, ...)
+end
+
+-- Without ox_lib: GTA's own notice feed and help text, so the message still shows.
+-- A text component holds at most 99 bytes; split longer text without cutting a UTF-8 character.
+local function addText(text)
+    local start = 1
+    while start <= #text do
+        local stop = math.min(#text, start + 95)
+        while stop > start and stop < #text and (text:byte(stop + 1) & 0xC0) == 0x80 do stop = stop - 1 end
+        AddTextComponentSubstringPlayerName(text:sub(start, stop))
+        start = stop + 1
+    end
+end
+
+local function feedNotice(message)
+    local text = tostring(message.msg or "")
+    if message.title and message.title ~= "" then
+        text = ("~h~%s~h~~n~%s"):format(message.title, text)
+    end
+
+    BeginTextCommandThefeedPost("STRING")
+    addText(text)
+    EndTextCommandThefeedPostTicker(false, true)
+end
+
+local helpText = nil
+
+local function showHelp(msg)
+    local drawing = helpText ~= nil
+    helpText = tostring(msg or "")
+    if drawing then return end
+
+    CreateThread(function()
+        while helpText do
+            BeginTextCommandDisplayHelp("STRING")
+            addText(helpText)
+            EndTextCommandDisplayHelp(0, false, false, -1)
+            Wait(0)
+        end
+    end)
+end
+
+local function hideHelp()
+    if not helpText then return end
+
+    helpText = nil
+    ClearAllHelpMessages()
+end
+
 gg.display.notify = function(message)
     local _type = provider("interface.notifications", DEFAULT)
     if _type == 'ox' then
-        return lib.notify({ title = message.title, description = message.msg, duration = message.timeout, type = message.status, icon = message.icon})
+        if not ox("notify", { title = message.title, description = message.msg, duration = message.timeout, type = message.status, icon = message.icon }) then
+            feedNotice(message)
+        end
     elseif _type == 'mythic' then
         return exports['mythic_notify']:SendAlert(message.status, message.msg)
     elseif _type == 'old_mythic' then
@@ -41,7 +100,9 @@ end
 gg.display.DoTextui = function(text)
     local _type = provider("interface.textui", DEFAULT)
     if _type == 'ox' then
-        return lib.showTextUI(text.msg, { position = provider("interface.ox_textui_position", "right-center") })
+        if not ox("showTextUI", text.msg, { position = provider("interface.ox_textui_position", "right-center") }) then
+            showHelp(text.msg)
+        end
     elseif _type == 'jg' then
         return exports['jg-textui']:DrawText(text.msg)
     elseif _type == 'qb' then
@@ -57,7 +118,8 @@ end
 gg.display.RemoveTextui = function()
     local _type = provider("interface.textui", DEFAULT)
     if _type == 'ox' then
-        return lib.hideTextUI()
+        ox("hideTextUI")
+        hideHelp()
     elseif _type == 'jg' then
         return exports['jg-textui']:HideText()
     elseif _type == 'qb' then
@@ -74,27 +136,35 @@ RegisterNetEvent(GetCurrentResourceName()..':client:notify', function(data)
     gg.display.notify(data)
 end)
 
+-- ox_lib's bar or circle; without ox_lib, gg_lib's own progress bar.
 local function oxProgress(data)
+    local ran, done
     if provider("interface.ox_progress_style", "circle") == "bar" then
-        return lib.progressBar({
+        ran, done = ox("progressBar", {
             duration = data.duration,
             label = data.label,
             canCancel = true,
             disable = {
                 car = true,
             },
-        }) == true
+        })
+    else
+        ran, done = ox("progressCircle", {
+            duration = data.duration,
+            label = data.label,
+            canCancel = true,
+            position = provider("interface.ox_progress_position", "bottom"),
+            disable = {
+                car = true,
+            },
+        })
     end
 
-    return lib.progressCircle({
-        duration = data.duration,
-        label = data.label,
-        canCancel = true,
-        position = provider("interface.ox_progress_position", "bottom"),
-        disable = {
-            car = true,
-        },
-    }) == true
+    if not ran then
+        return exports.gg_lib:ggProgress(data) == true
+    end
+
+    return done == true
 end
 
 gg.display.ProgressBar = function(data)
@@ -121,7 +191,7 @@ gg.display.ProgressBar = function(data)
     elseif _type == "esx" and GetResourceState("es_extended") == "started" then
         if not framework_core then framework_core = exports.es_extended:getSharedObject() end
         framework_core.Progressbar(data.label, data.duration,{
-            FreezePlayer = false, 
+            FreezePlayer = false,
             onFinish = function()
                 p:resolve(true)
             end, onCancel = function()

@@ -9,6 +9,18 @@ local function useLation()
     return GetResourceState("lation_ui") == "started"
 end
 
+-- ox_lib through its exports, not the global `lib`: the calling script may not load
+-- @ox_lib/init.lua (gg_lib#9, same as the display module). Returns false when ox_lib isn't running.
+local function ox(name, ...)
+    if GetResourceState("ox_lib") ~= "started" then return false end
+
+    return true, exports.ox_lib[name](nil, ...)
+end
+
+local function noMenu()
+    print(("^3[gg_lib] %s: no menu to show, start ox_lib or lation_ui^0"):format(GetCurrentResourceName()))
+end
+
 gg.menu.open = function(data, options)
     local id, title, menu = data.id, data.title, data.menu
     if useLation() then
@@ -21,13 +33,15 @@ gg.menu.open = function(data, options)
 
         exports.lation_ui:showMenu(id)
     else
-        lib.registerContext({
+        local ran = ox("registerContext", {
             id = id,
             title = title,
             menu = menu,
             options = table.unpack({options})
         })
-        lib.showContext(id)
+        if not ran then return noMenu() end
+
+        ox("showContext", id)
     end
 end
 
@@ -64,7 +78,7 @@ gg.menu.inputMenu = function(data)
             }
         })
     else
-        result = lib.inputDialog(title, {
+        local ran, values = ox("inputDialog", title, {
                 {
                     type = inputType,
                     label = label,
@@ -75,6 +89,8 @@ gg.menu.inputMenu = function(data)
                     default = default,
                 },
         })
+        if not ran then noMenu() end
+        result = values
     end
 
     return result or false
@@ -84,7 +100,10 @@ gg.menu.alertDialog = function(data)
     if useLation() then
         return exports.lation_ui:alert(data)
     else
-        return lib.alertDialog(data)
+        local ran, answer = ox("alertDialog", data)
+        if not ran then return noMenu() end
+
+        return answer
     end
 end
 
@@ -92,6 +111,8 @@ gg.menu.getOpenContextMenu = function()
     if useLation() then
         return exports.lation_ui:getOpenMenu()
     else
-        return lib.getOpenContextMenu()
-    end    
+        local _, id = ox("getOpenContextMenu")
+
+        return id
+    end
 end
